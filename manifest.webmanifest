@@ -1,0 +1,14 @@
+{
+  "name": "Rami en famille",
+  "short_name": "Rami",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1A4A33",
+  "theme_color": "#1A4A33",
+  "icons": [
+    { "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

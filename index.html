@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rami en famille</title>
+<meta name="theme-color" content="#1A4A33">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Libre+Baskerville:ital,wght@0,700;1,400&display=swap">
+<style>
+/* Mise en page : un tapis de jeu d'un seul tenant ; en haut l'adversaire, au milieu la pioche et la table,
+   puis une phrase d'aide, les gros boutons du moment, et la main en très grandes cartes en bas.
+   Trois tapis au choix ; chacun redéfinit les mêmes jetons de couleur. */
+:root{
+  --gold:#F0C04A; --gold-deep:#C99A22; --gold-ink:#2B1F00;
+  --paper:#FBF5E6; --ink:#151515; --alert:#FFE3A3;
+  --f-display:"Libre Baskerville", Georgia, "Times New Roman", serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme:dark;
+}
+body[data-tapis="vert"]{ --txt:#FBF5E6; --txt-dim:#D9E6DC; --line:#2C6A4C; --band:rgba(0,0,0,.22); --alert-txt:#FFE3A3;
+  background:#1A4A33 radial-gradient(ellipse at 50% 40%, #1E5239 0%, #0F3021 100%) fixed; }
+body[data-tapis="carreaux"]{ --txt:#2A1712; --txt-dim:#4E3128; --line:rgba(150,30,40,.45); --band:rgba(255,253,248,.9); --alert-txt:#8A1020;
+  color-scheme:light;
+  background-color:#FBF7F0;
+  background-image:linear-gradient(90deg, rgba(196,38,52,.30) 50%, transparent 50%), linear-gradient(rgba(196,38,52,.30) 50%, transparent 50%);
+  background-size:56px 56px; background-attachment:fixed; }
+body[data-tapis="bois"]{ --txt:#FFF6E8; --txt-dim:#F2DEC6; --line:rgba(255,230,200,.3); --band:rgba(45,22,6,.4); --alert-txt:#FFE3A3;
+  background-color:#7A4C2A;
+  background-image:repeating-linear-gradient(92deg, rgba(0,0,0,.07) 0 2px, transparent 2px 11px, rgba(255,220,170,.05) 11px 13px, transparent 13px 23px),
+    linear-gradient(180deg, #8C5A33 0%, #6B4022 100%);
+  background-attachment:fixed; }
+html,body{height:100%}
+body{margin:0;color:var(--txt);font-family:var(--f-body);font-size:22px;line-height:1.35;
+  -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none}
+#app{min-height:100%;display:flex;flex-direction:column;box-sizing:border-box;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:calc(10px + env(safe-area-inset-top, 0px));padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px))}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+.big{font-size:30px;font-weight:700;min-height:80px;padding:0 36px;border-radius:18px;border:0;
+  background:var(--gold);color:var(--gold-ink);box-shadow:0 5px 0 var(--gold-deep);text-wrap:balance}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--gold-deep)}
+.big.alt{background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #B8B09C}
+.small{font-size:19px;min-height:54px;padding:0 18px;border-radius:12px;border:2px solid var(--txt-dim);background:var(--band);color:var(--txt)}
+h1{font-family:var(--f-display);font-size:52px;line-height:1.1;margin:0;text-wrap:balance}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;padding-block:20px}
+.lead{font-size:26px;max-width:28em;margin:0;text-wrap:balance}
+.boxed{background:var(--band);border-radius:20px;padding:22px 26px}
+.field{font-size:38px;font-family:var(--f-body);font-weight:700;padding:14px 22px;border-radius:16px;border:4px solid var(--gold);
+  background:var(--paper);color:var(--ink);width:min(520px,100%);box-sizing:border-box;text-align:center}
+.err{color:var(--alert-txt);font-size:24px;font-weight:700;min-height:1.4em;margin:0}
+.fan{display:flex;justify-content:center}
+.fan svg{margin-left:-38px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+.fan svg:first-child{margin-left:0}
+.homebtns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+
+/* Écran de jeu */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 10px;border-radius:14px;background:var(--band)}
+.opp{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.opp b{font-size:26px}
+.opp span{white-space:nowrap}
+.away{color:var(--alert-txt);font-weight:700}
+.minibacks{display:flex;overflow:hidden;min-width:0;flex-shrink:1}.minibacks svg{margin-left:-16px;flex-shrink:0}.minibacks svg:first-child{margin-left:0}
+.score{font-size:20px;color:var(--txt-dim)}
+.last{font-size:20px;color:var(--txt);padding:4px 10px;margin-top:6px;border-radius:10px;background:var(--band);align-self:flex-start;min-height:1.3em}
+.board{flex:1;display:flex;gap:18px;padding-block:10px;min-height:0;align-items:flex-start}
+.piles{display:flex;gap:16px;flex-shrink:0}
+.pile{background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:20px;color:var(--txt)}
+.pile span{background:var(--band);border-radius:8px;padding:0 8px}
+.pile[disabled]{cursor:default}
+.pile.go svg{filter:drop-shadow(0 0 10px var(--gold)) drop-shadow(0 0 4px var(--gold))}
+.slot{border:3px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--txt-dim);font-size:18px;box-sizing:border-box;background:var(--band)}
+.table{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start;overflow:auto;max-height:100%}
+.table .empty{color:var(--txt);font-size:21px;padding:8px 12px;border-radius:12px;background:var(--band)}
+.grp{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--band);border:3px solid transparent;border-radius:14px;padding:8px}
+.grp .cards{display:flex}
+.grp .cards svg{filter:drop-shadow(-2px 0 3px rgba(0,0,0,.25))}
+.grp.can{border-color:var(--gold);cursor:pointer}
+.grp .tag{font-size:18px;color:var(--txt-dim)}
+.grp.can .tag{color:var(--txt);font-weight:700;font-size:22px}
+.grp.staged{border-color:var(--txt);border-style:dashed}
+.help{font-size:25px;font-weight:700;padding:12px 18px;border-radius:14px;background:var(--band);text-wrap:balance;margin:0}
+.help.mine{background:var(--paper);color:var(--ink)}
+.help.wait{font-weight:400}
+.actions{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center;padding-block:10px;min-height:82px}
+.sugg{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
+.sugg span{font-size:20px;background:var(--band);border-radius:8px;padding:2px 8px}
+.chip{font-size:22px;min-height:58px;padding:0 18px;border-radius:30px;border:3px solid var(--gold);background:var(--band);color:var(--txt);font-weight:700}
+.hand{display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:22px}
+.hrow{display:flex;justify-content:center}
+.card{background:none;border:0;padding:0;border-radius:10px;transition:transform .15s ease;position:relative}
+.card svg{display:block;filter:drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
+.card.sel{transform:translateY(-24px)}
+.card.sel svg{filter:drop-shadow(0 0 0 var(--gold)) drop-shadow(0 0 5px var(--gold)) drop-shadow(0 0 5px var(--gold))}
+.card[disabled]{cursor:default}
+
+/* Panneaux */
+.overlay{position:fixed;inset:0;background:rgba(5,20,12,.82);display:flex;align-items:center;justify-content:center;z-index:20;
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+.panel{background:var(--paper);color:var(--ink);border-radius:22px;padding:28px 30px;max-width:820px;width:100%;max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:16px}
+.panel h2{font-family:var(--f-display);font-size:36px;margin:0;text-wrap:balance}
+.panel h3{font-size:24px;margin:6px 0 0}
+.panel p,.panel li{font-size:22px;margin:0}
+.panel ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:8px}
+.panel .big.alt{background:#1A4A33;color:#FBF5E6;box-shadow:0 5px 0 #0F3021}
+.panel .field{border-color:#C99A22}
+.tally{display:grid;grid-template-columns:1fr auto auto;gap:8px 28px;font-size:24px;font-variant-numeric:tabular-nums;align-items:baseline}
+.tally .h{font-size:18px;color:#5A5040;text-align:right}
+.tally b{text-align:right}
+.mescartes{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.mescartes .col{flex:1;min-width:260px;display:flex;flex-direction:column;gap:12px}
+.tapis{display:flex;gap:14px;flex-wrap:wrap}
+.tapis button{flex:1;min-width:150px;min-height:110px;border-radius:16px;border:4px solid #CFC6B0;font-size:22px;font-weight:700;display:flex;align-items:flex-end;justify-content:center;padding:10px;color:#151515}
+.tapis button span{background:rgba(255,253,248,.92);border-radius:8px;padding:2px 10px}
+.tapis button[aria-pressed="true"]{border-color:#C99A22;box-shadow:0 0 0 4px #F0C04A}
+.tapis .t-vert{background:radial-gradient(ellipse at 50% 40%, #1E5239, #0F3021)}
+.tapis .t-carreaux{background-color:#FBF7F0;background-image:linear-gradient(90deg, rgba(196,38,52,.35) 50%, transparent 50%), linear-gradient(rgba(196,38,52,.35) 50%, transparent 50%);background-size:28px 28px}
+.tapis .t-bois{background:repeating-linear-gradient(92deg, rgba(0,0,0,.08) 0 2px, transparent 2px 9px), linear-gradient(#8C5A33,#6B4022)}
+.note{font-size:19px;color:#5A5040}
+@media (prefers-reduced-motion: reduce){.card{transition:none}}
+@media (max-width:700px){ h1{font-size:40px} .big{font-size:26px;padding:0 24px} .board{flex-direction:column} }
+</style>
+</head>
+<body data-tapis="vert">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="fleurs" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect width="22" height="22" fill="#EED9DC"/>
+      <g fill="#C2546B"><circle cx="6" cy="3.6" r="2"/><circle cx="8.4" cy="5.4" r="2"/><circle cx="7.5" cy="8.2" r="2"/><circle cx="4.5" cy="8.2" r="2"/><circle cx="3.6" cy="5.4" r="2"/></g>
+      <circle cx="6" cy="6" r="1.4" fill="#F3C14B"/>
+      <g fill="#7E9C5B"><ellipse cx="15" cy="15" rx="2.4" ry="1.1" transform="rotate(-35 15 15)"/><ellipse cx="18.5" cy="18" rx="2.4" ry="1.1" transform="rotate(35 18.5 18)"/></g>
+      <g fill="#E58FA0"><circle cx="17" cy="9" r="1.2"/><circle cx="18.6" cy="10.2" r="1.2"/><circle cx="17.9" cy="12" r="1.2"/><circle cx="16.1" cy="12" r="1.2"/><circle cx="15.4" cy="10.2" r="1.2"/></g>
+      <circle cx="17" cy="10.8" r=".8" fill="#FFF3C4"/>
+    </pattern>
+    <clipPath id="medaillon"><ellipse cx="50" cy="58" rx="27" ry="35"/></clipPath>
+  </defs>
+</svg>
+
+<div id="app"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+/* =====================================================================
+   RÈGLES DU JEU — RAMI FRANÇAIS CLASSIQUE À DEUX (variante « 51 »)
+   ---------------------------------------------------------------------
+   Variante choisie : la plus jouée en famille en France, le rami « à 51 ».
+   - Deux jeux de 52 cartes + 4 jokers = 108 cartes.
+   - Chacune reçoit 13 cartes ; celle qui commence en reçoit 14 et commence
+     directement par poser et/ou jeter une carte (elle ne pioche pas).
+   - À son tour : 1) prendre une carte, soit dans la pioche, soit la carte
+     visible de la défausse ; 2) poser si on le peut ; 3) jeter une carte
+     sur la défausse. On ne peut pas rejeter la carte qu'on vient de prendre
+     dans la défausse.
+   - Combinaisons : la SUITE (au moins 3 cartes qui se suivent dans la même
+     couleur ; l'as se met avant le 2 ou après le roi, jamais au milieu) et
+     le BRELAN ou CARRÉ (3 ou 4 cartes de même valeur, toutes de couleurs
+     différentes).
+   - Le joker remplace n'importe quelle carte. Une combinaison doit compter
+     plus de vraies cartes que de jokers.
+   - Première pose : les combinaisons posées ce tour-là doivent totaliser
+     au moins 51 points (figures 10, as 11, ou 1 dans A-2-3 ; le joker vaut
+     la carte qu'il remplace ; les autres cartes leur chiffre).
+   - Une fois sa première pose faite, on peut poser d'autres combinaisons
+     et compléter celles de la table (les siennes et celles de l'autre).
+   - La manche s'arrête quand une joueuse n'a plus de cartes (en posant
+     tout, ou en jetant sa dernière carte).
+   - L'autre compte les cartes qui lui restent : joker 20, as 11, figures 10,
+     les autres leur chiffre. Ces points s'ajoutent à son total ; le moins
+     de points gagne. « Rami ! » : si la gagnante pose tout son jeu d'un
+     coup sans avoir rien posé avant, les points de l'autre comptent double.
+   - Simplification assumée : on ne récupère pas un joker posé sur la table.
+
+   LIAISON ENTRE LES DEUX TABLETTES
+   - Aucun compte : les tablettes se parlent directement (WebRTC, bibliothèque
+     PeerJS) ; le serveur public et gratuit de PeerJS sert seulement à ce
+     qu'elles se trouvent, grâce au mot de la salle.
+   - La tablette qui crée la salle la « tient » : elle garde la partie et le
+     carnet des victoires dans sa mémoire. L'autre la rejoint.
+   - Un rechargement de page reprend la partie en cours.
+   ===================================================================== */
+
+/* Photo de famille pour le dos des cartes : coller ici une adresse « data:image/jpeg;base64,… »
+   (ou le nom d'un fichier image placé à côté de cette page). Vide = une fleur à la place. */
+const PHOTO_DOS = '';
+
+const SUIT_NAME=['pique','cœur','carreau','trèfle'];
+const SUIT_RED=[false,true,true,false];
+const SUIT_ORDER=[0,1,3,2]; // pique, cœur, trèfle, carreau : couleurs alternées dans la main
+const LABEL={1:'A',11:'V',12:'D',13:'R'};
+const isJoker=id=>id%54>=52;
+const suitOf=id=>Math.floor((id%54)/13);
+const rankOf=id=>(id%54)%13+1;
+const label=r=>LABEL[r]||String(r);
+
+function cardName(id){
+  if(isJoker(id)) return 'le joker';
+  const r=rankOf(id), s=' de '+SUIT_NAME[suitOf(id)];
+  if(r===1) return "l'as"+s;
+  if(r===11) return 'le valet'+s;
+  if(r===12) return 'la dame'+s;
+  if(r===13) return 'le roi'+s;
+  return 'le '+r+s;
+}
+function shortName(id){ return isJoker(id)?'Joker':label(rankOf(id))+' '+SUIT_NAME[suitOf(id)]; }
+function penalty(id){ if(isJoker(id)) return 20; const r=rankOf(id); return r===1?11:r>=11?10:r; }
+function sortHand(ids){ return [...ids].sort((a,b)=>key(a)-key(b)); function key(i){return isJoker(i)?999:SUIT_ORDER[suitOf(i)]*20+rankOf(i)} }
+
+/* Analyse d'un groupe de cartes : brelan/carré ou suite. Renvoie {ok, kind, points, order} ou {ok:false, msg}. */
+function analyse(ids){
+  if(ids.length<3) return {ok:false,msg:'Une combinaison demande au moins 3 cartes.'};
+  const nat=ids.filter(i=>!isJoker(i)), jok=ids.filter(isJoker);
+  if(nat.length<=jok.length) return {ok:false,msg:'Il faut plus de vraies cartes que de jokers.'};
+  const r0=rankOf(nat[0]);
+  if(nat.every(i=>rankOf(i)===r0)){
+    if(new Set(nat.map(suitOf)).size!==nat.length) return {ok:false,msg:'Dans un brelan, les couleurs doivent toutes être différentes.'};
+    if(ids.length>4) return {ok:false,msg:'Un carré a 4 cartes au plus.'};
+    const v=r0===1?11:r0>=11?10:r0;
+    return {ok:true,kind:'set',points:v*ids.length,order:[...nat,...jok]};
+  }
+  const s0=suitOf(nat[0]);
+  if(!nat.every(i=>suitOf(i)===s0)) return {ok:false,msg:'Une suite se fait dans une seule couleur ; un brelan avec la même valeur.'};
+  if(ids.length>13) return {ok:false,msg:'Une suite a 13 cartes au plus.'};
+  for(const aceHigh of [false,true]){
+    const rs=nat.map(i=>{const r=rankOf(i);return r===1&&aceHigh?14:r});
+    if(new Set(rs).size!==rs.length) continue;
+    const mn=Math.min(...rs), mx=Math.max(...rs), L=ids.length;
+    if(mx-mn+1>L) continue;
+    let start=mn; if(start+L-1>14) start=14-L+1;
+    if(start<1) continue;
+    const byPos={}; nat.forEach((id,k)=>byPos[rs[k]]=id);
+    const js=[...jok], order=[]; let pts=0;
+    for(let p=start;p<start+L;p++){ order.push(byPos[p]!==undefined?byPos[p]:js.shift()); pts+=p===1?1:p===14?11:p>=11?10:p; }
+    return {ok:true,kind:'run',points:pts,order};
+  }
+  return {ok:false,msg:'Ces cartes ne se suivent pas : il manque des cartes au milieu.'};
+}
+
+/* Combinaisons proposées (jamais imposées) à partir de la main. */
+function suggestions(hand){
+  const out=[], nat=hand.filter(i=>!isJoker(i)), jok=hand.filter(isJoker);
+  const byRank={};
+  nat.forEach(i=>{ const r=rankOf(i); (byRank[r]=byRank[r]||{})[suitOf(i)]??=i; });
+  for(const r in byRank){ const ids=Object.values(byRank[r]);
+    if(ids.length>=3) out.push(ids.slice(0,4));
+    else if(ids.length===2&&jok.length) out.push([...ids,jok[0]]); }
+  for(let s=0;s<4;s++){
+    const pos={}; nat.filter(i=>suitOf(i)===s).forEach(i=>{const r=rankOf(i); pos[r]??=i; if(r===1) pos[14]??=i;});
+    let run=[];
+    for(let p=1;p<=15;p++){
+      if(pos[p]!==undefined) run.push(pos[p]);
+      else { if(run.length>=3) out.push(run); else if(run.length===2&&jok.length) out.push([...run,jok[0]]); run=[]; }
+    }
+    if(jok.length) for(let p=1;p<=12;p++) if(pos[p]!==undefined&&pos[p+1]===undefined&&pos[p+2]!==undefined) out.push([pos[p],jok[0],pos[p+2]]);
+  }
+  const seen=new Set();
+  return out.map(ids=>({ids,a:analyse(ids)})).filter(x=>x.a.ok)
+    .filter(x=>{const k=[...x.ids].sort().join(); if(seen.has(k)) return false; seen.add(k); return true})
+    .sort((a,b)=>b.a.points-a.a.points).slice(0,3);
+}
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function newRound(st, starter){
+  const deck=shuffle([...Array(108).keys()]);
+  const hands=[[],[]];
+  for(let k=0;k<27;k++) hands[k%2===0?starter:1-starter].push(deck.pop());
+  return {...st, hands:[sortHand(hands[0]),sortHand(hands[1])], stock:deck, discard:[], table:[],
+    opened:[false,false], openedTurn:[-1,-1], turn:starter, starter, phase:'play', took:null, turnNo:1, result:null,
+    round:(st.round||0)+1, last:'Nouvelle manche : '+st.players[starter].name+' commence avec 14 cartes.'};
+}
+
+function take(hand, ids){
+  for(const id of ids){ const k=hand.indexOf(id); if(k<0) return false; hand.splice(k,1); }
+  return true;
+}
+function endRound(st, w){
+  const l=1-w; let pts=st.hands[l].reduce((s,i)=>s+penalty(i),0);
+  const rami=st.openedTurn[w]===st.turnNo; if(rami) pts*=2;
+  st.scores[l]+=pts; st.phase='over';
+  st.result={winner:w, pts, rami, loserCards:sortHand(st.hands[l])};
+  st.carnet=(st.carnet||[]).concat({w, t:Date.now()});
+  st.last=st.players[w].name+' a fini la manche.';
+}
+
+/* Applique un coup sur une copie de l'état. Renvoie {st} ou {error}. */
+function apply(prev, seat, a){
+  const st=JSON.parse(JSON.stringify(prev)), me=st.players[seat]?.name, hand=st.hands?.[seat];
+  if(a.type==='next'){ if(st.phase!=='over') return {error:'La manche continue.'}; return {st:newRound(st,1-st.starter)}; }
+  if(st.phase==='over'||st.phase==='waiting') return {error:'La manche est finie.'};
+  if(st.turn!==seat) return {error:"Ce n'est pas votre tour."};
+  if(a.type==='draw'){
+    if(st.phase!=='draw') return {error:'Vous avez déjà pris une carte.'};
+    if(a.from==='discard'){
+      if(!st.discard.length) return {error:'La défausse est vide.'};
+      const c=st.discard.pop(); hand.push(c); st.took=c; st.last=me+' a pris '+cardName(c)+' dans la défausse.';
+    } else {
+      if(!st.stock.length){ const top=st.discard.pop(); st.stock=shuffle(st.discard); st.discard=top===undefined?[]:[top]; }
+      if(!st.stock.length) return {error:'Plus aucune carte à piocher.'};
+      hand.push(st.stock.pop()); st.took=null; st.last=me+' a pioché une carte.';
+    }
+    st.hands[seat]=sortHand(hand); st.phase='play'; return {st};
+  }
+  if(st.phase!=='play') return {error:"Prenez d'abord une carte."};
+  if(a.type==='open'||a.type==='pose'){
+    const groups=a.type==='open'?a.groups:[a.ids];
+    if(a.type==='pose'&&!st.opened[seat]) return {error:'Votre première pose doit faire 51 points.'};
+    let total=0; const res=[];
+    for(const g of groups){ const r=analyse(g); if(!r.ok) return {error:r.msg}; total+=r.points; res.push(r); }
+    if(a.type==='open'&&total<51) return {error:'Il faut au moins 51 points pour la première pose.'};
+    if(!take(hand,groups.flat())) return {error:'Ces cartes ne sont plus dans votre main.'};
+    res.forEach(r=>st.table.push({cards:r.order,owner:seat}));
+    if(!st.opened[seat]){ st.opened[seat]=true; st.openedTurn[seat]=st.turnNo; }
+    st.last=me+' a posé '+total+' points.';
+    if(!hand.length) endRound(st,seat);
+    return {st};
+  }
+  if(a.type==='add'){
+    if(!st.opened[seat]) return {error:"Faites d'abord votre première pose de 51 points."};
+    const g=st.table[a.g]; if(!g) return {error:'Cette combinaison a disparu.'};
+    const r=analyse([...g.cards,...a.ids]); if(!r.ok) return {error:r.msg};
+    if(!take(hand,a.ids)) return {error:'Ces cartes ne sont plus dans votre main.'};
+    g.cards=r.order; st.last=me+' a ajouté '+a.ids.map(cardName).join(', ')+' sur la table.';
+    if(!hand.length) endRound(st,seat);
+    return {st};
+  }
+  if(a.type==='discard'){
+    if(a.id===st.took&&hand.length>1) return {error:'Vous ne pouvez pas rejeter la carte que vous venez de prendre.'};
+    if(!take(hand,[a.id])) return {error:"Cette carte n'est plus dans votre main."};
+    st.discard.push(a.id); st.last=me+' a jeté '+cardName(a.id)+'.';
+    if(!hand.length){ endRound(st,seat); return {st}; }
+    st.turn=1-seat; st.phase='draw'; st.took=null; st.turnNo++;
+    return {st};
+  }
+  return {error:'Coup inconnu.'};
+}
+
+/* ---------- Mémoire de la tablette ---------- */
+// ?profil=b sert uniquement aux essais à deux onglets sur un même ordinateur.
+const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
+const K=k=>'rami'+(PROFIL?'-'+PROFIL:'')+':'+k;
+const ls={get(k){try{return localStorage.getItem(K(k))}catch{return null}},
+  set(k,v){try{v==null?localStorage.removeItem(K(k)):localStorage.setItem(K(k),v)}catch{}}};
+const myName=()=>ls.get('nom')||'';
+const backName=()=>ls.get('dos-prenom')||myName();
+function applyTapis(){ const t=ls.get('tapis'); document.body.dataset.tapis=['vert','carreaux','bois'].includes(t)?t:'vert'; }
+applyTapis();
+
+/* ---------- Dessin des cartes (SVG, viewBox 100 × 140) ---------- */
+const SHAPE=[
+  '<path d="M50 4C64 26 96 40 96 62C96 77 84 85 72 85C63 85 57 80 54 74C55 84 59 91 68 96H32C41 91 45 84 46 74C43 80 37 85 28 85C16 85 4 77 4 62C4 40 36 26 50 4Z"/>',
+  '<path d="M50 92C20 68 4 50 4 31C4 15 16 5 30 5C40 5 47 11 50 19C53 11 60 5 70 5C84 5 96 15 96 31C96 50 80 68 50 92Z"/>',
+  '<path d="M50 3L89 50L50 97L11 50Z"/>',
+  '<circle cx="50" cy="27" r="21"/><circle cx="27" cy="58" r="21"/><circle cx="73" cy="58" r="21"/><path d="M45 48H55C55 74 60 87 70 96H30C40 87 45 74 45 48Z"/>'
+];
+function pip(s,x,y,size,flip){
+  const k=size/100;
+  return `<g transform="translate(${x-size/2} ${y-size/2}) scale(${k})${flip?' rotate(180 50 50)':''}">${SHAPE[s]}</g>`;
+}
+const PIPS={
+  2:[[50,32],[50,108]], 3:[[50,32],[50,70],[50,108]],
+  4:[[33,32],[67,32],[33,108],[67,108]], 5:[[33,32],[67,32],[50,70],[33,108],[67,108]],
+  6:[[33,32],[67,32],[33,70],[67,70],[33,108],[67,108]], 7:[[33,32],[67,32],[50,51],[33,70],[67,70],[33,108],[67,108]],
+  8:[[33,32],[67,32],[50,51],[33,70],[67,70],[50,89],[33,108],[67,108]],
+  9:[[33,32],[67,32],[33,57],[67,57],[50,70],[33,83],[67,83],[33,108],[67,108]],
+  10:[[33,32],[67,32],[50,45],[33,57],[67,57],[33,83],[67,83],[50,95],[33,108],[67,108]]
+};
+const FONT='Libre Baskerville, Georgia, serif';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* Dos de carte : fleurs, médaillon (photo de famille ou fleur), ruban avec le prénom. */
+function backSVG(w, name){
+  const h=Math.round(w*1.4), n=name===undefined?backName():name;
+  const tiny=w<50;
+  const flower=`<g transform="translate(50 56)"><g fill="#C2546B">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-11" rx="7" ry="10" transform="rotate(${a})"/>`).join('')}</g><circle r="6" fill="#F3C14B"/></g>`;
+  const inside=PHOTO_DOS?`<image href="${esc(PHOTO_DOS)}" x="23" y="23" width="54" height="70" preserveAspectRatio="xMidYMid slice" clip-path="url(#medaillon)"/>`:flower;
+  const len=n.length, fs=len>9?11:13;
+  const ribbon=tiny||!n?'':`<rect x="14" y="101" width="72" height="22" rx="5" fill="#FFF8EE" stroke="#B8875A" stroke-width="1.5"/>
+    <text x="50" y="116.5" font-size="${fs}" text-anchor="middle" font-family="${FONT}" font-style="italic" fill="#7A2E3E" ${len>11?'textLength="66" lengthAdjust="spacingAndGlyphs"':''}>${esc(n)}</text>`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 100 140" role="img" aria-label="dos de carte">
+    <rect x="1" y="1" width="98" height="138" rx="9" fill="#FFFDF7" stroke="#A79F8A" stroke-width="1.5"/>
+    <rect x="6" y="6" width="88" height="128" rx="6" fill="url(#fleurs)" stroke="#B8875A" stroke-width="2"/>
+    ${tiny?'':`<ellipse cx="50" cy="58" rx="29" ry="37" fill="#FFF8EE" stroke="#B8875A" stroke-width="2"/>${inside}`}${ribbon}</svg>`;
+}
+function cardSVG(id,w){
+  const h=Math.round(w*1.4);
+  if(id==null) return backSVG(w);
+  const open=`<svg width="${w}" height="${h}" viewBox="0 0 100 140" role="img"`;
+  const base=`<rect x="1" y="1" width="98" height="138" rx="9" fill="#FFFDF7" stroke="#A79F8A" stroke-width="1.5"/>`;
+  if(isJoker(id)){
+    const letters=[...'JOKER'].map((c,k)=>`<text x="12" y="${22+k*15}" font-size="15" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="#B3122A">${c}</text>`).join('');
+    return `${open} aria-label="joker">${base}${letters}<g transform="rotate(180 50 70)">${letters}</g>
+      <polygon points="56,30 63.5,55 89,55 68.5,70 76,95 56,80 36,95 43.5,70 23,55 48.5,55" fill="#F0C04A" stroke="#B3122A" stroke-width="2.5" transform="translate(-6 0)"/>
+      <circle cx="50" cy="66" r="6" fill="#B3122A"/></svg>`;
+  }
+  const s=suitOf(id), r=rankOf(id), col=SUIT_RED[s]?'#B3122A':'#151515', L=label(r);
+  const fs=L==='10'?25:31;
+  const corner=`<text x="14" y="31" font-size="${fs}" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="${col}" ${L==='10'?'textLength="24" lengthAdjust="spacingAndGlyphs"':''}>${L}</text>${pip(s,14,45,17)}`;
+  let mid='';
+  if(r===1) mid=pip(s,50,70,52);
+  else if(r<=10) mid=PIPS[r].map(([x,y])=>pip(s,x,y,19,y>72)).join('');
+  else {
+    const tint=SUIT_RED[s]?'#FBE6E3':'#E8ECF4';
+    const crown=r===13?`<path d="M36 44L39 30L45 38L50 26L55 38L61 30L64 44Z" fill="#E0A82E" stroke="${col}" stroke-width="1.5"/>`
+      :r===12?`<path d="M40 44Q50 30 60 44Z" fill="#E0A82E" stroke="${col}" stroke-width="1.5"/><circle cx="50" cy="33" r="3" fill="${col}"/>`
+      :`<rect x="42" y="36" width="16" height="8" rx="2" fill="#E0A82E" stroke="${col}" stroke-width="1.5"/>`;
+    mid=`<rect x="27" y="20" width="46" height="100" rx="5" fill="${tint}" stroke="${col}" stroke-width="1.6"/>${crown}
+      <text x="50" y="86" font-size="40" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="${col}">${L}</text>${pip(s,50,104,17)}`;
+  }
+  return `${open} aria-label="${cardName(id)}">${base}<g fill="${col}">${corner}<g transform="rotate(180 50 70)">${corner}</g>${mid}</g></svg>`;
+}
+
+/* ---------- Liaison directe entre les deux tablettes (PeerJS) ---------- */
+let S=null, word='', mySeat=null, sel=new Set(), staged=[], flash='', panel=null, lastScreen='';
+let peer=null, conn=null, role=null, linked=false, netMsg='', timers=[];
+const app=document.getElementById('app');
+const roomId=w=>'ramifamille51-'+w;
+const later=(f,ms)=>timers.push(setTimeout(f,ms));
+
+function save(){ if(S) ls.set('partie:'+word, JSON.stringify(S)); }
+function load(){ try{ return JSON.parse(ls.get('partie:'+word)||'null'); }catch{ return null; } }
+function send(m){ if(conn&&conn.open){ try{ conn.send(m); }catch{} } }
+
+function stopNet(){
+  timers.forEach(clearTimeout); timers=[];
+  try{ conn&&conn.close(); }catch{} conn=null; linked=false;
+  try{ peer&&peer.destroy(); }catch{} peer=null; role=null;
+}
+function netProblem(){
+  netMsg="La connexion internet ne répond pas. Le jeu réessaie tout seul dans quelques secondes.";
+  render(true); stopNet(); later(startNet,6000);
+}
+function startNet(){
+  if(!word) return;
+  if(typeof Peer==='undefined'){ netMsg="Le jeu n'a pas pu se charger. Vérifiez internet, puis rouvrez le jeu."; render(true); return; }
+  const r=ls.get('role:'+word);
+  if(r==='guest'){ S=S||load(); mySeat=1; joinAsGuest(); } else tryHost(r==='host');
+  render(true);
+}
+function tryHost(isMine){
+  const p=new Peer(roomId(word),{debug:0}); peer=p;
+  p.on('open',()=>{
+    role='host'; mySeat=0; ls.set('role:'+word,'host'); netMsg='';
+    S=load()||{v:2,rev:1,players:[{name:myName()}],scores:[0,0],phase:'waiting',round:0,carnet:[],last:myName()+' attend sa partenaire.'};
+    save(); render(true);
+  });
+  p.on('connection',c=>{ if(conn&&conn!==c){ try{conn.close()}catch{} } conn=c; wire(c); });
+  p.on('error',e=>{
+    if(e.type==='unavailable-id'){
+      try{p.destroy()}catch{} peer=null;
+      // Ma salle : l'ancienne connexion n'est pas encore libérée, on réessaie. Sinon, la salle existe : on la rejoint.
+      if(isMine){ netMsg='Reconnexion à votre salle…'; render(true); later(()=>tryHost(true),4000); }
+      else joinAsGuest();
+      return;
+    }
+    if(['network','server-error','socket-error','socket-closed','browser-incompatible'].includes(e.type)) netProblem();
+  });
+  p.on('disconnected',()=>later(()=>{ if(peer===p&&!p.destroyed) try{p.reconnect()}catch{} },2000));
+}
+function joinAsGuest(){
+  role='guest'; mySeat=1;
+  const p=new Peer({debug:0}); peer=p;
+  p.on('open',connectHost);
+  p.on('error',e=>{
+    if(e.type==='peer-unavailable'){ linked=false; if(!S) netMsg='On attend votre partenaire : sa tablette doit être allumée, avec le jeu ouvert.'; render(true); later(connectHost,5000); return; }
+    if(['network','server-error','socket-error','socket-closed','browser-incompatible'].includes(e.type)) netProblem();
+  });
+  p.on('disconnected',()=>later(()=>{ if(peer===p&&!p.destroyed) try{p.reconnect()}catch{} },2000));
+}
+function connectHost(){
+  if(!peer||peer.destroyed||role!=='guest') return;
+  if(conn&&conn.open) return;
+  const c=peer.connect(roomId(word),{reliable:true}); conn=c; wire(c);
+  later(()=>{ if(conn===c&&!c.open){ try{c.close()}catch{} connectHost(); } },9000);
+}
+function wire(c){
+  c.on('open',()=>{ linked=true; if(role==='guest') c.send({t:'hello',name:myName()}); else send({t:'state',st:S,sync:true}); render(); });
+  c.on('data',m=>onMsg(m));
+  c.on('close',()=>{ if(conn!==c) return; linked=false; render(); if(role==='guest') later(connectHost,3000); });
+  c.on('error',()=>{});
+}
+function onMsg(m){
+  if(!m||typeof m!=='object') return;
+  if(role==='host'){
+    if(m.t==='hello'){
+      if(S.players.length<2){ const st=JSON.parse(JSON.stringify(S)); st.players.push({name:String(m.name||'Partenaire').slice(0,20)}); commit(newRound(st,Math.random()<.5?0:1)); }
+      else send({t:'state',st:S,sync:true});
+    }
+    if(m.t==='state'&&m.st&&(m.st.rev||0)>(S.rev||0)){ S=m.st; save(); render(); }
+  } else if(m.t==='state'&&m.st){
+    if(!S||m.sync||(m.st.rev||0)>=(S.rev||0)){ S=m.st; ls.set('role:'+word,'guest'); netMsg=''; save(); render(); }
+  }
+}
+
+function cleanWord(w){ return w.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+
+function enterRoom(raw){
+  const w=cleanWord(raw);
+  if(!w){ flash='Tapez un mot, par exemple « jardin ».'; render(true); return; }
+  stopNet(); word=w; S=null; mySeat=null; sel.clear(); staged=[]; flash=''; netMsg='Connexion à la salle…';
+  ls.set('mot',raw.trim()); ls.set('salle',w);
+  if(!myName()){ render(true); return; }
+  startNet();
+}
+function leave(){ stopNet(); ls.set('salle',null); word=''; S=null; mySeat=null; sel.clear(); staged=[]; netMsg=''; render(true); }
+function setName(n){
+  n=n.trim().slice(0,20);
+  if(!n){ flash='Écrivez votre prénom.'; render(true); return; }
+  ls.set('nom',n); flash=''; if(word) startNet(); else render(true);
+}
+
+function commit(st){
+  st.rev=(S?.rev||0)+1; S=st; save(); render();
+  send({t:'state',st});
+}
+function act(a){
+  if(role==='guest'&&!linked){ flash='La liaison avec votre partenaire est coupée. Un instant, le jeu se reconnecte.'; render(true); return false; }
+  const r=apply(S,mySeat,a);
+  if(r.error){ flash=r.error; render(true); return false; }
+  flash=''; sel.clear();
+  if(a.type!=='add'&&a.type!=='pose') staged=[];
+  commit(r.st); return true;
+}
+async function keepAwake(){ try{ await navigator.wakeLock?.request('screen'); }catch{} }
+
+/* ---------- Carnet des victoires ---------- */
+function weekStart(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d.getTime(); }
+function carnetHTML(){
+  const c=S.carnet||[], ws=weekStart(), P=S.players;
+  const rows=P.map((p,k)=>`<span>${esc(p.name)}</span><b>${c.filter(x=>x.w===k&&x.t>=ws).length}</b><b>${c.filter(x=>x.w===k).length}</b>`).join('');
+  return `<div class="tally"><span></span><span class="h">Cette semaine</span><span class="h">Depuis le début</span>${rows}</div>`;
+}
+
+/* ---------- Affichage ---------- */
+function screen(){
+  if(!word) return 'home';
+  if(!myName()) return 'name';
+  if(!S) return 'connect';
+  if(mySeat===null||!S.players[mySeat]) return 'connect';
+  if(S.players.length<2) return 'wait';
+  return 'game';
+}
+function render(force){
+  const sc=screen();
+  if(!force&&sc===lastScreen&&(sc==='home'||sc==='name')&&!panel) return;
+  lastScreen=sc;
+  const f=flash?`<p class="err" role="alert">${esc(flash)}</p>`:'<p class="err"></p>';
+  const pan=panel==='cartes'?cartesHTML():panel==='regles'?rulesHTML():panel==='carnet'?carnetPanel():'';
+  if(sc==='home'){
+    app.innerHTML=`<div class="center">
+      <div class="fan">${[null,13,25,38,51].map(i=>cardSVG(i,110)).join('')}</div>
+      <h1>Rami en famille</h1>
+      <p class="lead boxed">Choisissez un mot avec votre partenaire, par exemple « jardin ». Tapez-le toutes les deux pour vous retrouver à la même table.</p>
+      <form id="fHome" class="center" style="padding:0;gap:16px">
+        <label for="mot" class="lead"><b>Le mot de la salle</b></label>
+        <input id="mot" class="field" autocomplete="off" autocapitalize="none" value="${esc(ls.get('mot')||'')}" placeholder="jardin">
+        <button class="big" type="submit">Entrer</button>${f}
+      </form>
+      <button class="small" data-act="cartes">Mes cartes et mon tapis</button></div>${pan}`;
+    return;
+  }
+  if(sc==='name'){
+    app.innerHTML=`<div class="center">
+      <h1>Salle « ${esc(word)} »</h1>
+      <form id="fName" class="center" style="padding:0;gap:16px">
+        <label for="prenom" class="lead"><b>Votre prénom</b></label>
+        <input id="prenom" class="field" autocomplete="off" autofocus placeholder="Jeanne">
+        <button class="big" type="submit">C'est moi</button>${f}
+      </form>
+      <button class="small" data-act="leave">Changer de salle</button></div>`;
+    return;
+  }
+  if(sc==='connect'){
+    app.innerHTML=`<div class="center"><div class="fan">${[null,null,null].map(i=>cardSVG(i,100)).join('')}</div>
+      <h1>Salle « ${esc(word)} »</h1>
+      <p class="lead boxed">${esc(netMsg||'Connexion à la salle…')}</p>
+      <button class="small" data-act="leave">Changer de salle</button></div>`;
+    return;
+  }
+  if(sc==='wait'){
+    app.innerHTML=`<div class="center"><div class="fan">${[null,null,null].map(i=>cardSVG(i,100)).join('')}</div>
+      <h1>Bonjour ${esc(S.players[mySeat].name)} !</h1>
+      <p class="lead boxed">On attend votre partenaire. Donnez-lui le mot <b>« ${esc(word)} »</b> : la partie commencera dès qu'elle l'aura tapé. Gardez le jeu ouvert.</p>
+      <div class="homebtns"><button class="small" data-act="cartes">Mes cartes</button><button class="small" data-act="leave">Changer de salle</button></div></div>${pan}`;
+    return;
+  }
+  renderGame(f, pan);
+}
+
+function handLayout(n){
+  const avail=app.clientWidth-40, portrait=innerHeight>innerWidth;
+  let W=Math.min(160, innerHeight*(portrait?0.13:0.18)), per=Math.max(n,1);
+  let step=per>1?(avail-W)/(per-1):W;
+  if(step<0.42*W&&n>7){ per=Math.ceil(n/2); step=(avail-W)/(per-1); }
+  if(step<0.36*W){ W=avail/(1+0.36*(per-1)); step=0.36*W; }
+  return {W:Math.floor(W), per, step:Math.min(step, W+10)};
+}
+
+function renderGame(f, pan){
+  const me=mySeat, op=1-me, my=S.turn===me, P=S.players, opened=S.opened[me];
+  const stagedIds=staged.flat();
+  const hand=(S.hands[me]||[]).filter(i=>!stagedIds.includes(i));
+  for(const i of [...sel]) if(!hand.includes(i)) sel.delete(i);
+  const selIds=[...sel];
+  const ana=selIds.length>=3?analyse(selIds):null;
+  const playing=my&&S.phase==='play';
+  const W=Math.max(64,Math.min(115, innerHeight*0.115)), Wt=Math.max(54,Math.min(76, innerWidth/17));
+
+  const canAdd=new Set();
+  if(playing&&opened&&selIds.length) S.table.forEach((g,k)=>{ if(analyse([...g.cards,...selIds]).ok) canAdd.add(k) });
+
+  // Phrase d'aide : la règle du moment, en une phrase.
+  let help, cls='help';
+  if(S.phase==='over') help='La manche est finie.';
+  else if(!my){ help=`C'est au tour de ${esc(P[op].name)}. Regardez vos cartes en attendant.`; cls+=' wait'; }
+  else {
+    cls+=' mine';
+    if(S.phase==='draw') help='À vous ! Prenez une carte : touchez la pioche, ou la carte visible de la défausse.';
+    else if(staged.length){ const t=staged.reduce((s,g)=>s+analyse(g).points,0); help=`Vous avez préparé ${t} points : il en faut 51 pour votre première pose. Ajoutez une autre combinaison, ou reprenez vos cartes.`; }
+    else if(selIds.length===1&&canAdd.size) help=`Touchez la combinaison entourée d'or pour y ajouter ${cardName(selIds[0])}, ou jetez cette carte.`;
+    else if(selIds.length===1) help=`Pour finir votre tour, touchez « Jeter ${cardName(selIds[0])} ».`;
+    else if(ana&&ana.ok) help=`Belle combinaison de ${ana.points} points ! Touchez « Poser ».`;
+    else if(selIds.length>=3&&canAdd.size) help="Touchez la combinaison entourée d'or pour y ajouter ces cartes.";
+    else if(selIds.length>=2) help=ana?ana.msg:'Choisissez au moins 3 cartes pour une combinaison, ou une seule carte à jeter.';
+    else if(S.turnNo===1&&S.turn===S.starter&&!S.took&&(S.hands[me]||[]).length===14&&!opened) help='Vous commencez avec 14 cartes : posez si vous pouvez, puis touchez une carte pour la jeter.';
+    else if(!opened) help='Touchez des cartes pour faire une suite ou un brelan (51 points pour la première pose), ou une seule carte pour la jeter.';
+    else help='Posez une combinaison, complétez la table, ou touchez une carte pour la jeter.';
+  }
+
+  let actions='';
+  if(my&&S.phase==='draw'){
+    actions=`<button class="big" data-act="draw" data-from="stock">Piocher</button>`
+      +(S.discard.length?`<button class="big alt" data-act="draw" data-from="discard">Prendre ${cardName(S.discard.at(-1))}</button>`:'');
+  } else if(playing){
+    if(ana&&ana.ok) actions+=`<button class="big" data-act="pose">Poser ces ${selIds.length} cartes</button>`;
+    if(selIds.length===1) actions+=`<button class="big alt" data-act="discard">Jeter ${cardName(selIds[0])}</button>`;
+    if(staged.length) actions+=`<button class="big alt" data-act="unstage">Reprendre mes cartes</button>`;
+    if(selIds.length) actions+=`<button class="small" data-act="clear">Tout désélectionner</button>`;
+    if(!selIds.length){
+      const sg=suggestions(hand);
+      if(sg.length) actions+=`<div class="sugg"><span>Idées :</span>${sg.map(x=>`<button class="chip" data-act="sugg" data-ids="${x.ids.join(',')}">${x.a.order.map(shortName).join(' · ')} (${x.a.points} pts)</button>`).join('')}</div>`;
+    }
+  }
+
+  let table=staged.map(g=>`<div class="grp staged"><div class="cards">${analyse(g).order.map((i,k)=>`<span style="margin-left:${k?-Wt*0.5:0}px">${cardSVG(i,Wt)}</span>`).join('')}</div><span class="tag">Prête à poser (${analyse(g).points} pts)</span></div>`).join('');
+  table+=S.table.map((g,k)=>`<div class="grp${canAdd.has(k)?' can':''}" ${canAdd.has(k)?`data-act="add" data-g="${k}" role="button" tabindex="0"`:''}>
+      <div class="cards">${g.cards.map((i,j)=>`<span style="margin-left:${j?-Wt*0.5:0}px">${cardSVG(i,Wt)}</span>`).join('')}</div>
+      <span class="tag">${canAdd.has(k)?'Toucher ici pour ajouter':esc(P[g.owner].name)}</span></div>`).join('');
+  if(!table) table='<div class="empty">La table est vide : aucune combinaison posée pour l\'instant.</div>';
+
+  const L=handLayout(hand.length), rows=[];
+  for(let k=0;k<hand.length;k+=L.per) rows.push(hand.slice(k,k+L.per));
+  const handHTML=rows.map(row=>`<div class="hrow">${row.map((i,k)=>`<button class="card${sel.has(i)?' sel':''}" data-act="card" data-id="${i}" ${playing?'':'disabled'} style="margin-left:${k?Math.round(L.step-L.W):0}px;z-index:${k}" aria-pressed="${sel.has(i)}">${cardSVG(i,L.W)}</button>`).join('')}</div>`).join('');
+
+  const drawGo=my&&S.phase==='draw';
+  const top=S.discard.at(-1);
+  const nOpp=(S.hands[op]||[]).length;
+  const away=linked?'':`<span class="away">${role==='host'?"n'est pas connectée":'reconnexion…'}</span>`;
+  app.innerHTML=`
+    <div class="top">
+      <div class="opp"><b>${esc(P[op].name)}</b><span>${nOpp} carte${nOpp>1?'s':''}</span>${away}
+        <span class="minibacks">${Array.from({length:Math.min(nOpp,14)},()=>backSVG(30)).join('')}</span></div>
+      <span class="score">Points (le moins gagne) : ${esc(P[me].name)} ${S.scores[me]} · ${esc(P[op].name)} ${S.scores[op]}</span>
+      <button class="small" data-act="regles">Les règles</button>
+      <button class="small" data-act="carnet">Le carnet</button>
+      <button class="small" data-act="cartes">Mes cartes</button>
+      <button class="small" data-act="leave">Changer de salle</button>
+    </div>
+    <div class="last">${esc(S.last||'')}</div>
+    <div class="board">
+      <div class="piles">
+        <button class="pile${drawGo?' go':''}" data-act="draw" data-from="stock" ${drawGo?'':'disabled'}>${backSVG(W)}<span>Pioche (${S.stock.length})</span></button>
+        <button class="pile${drawGo&&top!==undefined?' go':''}" data-act="draw" data-from="discard" ${drawGo&&top!==undefined?'':'disabled'}>${top!==undefined?cardSVG(top,W):`<div class="slot" style="width:${W}px;height:${Math.round(W*1.4)}px">vide</div>`}<span>Défausse</span></button>
+      </div>
+      <div class="table">${table}</div>
+    </div>
+    <p class="${cls}" aria-live="polite">${help}</p>
+    ${f}
+    <div class="actions">${actions}</div>
+    <div class="hand">${handHTML}</div>
+    ${S.phase==='over'&&!panel?overHTML():''}${pan}`;
+}
+
+function overHTML(){
+  const R=S.result, P=S.players, w=R.winner, l=1-w, me=mySeat;
+  const title=`Bravo ${esc(P[w].name)} !`;
+  const sub=w===me?'Vous avez gagné la manche.':`${esc(P[w].name)} a gagné la manche.`;
+  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de manche">
+    <h2>${title}</h2><p>${sub}</p>
+    ${R.rami?'<p><b>Rami !</b> Tout posé d\'un coup : les points comptent double.</p>':''}
+    <p>${esc(P[l].name)} garde ${R.loserCards.length} carte${R.loserCards.length>1?'s':''} et prend <b>${R.pts} points</b>.</p>
+    <div class="fan" style="flex-wrap:wrap">${R.loserCards.map(i=>cardSVG(i,64)).join('')}</div>
+    <h3>Le carnet des victoires</h3>${carnetHTML()}
+    <p>Points de la partie (le moins gagne) : ${esc(P[me].name)} ${S.scores[me]} · ${esc(P[1-me].name)} ${S.scores[1-me]}</p>
+    <button class="big" data-act="next">Nouvelle manche</button>
+  </div></div>`;
+}
+function carnetPanel(){
+  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Le carnet des victoires">
+    <h2>Le carnet des victoires</h2><p>Les manches gagnées par chacune. La semaine commence le lundi.</p>
+    ${carnetHTML()}
+    <p class="note">Le carnet est gardé par la tablette de ${esc(S.players[0].name)}, qui a créé la salle.</p>
+    <button class="big alt" data-act="close">Fermer</button></div></div>`;
+}
+function cartesHTML(){
+  const t=document.body.dataset.tapis, changed=ls.get('dos-change')==='1';
+  const nameBlock=changed
+    ? `<p>Prénom au dos : <b>${esc(backName())}</b>.</p><p class="note">Il a déjà été changé une fois ; il reste comme ça.</p>`
+    : `<label for="dosnom"><b>Le prénom écrit au dos</b></label>
+       <input id="dosnom" class="field" style="font-size:30px" autocomplete="off" value="${esc(backName())}" placeholder="Votre prénom">
+       <button class="big" data-act="dosnom">Écrire ce prénom</button>
+       <p class="note">Ce prénom ne pourra être changé qu'une seule fois.</p>`;
+  const tap=[['vert','Tapis vert'],['carreaux','Nappe à carreaux'],['bois','Bois']]
+    .map(([k,n])=>`<button class="t-${k}" data-act="tapis" data-t="${k}" aria-pressed="${t===k}"><span>${t===k?'✓ ':''}${n}</span></button>`).join('');
+  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Mes cartes">
+    <h2>Mes cartes</h2>
+    <div class="mescartes">
+      <div>${backSVG(150)}</div>
+      <div class="col">${nameBlock}${flash&&panel==='cartes'?`<p class="err" style="color:#8A1020">${esc(flash)}</p>`:''}
+        <p class="note">Une photo de famille viendra bientôt à la place de la fleur.</p></div>
+    </div>
+    <h3>Le tapis de jeu</h3>
+    <div class="tapis">${tap}</div>
+    <button class="big alt" data-act="close">Fermer</button></div></div>`;
+}
+function rulesHTML(){
+  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Les règles">
+    <h2>Le rami en bref</h2>
+    <ul>
+      <li>À votre tour : prenez une carte (pioche ou défausse), posez si vous pouvez, puis jetez une carte.</li>
+      <li><b>Suite</b> : au moins 3 cartes qui se suivent, de la même couleur (7, 8, 9 de cœur).</li>
+      <li><b>Brelan</b> : 3 ou 4 cartes de même valeur, de couleurs différentes (trois dames).</li>
+      <li>Le <b>joker</b> remplace n'importe quelle carte.</li>
+      <li>Première pose : au moins <b>51 points</b>. Figures 10, as 11 (ou 1 avant le 2).</li>
+      <li>Ensuite, vous pouvez compléter toutes les combinaisons de la table.</li>
+      <li>La première qui n'a plus de cartes gagne la manche ; l'autre compte ses cartes (joker 20, as 11, figures 10).</li>
+    </ul>
+    <button class="big alt" data-act="close">J'ai compris</button>
+  </div></div>`;
+}
+
+/* ---------- Gestes ---------- */
+app.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(e.target.id==='fHome') enterRoom(document.getElementById('mot').value);
+  if(e.target.id==='fName') setName(document.getElementById('prenom').value);
+});
+app.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]'); if(!t||t.disabled) return;
+  const a=t.dataset.act;
+  switch(a){
+    case 'leave': leave(); break;
+    case 'regles': case 'carnet': case 'cartes': panel=a; flash=''; render(true); break;
+    case 'close': panel=null; flash=''; render(true); break;
+    case 'tapis': ls.set('tapis',t.dataset.t); applyTapis(); render(true); break;
+    case 'dosnom': {
+      const v=document.getElementById('dosnom').value.trim().slice(0,14);
+      if(!v){ flash='Écrivez un prénom.'; render(true); break; }
+      ls.set('dos-prenom',v); ls.set('dos-change','1'); flash=''; render(true); break;
+    }
+    case 'card': { const id=+t.dataset.id; sel.has(id)?sel.delete(id):sel.add(id); flash=''; render(); break; }
+    case 'clear': sel.clear(); render(); break;
+    case 'sugg': sel=new Set(t.dataset.ids.split(',').map(Number)); render(); break;
+    case 'draw': act({type:'draw',from:t.dataset.from}); break;
+    case 'discard': act({type:'discard',id:[...sel][0]}); break;
+    case 'unstage': staged=[]; render(); break;
+    case 'add': act({type:'add',g:+t.dataset.g,ids:[...sel]}); break;
+    case 'next': act({type:'next'}); break;
+    case 'pose': {
+      const ids=[...sel];
+      if(S.opened[mySeat]){ act({type:'pose',ids}); break; }
+      const groups=[...staged,ids], total=groups.reduce((s,g)=>s+analyse(g).points,0);
+      if(total>=51){ if(act({type:'open',groups})) staged=[]; }
+      else { staged=groups; sel.clear(); flash=''; render(); }
+      break;
+    }
+  }
+});
+let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(screen()==='game') render(); },120); });
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden||!word) return;
+  keepAwake();
+  if(!peer||peer.destroyed) startNet();
+  else if(peer.disconnected) try{ peer.reconnect(); }catch{}
+  else if(role==='guest'&&!(conn&&conn.open)) connectHost();
+});
+document.addEventListener('click',keepAwake,{once:true});
+
+// Accès pour la vérification automatisée (lecture de l'état et coups) : sans effet pour les joueuses.
+window.__rami={get S(){return S}, get seat(){return mySeat}, get role(){return role}, get linked(){return linked}, act, analyse, suggestions, apply, cardName};
+
+const saved=ls.get('salle');
+if(saved){ word=saved; render(true); if(myName()) startNet(); } else render(true);
+</script>
+</body>
+</html>
