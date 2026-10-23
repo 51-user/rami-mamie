@@ -122,6 +122,28 @@ h1{font-family:var(--f-display);font-size:52px;line-height:1.1;margin:0;text-wra
 .tapis .t-carreaux{background-color:#FBF7F0;background-image:linear-gradient(90deg, rgba(196,38,52,.35) 50%, transparent 50%), linear-gradient(rgba(196,38,52,.35) 50%, transparent 50%);background-size:28px 28px}
 .tapis .t-bois{background:repeating-linear-gradient(92deg, rgba(0,0,0,.08) 0 2px, transparent 2px 9px), linear-gradient(#8C5A33,#6B4022)}
 .note{font-size:19px;color:#5A5040}
+
+/* Accueil : deux grands choix */
+.choice{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+.choice .big{font-size:40px;min-height:150px;width:min(380px,100%);padding:0 30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.choice .big small{font-size:21px;font-weight:400}
+
+/* Solitaire : une grille de 7 colonnes ; la ligne du haut porte pioche, défausse et les 4 fondations. */
+.soltop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 10px;border-radius:14px;background:var(--band)}
+.soltop b{font-family:var(--f-display);font-size:28px;flex:1 0 auto}
+.soltop .big{font-size:24px;min-height:64px;padding:0 22px}
+.moves{font-size:20px;color:var(--txt-dim);white-space:nowrap}
+.solgrid{display:grid;grid-template-columns:repeat(7,var(--cw));column-gap:var(--g);justify-content:center}
+.solgrid.up{margin-block:12px}
+.sslot{width:var(--cw);height:var(--ch);border:3px dashed var(--line);border-radius:10px;background:var(--band);box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;color:var(--txt);font-size:20px;font-weight:700;padding:4px;text-align:center}
+.spile{background:none;border:0;padding:0;width:var(--cw);height:var(--ch)}
+.spile svg,.scard svg{display:block;filter:drop-shadow(-2px 2px 3px rgba(0,0,0,.3))}
+.scol{position:relative;width:var(--cw)}
+.scard{position:absolute;left:0;background:none;border:0;padding:0}
+.ssel svg{filter:drop-shadow(0 0 0 var(--gold)) drop-shadow(0 0 5px var(--gold)) drop-shadow(0 0 5px var(--gold))}
+.starget svg{filter:drop-shadow(0 0 9px var(--gold)) drop-shadow(0 0 4px var(--gold))}
+.sslot.starget{border:4px solid var(--gold);box-shadow:0 0 14px var(--gold)}
 @media (prefers-reduced-motion: reduce){.card{transition:none}}
 @media (max-width:700px){ h1{font-size:40px} .big{font-size:26px;padding:0 24px} .board{flex-direction:column} }
 </style>
@@ -538,7 +560,8 @@ function carnetHTML(){
 
 /* ---------- Affichage ---------- */
 function screen(){
-  if(!word) return 'home';
+  if(mode==='solo') return 'solo';
+  if(!word) return mode==='rami'?'home':'choice';
   if(!myName()) return 'name';
   if(!S) return 'connect';
   if(mySeat===null||!S.players[mySeat]) return 'connect';
@@ -551,6 +574,18 @@ function render(force){
   lastScreen=sc;
   const f=flash?`<p class="err" role="alert">${esc(flash)}</p>`:'<p class="err"></p>';
   const pan=panel==='cartes'?cartesHTML():panel==='regles'?rulesHTML():panel==='carnet'?carnetPanel():'';
+  if(sc==='choice'){
+    app.innerHTML=`<div class="center">
+      <div class="fan">${[null,13,25,38,51].map(i=>cardSVG(i,110)).join('')}</div>
+      <h1>Cartes en famille</h1>
+      <div class="choice">
+        <button class="big" data-act="rami">Rami à deux<small>avec votre partenaire, à distance</small></button>
+        <button class="big alt" data-act="solo">Solitaire<small>toute seule, sans connexion</small></button>
+      </div>
+      <button class="small" data-act="cartes">Mes cartes et mon tapis</button></div>${pan}`;
+    return;
+  }
+  if(sc==='solo'){ renderSolo(pan); return; }
   if(sc==='home'){
     app.innerHTML=`<div class="center">
       <div class="fan">${[null,13,25,38,51].map(i=>cardSVG(i,110)).join('')}</div>
@@ -561,7 +596,7 @@ function render(force){
         <input id="mot" class="field" autocomplete="off" autocapitalize="none" value="${esc(ls.get('mot')||'')}" placeholder="jardin">
         <button class="big" type="submit">Entrer</button>${f}
       </form>
-      <button class="small" data-act="cartes">Mes cartes et mon tapis</button></div>${pan}`;
+      <div class="homebtns"><button class="small" data-act="accueil">Retour à l'accueil</button><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
     return;
   }
   if(sc==='name'){
@@ -744,6 +779,159 @@ function rulesHTML(){
   </div></div>`;
 }
 
+/* =====================================================================
+   SOLITAIRE (Klondike classique), à jouer seule, sans connexion.
+   - Un jeu de 52 cartes. Sept colonnes : la 1re a 1 carte, la 7e en a 7,
+     seule la dernière de chaque colonne est visible.
+   - On pioche une carte à la fois ; la pioche vide se retourne sans limite.
+   - Dans les colonnes, on descend en alternant les couleurs (rouge sur noir) ;
+     on peut déplacer une carte visible avec toutes celles posées dessus.
+   - Une colonne vide ne reçoit qu'un roi.
+   - Les quatre fondations se montent de l'as au roi, une couleur chacune.
+   - Gagné quand les 52 cartes sont sur les fondations.
+   ===================================================================== */
+let mode=null, SOL=null, ssel=null, hist=[], lastTap={k:'',t:0}, soloMsg='', confirmNew=false;
+const isRed=id=>SUIT_RED[suitOf(id)];
+function soloSave(){ ls.set('solo',JSON.stringify(SOL)); }
+function soloNew(){
+  const d=shuffle([...Array(52).keys()]), tab=[];
+  for(let c=0;c<7;c++){ const down=d.splice(0,c), up=d.splice(0,1); tab.push({down,up}); }
+  SOL={stock:d,waste:[],found:[[],[],[],[]],tab,moves:0,won:false}; hist=[]; ssel=null; soloMsg=''; confirmNew=false; soloSave();
+}
+function soloLoad(){ try{ SOL=JSON.parse(ls.get('solo')||'null'); }catch{ SOL=null; } if(!SOL) soloNew(); }
+function moving(src){
+  if(src.where==='waste') return SOL.waste.slice(-1);
+  if(src.where==='found') return SOL.found[src.s].slice(-1);
+  return SOL.tab[src.col].up.slice(src.i);
+}
+function whyNot(src,dest){
+  const cards=moving(src), first=cards[0];
+  if(dest.where==='found'){
+    if(cards.length>1) return 'Vers les fondations, une seule carte à la fois.';
+    const f=SOL.found[dest.s];
+    if(suitOf(first)!==dest.s) return 'Chaque fondation reçoit une seule couleur : '+SUIT_NAME[dest.s]+' ici.';
+    if(rankOf(first)!==f.length+1) return f.length?'Ici, il faut '+cardName(dest.s*13+f.length)+'.':'Les fondations commencent par l\'as.';
+    return '';
+  }
+  const t=SOL.tab[dest.col];
+  if(!t.up.length&&!t.down.length) return rankOf(first)===13?'':'Une colonne vide ne reçoit qu\'un roi.';
+  const top=t.up.at(-1);
+  if(isRed(top)===isRed(first)) return 'Il faut alterner les couleurs : rouge sur noir, noir sur rouge.';
+  if(rankOf(top)!==rankOf(first)+1) return 'Il faut une carte juste en dessous de '+cardName(top)+'.';
+  return '';
+}
+function sameSpot(a,b){ return a.where===b.where&&(a.where==='tab'?a.col===b.col:a.where==='found'?a.s===b.s:true); }
+function soloTargets(){
+  const T={tab:new Set(),found:new Set()};
+  if(!ssel) return T;
+  for(let c=0;c<7;c++){ const d={where:'tab',col:c}; if(!sameSpot(ssel,d)&&!whyNot(ssel,d)) T.tab.add(c); }
+  for(let s=0;s<4;s++){ const d={where:'found',s}; if(!sameSpot(ssel,d)&&!whyNot(ssel,d)) T.found.add(s); }
+  return T;
+}
+function soloMove(src,dest){
+  hist.push(JSON.stringify(SOL)); if(hist.length>300) hist.shift();
+  const cards=moving(src);
+  if(src.where==='waste') SOL.waste.pop();
+  else if(src.where==='found') SOL.found[src.s].pop();
+  else SOL.tab[src.col].up.splice(src.i);
+  if(dest.where==='found') SOL.found[dest.s].push(...cards); else SOL.tab[dest.col].up.push(...cards);
+  SOL.tab.forEach(t=>{ if(!t.up.length&&t.down.length) t.up.push(t.down.pop()); });
+  SOL.moves++; SOL.won=SOL.found.every(f=>f.length===13);
+  ssel=null; soloMsg=''; confirmNew=false; soloSave(); render();
+}
+function soloStock(){
+  if(!SOL.stock.length&&!SOL.waste.length){ soloMsg='La pioche est vide.'; render(); return; }
+  hist.push(JSON.stringify(SOL));
+  if(SOL.stock.length) SOL.waste.push(SOL.stock.pop());
+  else { SOL.stock=SOL.waste.reverse(); SOL.waste=[]; }
+  SOL.moves++; ssel=null; soloMsg=''; confirmNew=false; soloSave(); render();
+}
+function soloUndo(){
+  if(!hist.length){ soloMsg='Rien à annuler pour l\'instant.'; render(); return; }
+  SOL=JSON.parse(hist.pop()); ssel=null; soloMsg='Dernier coup annulé.'; confirmNew=false; soloSave(); render();
+}
+/* Un toucher sur une carte ou une place. Deux touchers rapides sur la même carte : vers les fondations. */
+function soloTap(where,col,i){
+  const now=Date.now(), key=where+':'+col+':'+i, dbl=key===lastTap.k&&now-lastTap.t<450;
+  lastTap={k:dbl?'':key,t:now}; confirmNew=false;
+  let src=null;
+  if(where==='waste'&&SOL.waste.length) src={where:'waste'};
+  if(where==='found'&&SOL.found[col].length) src={where:'found',s:col};
+  if(where==='tab'&&i>=SOL.tab[col].down.length) src={where:'tab',col,i:i-SOL.tab[col].down.length};
+  if(dbl&&src){
+    const c=moving(src);
+    if(c.length===1&&src.where!=='found'){ const d={where:'found',s:suitOf(c[0])}; if(!whyNot(src,d)){ soloMove(src,d); return; } }
+    soloMsg='Cette carte ne peut pas encore monter sur les fondations.'; ssel=src; render(); return;
+  }
+  if(ssel){
+    const dest=where==='tab'?{where:'tab',col}:where==='found'?{where:'found',s:col}:null;
+    if(dest&&!sameSpot(ssel,dest)){
+      const why=whyNot(ssel,dest);
+      if(!why){ soloMove(ssel,dest); return; }
+      soloMsg='Ce coup n\'est pas permis. '+why; ssel=null; render(); return;
+    }
+    if(src&&sameSpot(src,ssel)&&src.i===ssel.i){ ssel=null; soloMsg=''; render(); return; }
+  }
+  if(src){ ssel=src; soloMsg=''; }
+  else if(where==='tab'&&i>=0) soloMsg='Cette carte est encore retournée : elle se montrera quand celles du dessus seront parties.';
+  render();
+}
+
+function soloLayout(){
+  const availW=app.clientWidth-32, g=Math.round(Math.max(8,Math.min(18,availW*0.013)));
+  const W=Math.floor(Math.min(150,(availW-6*g)/7, innerHeight*(innerHeight>innerWidth?0.11:0.16)));
+  return {W,H:Math.round(W*1.4),g};
+}
+function renderSolo(pan){
+  if(!SOL) soloLoad();
+  const {W,H,g}=soloLayout(), T=soloTargets(), name=myName();
+  const selCls=(w,c,k)=>ssel&&ssel.where===w&&(w==='waste'||(w==='found'&&ssel.s===c)||(w==='tab'&&ssel.col===c&&k>=SOL.tab[c].down.length+ssel.i))?' ssel':'';
+  const stock=SOL.stock.length
+    ?`<button class="spile" data-act="stock" aria-label="Pioche, ${SOL.stock.length} cartes">${backSVG(W)}</button>`
+    :`<button class="sslot" data-act="stock">${SOL.waste.length?'Retourner la pioche':'vide'}</button>`;
+  const wtop=SOL.waste.at(-1);
+  const waste=wtop!==undefined?`<button class="spile${selCls('waste')}" data-act="sc" data-w="waste" data-c="0" data-i="0">${cardSVG(wtop,W)}</button>`:'<div class="sslot"></div>';
+  const found=SOL.found.map((f,s)=>{
+    const tg=T.found.has(s)?' starget':'';
+    return f.length?`<button class="spile${tg}${selCls('found',s)}" data-act="sc" data-w="found" data-c="${s}" data-i="0">${cardSVG(f.at(-1),W)}</button>`
+      :`<button class="sslot${tg}" data-act="sc" data-w="found" data-c="${s}" data-i="0" aria-label="fondation ${SUIT_NAME[s]}"><svg width="${W*0.45}" height="${W*0.45}" viewBox="0 0 100 100" style="opacity:.45" fill="currentColor">${SHAPE[s]}</svg></button>`;
+  }).join('');
+  const availH=Math.max(H*1.6, innerHeight-H-230);
+  const cols=SOL.tab.map((t,c)=>{
+    const nd=t.down.length, nu=t.up.length, tg=T.tab.has(c)?' starget':'';
+    if(!nd&&!nu) return `<div class="scol" style="height:${H}px"><button class="sslot${tg}" data-act="sc" data-w="tab" data-c="${c}" data-i="-1">Roi</button></div>`;
+    const dOff=Math.round(H*0.12); let uOff=H*0.27;
+    if(nu>1&&H+nd*dOff+(nu-1)*uOff>availH) uOff=Math.max(H*0.17,(availH-H-nd*dOff)/(nu-1));
+    const all=[...t.down.map(id=>({id,up:false})),...t.up.map(id=>({id,up:true}))];
+    let y=0;
+    const html=all.map((x,k)=>{ const top=Math.round(y); y+=x.up?uOff:dOff;
+      const last=k===all.length-1;
+      return `<button class="scard${selCls('tab',c,k)}${last?tg:''}" style="top:${top}px" data-act="sc" data-w="tab" data-c="${c}" data-i="${k}">${x.up?cardSVG(x.id,W):backSVG(W,'')}</button>`; }).join('');
+    const hgt=Math.round(y-(all.at(-1).up?uOff:dOff)+H);
+    return `<div class="scol" style="height:${hgt}px">${html}</div>`;
+  }).join('');
+  let help;
+  if(SOL.won) help='Toutes les cartes sont montées. Bravo !';
+  else if(ssel){ const c=moving(ssel); help=(T.tab.size||T.found.size)?`Touchez un endroit qui s'allume pour poser ${cardName(c[0])}${c.length>1?' et les cartes dessus':''}.`:`${cardName(c[0])[0].toUpperCase()+cardName(c[0]).slice(1)} n'a pas de place pour l'instant : touchez une autre carte, ou la pioche.`; }
+  else help='Touchez une carte pour la prendre, puis l\'endroit où la poser. Deux touchers rapides envoient une carte en haut à droite.';
+  app.innerHTML=`
+    <div class="soltop"><b>Solitaire</b><span class="moves">${SOL.moves} coup${SOL.moves>1?'s':''}</span>
+      <button class="big alt" data-act="undo">Annuler mon dernier coup</button>
+      <button class="small" data-act="solonew">${confirmNew?'Toucher encore pour recommencer':'Nouvelle partie'}</button>
+      <button class="small" data-act="cartes">Mes cartes</button>
+      <button class="small" data-act="accueil">Accueil</button></div>
+    <p class="help${ssel?' mine':''}" style="margin-top:10px" aria-live="polite">${help}</p>
+    ${soloMsg?`<p class="err" role="alert">${esc(soloMsg)}</p>`:''}
+    <div style="--cw:${W}px;--ch:${H}px;--g:${g}px">
+      <div class="solgrid up">${stock}${waste}<div></div>${found}</div>
+      <div class="solgrid">${cols}</div>
+    </div>
+    ${SOL.won&&!panel?`<div class="overlay"><div class="panel" role="dialog" aria-label="Solitaire réussi">
+      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p>
+      <div class="fan">${[0,13,26,39].map(s=>cardSVG(s+12,90)).join('')}</div>
+      <button class="big" data-act="solonew2">Nouvelle partie</button></div></div>`:''}${pan}`;
+}
+
 /* ---------- Gestes ---------- */
 app.addEventListener('submit',e=>{
   e.preventDefault();
@@ -754,6 +942,14 @@ app.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]'); if(!t||t.disabled) return;
   const a=t.dataset.act;
   switch(a){
+    case 'rami': mode='rami'; ls.set('mode','rami'); flash=''; render(true); break;
+    case 'solo': mode='solo'; ls.set('mode','solo'); soloLoad(); render(true); break;
+    case 'accueil': mode=null; ls.set('mode',null); ssel=null; soloMsg=''; flash=''; render(true); break;
+    case 'stock': soloStock(); break;
+    case 'sc': soloTap(t.dataset.w,+t.dataset.c,+t.dataset.i); break;
+    case 'undo': soloUndo(); break;
+    case 'solonew': if(confirmNew){ soloNew(); render(); } else { confirmNew=true; render(); } break;
+    case 'solonew2': soloNew(); render(); break;
     case 'leave': leave(); break;
     case 'regles': case 'carnet': case 'cartes': panel=a; flash=''; render(true); break;
     case 'close': panel=null; flash=''; render(true); break;
@@ -781,7 +977,7 @@ app.addEventListener('click',e=>{
     }
   }
 });
-let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(screen()==='game') render(); },120); });
+let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(screen()==='game'||screen()==='solo') render(); },120); });
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden||!word) return;
   keepAwake();
@@ -794,8 +990,11 @@ document.addEventListener('click',keepAwake,{once:true});
 // Accès pour la vérification automatisée (lecture de l'état et coups) : sans effet pour les joueuses.
 window.__rami={get S(){return S}, get seat(){return mySeat}, get role(){return role}, get linked(){return linked}, act, analyse, suggestions, apply, cardName};
 
+window.__solo={get SOL(){return SOL}, set SOL(v){SOL=v;hist=[];ssel=null;soloSave();render();}, get sel(){return ssel}, get msg(){return soloMsg}, whyNot};
+
 const saved=ls.get('salle');
-if(saved){ word=saved; render(true); if(myName()) startNet(); } else render(true);
+if(saved){ word=saved; mode='rami'; render(true); if(myName()) startNet(); }
+else { mode=ls.get('mode')==='solo'?'solo':null; render(true); }
 </script>
 </body>
 </html>
