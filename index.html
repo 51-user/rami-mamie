@@ -368,6 +368,12 @@ const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[
 const K=k=>'rami'+(PROFIL?'-'+PROFIL:'')+':'+k;
 const ls={get(k){try{return localStorage.getItem(K(k))}catch{return null}},
   set(k,v){try{v==null?localStorage.removeItem(K(k)):localStorage.setItem(K(k),v)}catch{}}};
+/* Chaque partie gagnée ou perdue verse des pièces dans la caisse du village (village.html, même tablette).
+   La clé évite de payer deux fois la même manche quand l'écran se redessine. */
+function versVillage(n,cle){
+  try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
+    localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
+}
 const myName=()=>ls.get('nom')||'';
 const backName=()=>ls.get('dos-prenom')||myName();
 function applyTapis(){ const t=ls.get('tapis'); document.body.dataset.tapis=['vert','carreaux','bois'].includes(t)?t:'vert'; }
@@ -582,7 +588,7 @@ function render(force){
         <button class="big" data-act="rami">Rami à deux<small>avec votre partenaire, à distance</small></button>
         <button class="big alt" data-act="solo">Solitaire<small>toute seule, sans connexion</small></button>
       </div>
-      <button class="small" data-act="cartes">Mes cartes et mon tapis</button></div>${pan}`;
+      <div class="homebtns"><button class="small" data-act="village">🏡 Mon village</button><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
     return;
   }
   if(sc==='solo'){ renderSolo(pan); return; }
@@ -725,8 +731,11 @@ function overHTML(){
   const R=S.result, P=S.players, w=R.winner, l=1-w, me=mySeat;
   const title=`Bravo ${esc(P[w].name)} !`;
   const sub=w===me?'Vous avez gagné la manche.':`${esc(P[w].name)} a gagné la manche.`;
+  const fin=(S.carnet||[]).slice(-1)[0], gain=w===me?30:20;
+  if(fin) versVillage(gain,'rami-'+fin.t);
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de manche">
     <h2>${title}</h2><p>${sub}</p>
+    <p>🏡 +${gain} pièces pour votre village.</p>
     ${R.rami?'<p><b>Rami !</b> Tout posé d\'un coup : les points comptent double.</p>':''}
     <p>${esc(P[l].name)} garde ${R.loserCards.length} carte${R.loserCards.length>1?'s':''} et prend <b>${R.pts} points</b>.</p>
     <div class="fan" style="flex-wrap:wrap">${R.loserCards.map(i=>cardSVG(i,64)).join('')}</div>
@@ -837,6 +846,7 @@ function soloMove(src,dest){
   if(dest.where==='found') SOL.found[dest.s].push(...cards); else SOL.tab[dest.col].up.push(...cards);
   SOL.tab.forEach(t=>{ if(!t.up.length&&t.down.length) t.up.push(t.down.pop()); });
   SOL.moves++; SOL.won=SOL.found.every(f=>f.length===13);
+  if(SOL.won) versVillage(15,'sol-'+Date.now());
   ssel=null; soloMsg=''; confirmNew=false; soloSave(); render();
 }
 function soloStock(){
@@ -927,7 +937,7 @@ function renderSolo(pan){
       <div class="solgrid">${cols}</div>
     </div>
     ${SOL.won&&!panel?`<div class="overlay"><div class="panel" role="dialog" aria-label="Solitaire réussi">
-      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p>
+      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p><p>🏡 +15 pièces pour votre village.</p>
       <div class="fan">${[0,13,26,39].map(s=>cardSVG(s+12,90)).join('')}</div>
       <button class="big" data-act="solonew2">Nouvelle partie</button></div></div>`:''}${pan}`;
 }
@@ -944,6 +954,7 @@ app.addEventListener('click',e=>{
   switch(a){
     case 'rami': mode='rami'; ls.set('mode','rami'); flash=''; render(true); break;
     case 'solo': mode='solo'; ls.set('mode','solo'); soloLoad(); render(true); break;
+    case 'village': location.href='village.html'; break;
     case 'accueil': mode=null; ls.set('mode',null); ssel=null; soloMsg=''; flash=''; render(true); break;
     case 'stock': soloStock(); break;
     case 'sc': soloTap(t.dataset.w,+t.dataset.c,+t.dataset.i); break;

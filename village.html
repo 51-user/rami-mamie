@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le village</title>
+<meta name="theme-color" content="#2E5E3A">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Libre+Baskerville:ital,wght@0,700;1,400&display=swap">
+<style>
+/* Alpha du village : vue en losanges façon Forge, formes de couleur à la place des dessins.
+   En haut les réserves, au milieu le village, à droite (ou dessous) la mission, en bas les gros boutons. */
+:root{
+  --gold:#F0C04A; --gold-deep:#C99A22; --gold-ink:#2B1F00;
+  --paper:#FBF5E6; --ink:#1E1A14; --ink-dim:#5A5145; --line:#D9CDB4;
+  --f-display:"Libre Baskerville", Georgia, serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme:light;
+}
+body[data-saison="printemps"]{--ciel1:#DDF1FB;--ciel2:#F7FBEF}
+body[data-saison="ete"]{--ciel1:#BFE6FA;--ciel2:#FFF6D8}
+body[data-saison="automne"]{--ciel1:#F4E1C4;--ciel2:#FBF0E0}
+body[data-saison="hiver"]{--ciel1:#DCE6F0;--ciel2:#F7F9FC}
+html,body{height:100%}
+body{margin:0;font-family:var(--f-body);font-size:22px;line-height:1.3;color:var(--ink);
+  background:linear-gradient(180deg,var(--ciel1),var(--ciel2)) fixed;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+#app{min-height:100%;display:flex;flex-direction:column;box-sizing:border-box;
+  padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.haut{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-size:30px;margin:0 8px 0 0}
+.saison{font-size:20px;font-weight:700;padding:6px 14px;border-radius:999px;background:var(--paper);border:2px solid var(--line)}
+.res{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.pill{background:var(--paper);border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-size:22px;font-weight:700;display:flex;align-items:center;gap:6px;min-height:44px;box-sizing:border-box}
+.pill.anim{animation:pop .5s}
+@keyframes pop{40%{transform:scale(1.18);background:#FFF1B8}}
+.milieu{flex:1;display:flex;gap:14px;min-height:0;margin-top:8px}
+.carte{flex:1;min-width:0;display:flex;align-items:center;justify-content:center}
+.carte svg{width:100%;height:100%;max-height:calc(100vh - 220px);touch-action:manipulation}
+.cote{width:300px;display:flex;flex-direction:column;gap:10px}
+@media (max-width:900px){.milieu{flex-direction:column}.cote{width:auto}.carte svg{max-height:60vh}}
+.mission{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:12px 16px}
+.mission h2{font-family:var(--f-display);font-size:20px;margin:0 0 6px}
+.mission p{margin:0 0 8px;font-size:18px;color:var(--ink-dim)}
+.lig{display:flex;justify-content:space-between;font-size:20px;padding:3px 0}
+.lig.ok{color:#2E7D32;font-weight:700}
+.barre{height:12px;border-radius:6px;background:#EDE3CF;overflow:hidden;margin-top:6px}
+.barre i{display:block;height:100%;background:#7BB661}
+.msg{background:#FFFDF6;border:2px solid var(--line);border-radius:18px;padding:12px 16px;font-size:20px;min-height:56px}
+.bas{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.big{flex:1;min-width:150px;font-size:24px;font-weight:700;min-height:76px;border-radius:18px;border:0;
+  background:var(--gold);color:var(--gold-ink);box-shadow:0 5px 0 var(--gold-deep);display:flex;align-items:center;justify-content:center;gap:10px}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--gold-deep)}
+.big.alt{background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #B8B09C}
+.big.on{background:#7BB661;color:#fff;box-shadow:0 5px 0 #4E8A3A}
+.big .e{font-size:30px}
+/* Feuille du bas : ce qu'on peut faire avec la chose touchée, ou le catalogue */
+.voile{position:fixed;inset:0;background:rgba(30,26,20,.35);display:flex;align-items:flex-end;justify-content:center;z-index:5}
+.feuille{background:var(--paper);border-radius:24px 24px 0 0;padding:18px 22px calc(18px + env(safe-area-inset-bottom,0px));width:min(900px,100%);box-sizing:border-box;max-height:80vh;overflow:auto}
+.feuille h2{font-family:var(--f-display);font-size:28px;margin:0 0 4px}
+.feuille .sous{font-size:20px;color:var(--ink-dim);margin:0 0 14px}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.choix{background:#fff;border:3px solid var(--line);border-radius:18px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:19px;font-weight:700;min-height:130px}
+.choix .e{font-size:44px;line-height:1}
+.choix small{font-weight:400;color:var(--ink-dim);font-size:16px;text-align:center}
+.choix[disabled]{opacity:.45;cursor:default}
+.onglets{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.onglets button{font-size:20px;font-weight:700;min-height:52px;padding:0 18px;border-radius:14px;border:2px solid var(--line);background:#fff}
+.onglets button.on{background:var(--gold);border-color:var(--gold-deep)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.actions .big{min-width:200px}
+.fermer{float:right;font-size:20px;min-height:52px;padding:0 18px;border-radius:14px;border:2px solid var(--line);background:#fff}
+.debut{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,var(--ciel1),var(--ciel2));z-index:6;padding:16px;box-sizing:border-box}
+.debut .boite{background:var(--paper);border-radius:24px;padding:28px;max-width:560px;text-align:center;border:2px solid var(--line)}
+.debut h1{font-size:40px;margin-bottom:12px}
+.champ{font-size:32px;font-weight:700;padding:12px 18px;border-radius:16px;border:4px solid var(--gold);width:100%;box-sizing:border-box;text-align:center;margin:14px 0;font-family:var(--f-body)}
+/* Le village : les bulles de récolte flottent */
+.flotte{animation:flotte 1.6s ease-in-out infinite}
+@keyframes flotte{50%{transform:translateY(-6px)}}
+.case-libre{cursor:pointer}
+svg text{font-family:var(--f-body)}
+</style>
+</head>
+<body data-saison="printemps">
+<div id="app"></div>
+<script>
+/* ---------- Données du jeu ---------- */
+const SAISONS=[
+ {id:'printemps',nom:'Printemps',e:'🌸',herbe:['#A9D67A','#9CCB6C'],arbre:'#F3B8CC',bord:'#7FB257'},
+ {id:'ete',nom:'Été',e:'☀️',herbe:['#8FC75A','#84BC50'],arbre:'#4F9A3A',bord:'#6AA342'},
+ {id:'automne',nom:'Automne',e:'🍂',herbe:['#C9C36E','#BEB763'],arbre:'#E0802F',bord:'#A39A4C'},
+ {id:'hiver',nom:'Hiver',e:'❄️',herbe:['#EEF3F6','#E2EAEF'],arbre:'#FFFFFF',bord:'#C6D3DB'}];
+/* Cultures : deux par saison et une fleur. min = minutes pour pousser. */
+const CULTURES={
+ fraise:{nom:'Fraises',e:'🍓',saison:'printemps',min:2,graine:2,gain:6},
+ carotte:{nom:'Carottes',e:'🥕',saison:'printemps',min:6,graine:3,gain:12},
+ tulipe:{nom:'Tulipes',e:'🌷',saison:'printemps',min:3,graine:2,fleur:true},
+ tomate:{nom:'Tomates',e:'🍅',saison:'ete',min:2,graine:2,gain:6},
+ pasteque:{nom:'Pastèques',e:'🍉',saison:'ete',min:6,graine:3,gain:12},
+ tournesol:{nom:'Tournesols',e:'🌻',saison:'ete',min:3,graine:2,fleur:true},
+ pomme:{nom:'Pommes',e:'🍎',saison:'automne',min:2,graine:2,gain:6},
+ citrouille:{nom:'Citrouilles',e:'🎃',saison:'automne',min:6,graine:3,gain:12},
+ dahlia:{nom:'Dahlias',e:'🌺',saison:'automne',min:3,graine:2,fleur:true},
+ chou:{nom:'Choux',e:'🥬',saison:'hiver',min:2,graine:2,gain:6},
+ oignon:{nom:'Oignons',e:'🧅',saison:'hiver',min:6,graine:3,gain:12},
+ rose:{nom:'Roses de Noël',e:'🌹',saison:'hiver',min:3,graine:2,fleur:true}};
+/* Bâtiments : prod = ce qu'ils donnent quand c'est prêt (multiplié par le niveau). */
+const TYPES={
+ mairie:{nom:'La mairie',e:'🏛️',taille:2,mur:'#E9EEF5',toit:'#3A6EA5',prod:{pieces:15},min:2,
+   phrase:'Le maire : « Merci pour les impôts, mesdames ! La fête approche. »'},
+ boulangerie:{nom:"La boulangerie d'Hugo",patron:'Hugo',e:'🥖',taille:2,mur:'#F6DDB2',toit:'#B5651D',prod:{pain:2,pieces:8},min:3,
+   phrase:'Hugo : « Tout chaud, sorti du four ! »'},
+ fleuriste:{nom:'La boutique de Chloé',patron:'Chloé',e:'💐',taille:2,mur:'#FADDE6',toit:'#C2457A',prod:{bouquet:1,pieces:10},min:4,besoin:{fleurs:2},
+   phrase:'Chloé : « Elles sentent bon, hein ? »'},
+ garage:{nom:'Le garage de Pierre',patron:'Pierre',e:'🔧',taille:2,mur:'#DADAD2',toit:'#55534C',prod:{outil:1,pieces:6},min:6,
+   phrase:'Pierre : « Et un outil de plus, ça roule ! »'},
+ maison:{nom:'Votre maison',e:'🏡',taille:2,mur:'#FFF3D6',toit:'#9C4A3A',prod:{pieces:5},min:5,
+   phrase:'Chez vous : « On est bien à la maison. »'},
+ parcelle:{nom:'Parcelle',e:'🟫',taille:1,cout:{pieces:15},cat:'ferme',aide:'Pour planter fruits, légumes et fleurs'},
+ route:{nom:'Route',e:'🛣️',taille:1,cout:{pieces:2},cat:'deco',aide:'Pour relier les maisons'},
+ arbre:{nom:'Arbre',e:'🌳',taille:1,cout:{pieces:10},cat:'deco',aide:'Change de couleur avec les saisons'},
+ banc:{nom:'Banc',e:'🪑',taille:1,cout:{pieces:20},cat:'deco',aide:'Pour se reposer'},
+ lampadaire:{nom:'Lampadaire',e:'🏮',taille:1,cout:{pieces:25},cat:'deco',aide:'Éclaire la rue'},
+ massif:{nom:'Massif de fleurs',e:'💮',taille:1,cout:{pieces:5,fleurs:2},cat:'deco',aide:'Avec 2 fleurs du jardin'},
+ fontaine:{nom:'Fontaine',e:'⛲',taille:1,cout:{pieces:0},cat:'deco',aide:'Cadeau de la fête du village',cadeau:true},
+ cerisier:{nom:'Cerisier en fleurs',e:'🌸',taille:1,cout:{pieces:30},cat:'deco',saison:'printemps',aide:'Décor du printemps'},
+ parasol:{nom:'Parasol',e:'⛱️',taille:1,cout:{pieces:20},cat:'deco',saison:'ete',aide:"Décor de l'été"},
+ citrouilles:{nom:'Tas de citrouilles',e:'🎃',taille:1,cout:{pieces:5,citrouille:2},cat:'deco',saison:'automne',aide:"Décor de l'automne"},
+ sapin:{nom:'Sapin décoré',e:'🎄',taille:1,cout:{pieces:30},cat:'deco',saison:'hiver',aide:"Décor de l'hiver"},
+ bonhomme:{nom:'Bonhomme de neige',e:'⛄',taille:1,cout:{pieces:10},cat:'deco',saison:'hiver',aide:"Décor de l'hiver"}};
+const AMELIO=[null,null,{pieces:60,outil:2},{pieces:150,outil:5}]; // coût pour passer au niveau 2, puis 3
+const RES={pieces:{e:'🪙',nom:'pièces'},pain:{e:'🍞',nom:'pains'},bouquet:{e:'💐',nom:'bouquets'},outil:{e:'🔧',nom:'outils'},fleurs:{e:'🌷',nom:'fleurs'},recolte:{e:'🧺',nom:'fruits et légumes'}};
+const N=12, TW=34, TH=17, OX=N*TW, OY=70;
+const ROUTES=[];for(let k=0;k<N;k++){ROUTES.push([k,5]);if(k!==5)ROUTES.push([5,k]);}
+
+/* ---------- Mémoire de la tablette ---------- */
+const CLE='village:etat';
+const ls={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+function neuf(nom){
+  const t=Date.now(), b=[];
+  const pose=(type,i,j,extra)=>b.push(Object.assign({id:Math.random().toString(36).slice(2,9),type,i,j,niv:1,depuis:t-60000*((TYPES[type].min||0)-0.2)},extra||{}));
+  ROUTES.forEach(([i,j])=>pose('route',i,j));
+  pose('mairie',6,6);pose('boulangerie',2,2);pose('fleuriste',7,2);pose('garage',2,7);pose('maison',9,8);
+  pose('parcelle',1,10);pose('parcelle',2,10);pose('parcelle',3,10);
+  pose('arbre',0,0);pose('arbre',10,1);pose('arbre',0,7);
+  return {v:1,nom,saison:0,annee:1,stock:{pieces:60,pain:0,bouquet:0,outil:1,fleurs:2,recolte:0,citrouille:0},
+    b,grenier:[],fete:{pain:0,bouquet:0,recolte:0,deco:0,finie:false},missionSaison:null,caisseVue:0};
+}
+let S=null;
+try{S=JSON.parse(ls.get(CLE))}catch{}
+function sauve(){ls.set(CLE,JSON.stringify(S))}
+
+/* ---------- Outils ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const P=(i,j)=>[OX+(i-j)*TW,OY+(i+j)*TH];
+const saison=()=>SAISONS[S.saison];
+const occupe=(i,j)=>S.b.find(o=>i>=o.i&&i<o.i+TYPES[o.type].taille&&j>=o.j&&j<o.j+TYPES[o.type].taille);
+function pret(o){const T=TYPES[o.type];
+  if(o.type==='parcelle')return o.culture&&Date.now()>=o.plante+CULTURES[o.culture].min*60000;
+  if(!T.min)return false;return Date.now()>=o.depuis+T.min*60000}
+function reste(ms){const m=Math.ceil(ms/60000);return m<=1?'moins d\'une minute':m+' minutes'}
+function assez(cout){return Object.entries(cout).every(([k,v])=>(S.stock[k]||0)>=v)}
+function paye(cout){Object.entries(cout).forEach(([k,v])=>S.stock[k]-=v)}
+function coutTxt(cout){return Object.entries(cout).filter(([,v])=>v>0).map(([k,v])=>v+' '+(k==='citrouille'?'🎃':RES[k].e)).join(' + ')||'gratuit'}
+let message='', anims=new Set();
+function gagne(k,n){S.stock[k]=(S.stock[k]||0)+n;anims.add(k);
+  if(!S.fete.finie&&k in S.fete&&k!=='deco')S.fete[k]=Math.min(S.fete[k]+n,FETE[k]);}
+const FETE={pain:10,bouquet:5,recolte:8,deco:6};
+
+/* ---------- Dessin du village ---------- */
+function poly(pts,f,s,extra){return `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="${f}" stroke="${s}" stroke-width="1" stroke-linejoin="round" ${extra||''}/>`}
+const up=(p,z)=>[p[0],p[1]-z];
+function boite(i,j,s,z,mur,toit,haut){
+  const A=P(i,j),B=P(i+s,j),C=P(i+s,j+s),D=P(i,j+s);
+  let h=poly([D,C,up(C,z),up(D,z)],mur,'#00000055');
+  h+=poly([C,B,up(B,z),up(C,z)],mur,'#00000055','style="filter:brightness(.86)"');
+  const ap=[(A[0]+C[0])/2,(A[1]+C[1])/2-z-(haut||18*s)];
+  h+=poly([up(D,z),up(C,z),ap],toit,'#00000055');
+  h+=poly([up(C,z),up(B,z),ap],toit,'#00000055','style="filter:brightness(.82)"');
+  return {h,ap,D,C,B};
+}
+function dessineObjet(o,k){
+  const T=TYPES[o.type], s=T.taille, [x,y]=P(o.i,o.j), sa=saison();
+  const cx=x, cy=y+TH*s; // centre du pied
+  let h='', top=cy;
+  if(o.type==='route'){return ''}
+  if(o.type==='parcelle'){
+    const A=P(o.i,o.j),B=P(o.i+1,o.j),C=P(o.i+1,o.j+1),D=P(o.i,o.j+1);
+    h+=poly([A,B,C,D],S.saison===3?'#B9A894':'#8A5A3B','#6B4329');
+    for(let r=1;r<3;r++){const a=[A[0]+(D[0]-A[0])*r/3,A[1]+(D[1]-A[1])*r/3],b=[B[0]+(C[0]-B[0])*r/3,B[1]+(C[1]-B[1])*r/3];h+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#5E3A22" stroke-width="1.5"/>`}
+    if(o.culture){const c=CULTURES[o.culture],f=Math.min(1,(Date.now()-o.plante)/(c.min*60000));
+      if(f<1){const r=3+f*6;[[-10,-2],[0,3],[10,-2],[0,-6]].forEach(([dx,dy])=>h+=`<circle cx="${cx+dx}" cy="${cy+dy}" r="${r}" fill="#3F8F33"/>`)}
+      else h+=`<text x="${cx}" y="${cy+7}" font-size="22" text-anchor="middle">${c.e}</text>`;}
+    top=cy-14;
+  } else if(T.cat==='deco'){
+    if(o.type==='arbre'||o.type==='cerisier'||o.type==='sapin'){
+      h+=`<rect x="${cx-3}" y="${cy-18}" width="6" height="18" fill="#7A4E2D"/>`;
+      if(o.type==='sapin'){h+=`<polygon points="${cx},${cy-62} ${cx-18},${cy-18} ${cx+18},${cy-18}" fill="#2F6B3A"/><circle cx="${cx-6}" cy="${cy-32}" r="3" fill="#E53935"/><circle cx="${cx+7}" cy="${cy-25}" r="3" fill="#FDD835"/><circle cx="${cx+2}" cy="${cy-45}" r="3" fill="#1E88E5"/><text x="${cx}" y="${cy-60}" font-size="12" text-anchor="middle">⭐</text>`}
+      else{const col=o.type==='cerisier'?'#F7B9CF':sa.arbre;h+=`<circle cx="${cx}" cy="${cy-32}" r="18" fill="${col}" stroke="#00000033"/><circle cx="${cx-9}" cy="${cy-24}" r="11" fill="${col}"/><circle cx="${cx+10}" cy="${cy-25}" r="11" fill="${col}"/>`}
+      top=cy-50;
+    } else if(o.type==='fontaine'){
+      h+=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#B0BEC5" stroke="#78909C"/><ellipse cx="${cx}" cy="${cy-2}" rx="18" ry="7" fill="#64B5F6"/><rect x="${cx-3}" y="${cy-24}" width="6" height="22" fill="#B0BEC5"/><circle cx="${cx}" cy="${cy-28}" r="6" fill="#90CAF9"/>`;top=cy-34;
+    } else if(o.type==='bonhomme'){
+      h+=`<circle cx="${cx}" cy="${cy-10}" r="12" fill="#fff" stroke="#B0BEC5"/><circle cx="${cx}" cy="${cy-28}" r="8" fill="#fff" stroke="#B0BEC5"/><polygon points="${cx},${cy-28} ${cx+10},${cy-26} ${cx},${cy-25}" fill="#FB8C00"/>`;top=cy-38;
+    } else if(o.type==='massif'){
+      h+=`<ellipse cx="${cx}" cy="${cy}" rx="22" ry="10" fill="#5B8C3A"/>`;
+      ['#E91E63','#FFEB3B','#AB47BC','#FF7043','#fff'].forEach((c,n)=>h+=`<circle cx="${cx-14+n*7}" cy="${cy-3+(n%2)*4}" r="4" fill="${c}"/>`);top=cy-10;
+    } else {
+      h+=`<ellipse cx="${cx}" cy="${cy+2}" rx="16" ry="7" fill="#00000022"/><text x="${cx}" y="${cy+4}" font-size="28" text-anchor="middle">${T.e}</text>`;top=cy-26;
+    }
+  } else {
+    const z=20+o.niv*14, bx=boite(o.i,o.j,s,z,T.mur,T.toit);
+    h+=bx.h;
+    // porte et enseigne sur la façade gauche
+    const mx=(bx.D[0]+bx.C[0])/2, my=(bx.D[1]+bx.C[1])/2;
+    h+=`<polygon points="${mx-6},${my+3} ${mx+6},${my-3} ${mx+6},${my-21} ${mx-6},${my-15}" fill="#6D4C41"/>`;
+    h+=`<circle cx="${mx-24}" cy="${my-z+14}" r="13" fill="#fff" stroke="#00000044"/><text x="${mx-24}" y="${my-z+20}" font-size="16" text-anchor="middle">${T.e}</text>`;
+    if(S.saison===3)h+=`<polygon points="${bx.ap[0]},${bx.ap[1]} ${bx.ap[0]-10},${bx.ap[1]+8} ${bx.ap[0]+10},${bx.ap[1]+8}" fill="#fff"/>`;
+    for(let n=1;n<o.niv;n++)h+=`<text x="${bx.C[0]+8+n*12}" y="${bx.C[1]-z-4}" font-size="14">⭐</text>`;
+    top=bx.ap[1];
+  }
+  // bulle de récolte
+  let bulle='';
+  if(pret(o)){
+    let e;if(o.type==='parcelle')e=CULTURES[o.culture].e;else e=T.e;
+    const manque=T.besoin&&!assez(T.besoin);
+    bulle=`<g class="flotte" style="transform-box:fill-box"><circle cx="${cx}" cy="${top-22}" r="19" fill="${manque?'#ECEFF1':'#FFD54F'}" stroke="${manque?'#90A4AE':'#C99A22'}" stroke-width="3"/><text x="${cx}" y="${top-14}" font-size="22" text-anchor="middle">${manque?'💤':e}</text></g>`;
+  }
+  return `<g data-o="${k}" style="cursor:pointer">${h}${bulle}</g>`;
+}
+let mode=null; // {type, depuisGrenier:index}
+function dessineVillage(){
+  const sa=saison(); let h='';
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const [x,y]=P(i,j), o=occupe(i,j), route=o&&o.type==='route';
+    let f=route?(S.saison===3?'#CFD8DC':'#CBC6B8'):sa.herbe[(i+j)%2];
+    const libre=mode&&!o;
+    if(libre)f='#7CCF5A';
+    h+=poly([[x,y],[x+TW,y+TH],[x,y+2*TH],[x-TW,y+TH]],f,route?'#B4AE9F':sa.bord,libre?`class="case-libre" data-t="${i},${j}"`:(route?`data-o="${S.b.indexOf(o)}"`:''));
+  }
+  // bord du terrain
+  const g=P(0,N),d=P(N,0),bas=P(N,N);
+  h+=poly([g,bas,[bas[0],bas[1]+16],[g[0],g[1]+16]],'#8D6E4F','#6B4F36');
+  h+=poly([bas,d,[d[0],d[1]+16],[bas[0],bas[1]+16]],'#7A5E42','#6B4F36');
+  S.b.map((o,k)=>[o,k]).filter(([o])=>o.type!=='route')
+    .sort((a,b)=>(a[0].i+a[0].j+TYPES[a[0].type].taille)-(b[0].i+b[0].j+TYPES[b[0].type].taille))
+    .forEach(([o,k])=>h+=dessineObjet(o,k));
+  // noms des commerces
+  S.b.forEach(o=>{const T=TYPES[o.type];if(T.taille===2){const [x,y]=P(o.i+2,o.j+2);
+    h+=`<text x="${x}" y="${y+18}" font-size="15" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="4" paint-order="stroke">${esc(T.patron||T.nom.replace(/^(La|Le|Votre) /,''))}${o.niv>1?' · niv. '+o.niv:''}</text>`}});
+  const W=2*N*TW, H=2*N*TH+OY+30;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Le village vu de biais"><title>Le village</title>${h}</svg>`;
+}
+
+/* ---------- Écran ---------- */
+let feuille=null; // {quoi:'objet',k} | {quoi:'catalogue',onglet}
+function rendu(){
+  if(!S){
+    const nomCartes=ls.get('rami:nom')||'';
+    $('#app').innerHTML=`<div class="debut"><div class="boite"><h1>Le village</h1>
+      <p>Un petit village à faire grandir : la boulangerie d'Hugo, la boutique de Chloé, le garage de Pierre, et votre jardin.</p>
+      <label for="nom">Votre prénom</label><input id="nom" class="champ" maxlength="16" value="${esc(nomCartes)}" autocomplete="off">
+      <button class="big" id="go" style="width:100%">Entrer au village</button></div></div>`;
+    $('#go').onclick=()=>{const n=$('#nom').value.trim();if(!n){$('#nom').focus();return}S=neuf(n);message='Bienvenue ! Touchez les bulles jaunes au-dessus des toits pour récolter.';sauve();rendu()};
+    return;
+  }
+  document.body.dataset.saison=saison().id;
+  const F=S.fete, MS=S.missionSaison;
+  const lignes=F.finie?'':['pain','bouquet','recolte','deco'].map(k=>{const v=k==='deco'?Math.min(F.deco,FETE.deco):F[k];
+    return `<div class="lig ${v>=FETE[k]?'ok':''}"><span>${k==='deco'?'🎀 décorations posées':RES[k].e+' '+RES[k].nom}</span><span>${v} / ${FETE[k]}</span></div>`}).join('');
+  const total=F.finie?1:['pain','bouquet','recolte','deco'].reduce((s,k)=>s+Math.min(F[k],FETE[k])/FETE[k],0)/4;
+  let mis=F.finie?`<div class="mission"><h2>🎉 La fête a eu lieu !</h2><p>La fontaine vous attend dans « Construire ».</p></div>`
+    :`<div class="mission"><h2>🎪 La fête du village</h2><p>Le maire prépare la fête. Réunissez :</p>${lignes}<div class="barre"><i style="width:${Math.round(total*100)}%"></i></div></div>`;
+  if(MS)mis+=`<div class="mission"><h2>${saison().e} Décorer pour ${MS.nom}</h2><p>Posez des décors de la saison.</p>
+    <div class="lig ${MS.fait>=MS.but?'ok':''}"><span>décors de saison</span><span>${Math.min(MS.fait,MS.but)} / ${MS.but}</span></div></div>`;
+  const pills=Object.keys(RES).map(k=>`<span class="pill ${anims.has(k)?'anim':''}" title="${RES[k].nom}">${RES[k].e} ${S.stock[k]||0}</span>`).join('')
+    +(S.stock.citrouille?`<span class="pill" title="citrouilles">🎃 ${S.stock.citrouille}</span>`:'');
+  anims.clear();
+  $('#app').innerHTML=`
+   <div class="haut"><h1>Le village de ${esc(S.nom)}</h1><span class="saison">${saison().e} ${saison().nom}</span><div class="res">${pills}</div></div>
+   <div class="milieu"><div class="carte">${dessineVillage()}</div>
+     <div class="cote">${mis}<div class="msg" role="status">${message||'Touchez un bâtiment pour voir ce qu\'il fait.'}</div></div></div>
+   <div class="bas">${mode?`<button class="big on" data-a="fini"><span class="e">✅</span>Terminé</button>`:`
+     <button class="big" data-a="construire"><span class="e">🔨</span>Construire</button>
+     <button class="big alt" data-a="cartes"><span class="e">🃏</span>Jouer aux cartes</button>
+     <button class="big alt" data-a="saison"><span class="e">${SAISONS[(S.saison+1)%4].e}</span>Saison suivante</button>`}</div>
+   ${feuille?feuilleHTML():''}`;
+  lier();
+}
+function feuilleHTML(){
+  if(feuille.quoi==='catalogue')return catalogueHTML();
+  if(feuille.quoi==='saison')return `<div class="voile" data-a="fermer"><div class="feuille" data-stop>
+    <button class="fermer" data-a="fermer">Fermer</button><h2>Passer à la saison suivante ?</h2>
+    <p class="sous">Bouton d'essai de l'alpha : dans le vrai jeu, les saisons changeront toutes seules.</p>
+    <p>Le village prendra les couleurs de <b>${SAISONS[(S.saison+1)%4].nom.toLowerCase()}</b>. Les décors de ${saison().nom.toLowerCase()} montent au grenier, rien n'est perdu. Ce qui pousse au jardin est récolté avant.</p>
+    <div class="actions"><button class="big" data-a="saison-ok">Oui, on change</button><button class="big alt" data-a="fermer">Pas encore</button></div></div></div>`;
+  const o=S.b[feuille.k];if(!o){feuille=null;return ''}
+  const T=TYPES[o.type];let corps='',act='';
+  if(o.type==='parcelle'){
+    if(!o.culture){
+      const dispo=Object.entries(CULTURES).filter(([,c])=>c.saison===saison().id);
+      corps=`<p class="sous">Que voulez-vous planter ? (cultures de ${saison().nom.toLowerCase()})</p><div class="grille">${dispo.map(([id,c])=>
+        `<button class="choix" data-plante="${id}" ${S.stock.pieces<c.graine?'disabled':''}><span class="e">${c.e}</span>${c.nom}<small>pousse en ${c.min} min<br>graines : ${c.graine} 🪙</small></button>`).join('')}</div>`;
+      act=`<button class="big alt" data-a="ranger">🧺 Ranger la parcelle</button>`;
+    } else {const c=CULTURES[o.culture];corps=`<p class="sous">${c.e} ${c.nom} : prêtes dans ${reste(o.plante+c.min*60000-Date.now())}.</p>`}
+  } else if(T.cat==='deco'||o.type==='route'){
+    corps=`<p class="sous">${T.aide||''}</p>`;
+    act=`<button class="big alt" data-a="ranger">📦 Ranger au grenier</button>`;
+  } else {
+    const prod=Object.entries(T.prod).map(([k,v])=>v*o.niv+' '+RES[k].e).join(' + ');
+    corps=`<p class="sous">${T.patron?'Tenue par '+T.patron+'. ':''}Donne ${prod} toutes les ${T.min} minutes.${T.besoin?' Il faut '+coutTxt(T.besoin)+' du jardin à chaque fois.':''}</p>`;
+    corps+=pret(o)?(T.besoin&&!assez(T.besoin)?`<p>💤 Chloé attend des fleurs : plantez-en au jardin.</p>`:`<p>✅ C'est prêt : touchez la bulle jaune.</p>`)
+      :`<p>⏳ Prochaine fournée dans ${reste(o.depuis+T.min*60000-Date.now())}.</p>`;
+    if(o.type!=='mairie'){
+      if(o.niv<3){const c=AMELIO[o.niv+1];act=`<button class="big" data-a="ameliorer" ${assez(c)?'':'disabled style="opacity:.5"'}>⬆️ Niveau ${o.niv+1} : ${coutTxt(c)}</button>`}
+      else act=`<p>⭐ Niveau le plus haut de l'alpha.</p>`;
+    }
+  }
+  return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button>
+    <h2>${T.e} ${esc(T.nom)}${o.niv>1?' · niveau '+o.niv:''}</h2>${corps}<div class="actions">${act}</div></div></div>`;
+}
+function catalogueHTML(){
+  const ong=feuille.onglet||'ferme';
+  let items='';
+  if(ong==='grenier'){
+    items=S.grenier.length?S.grenier.map((g,n)=>{const T=TYPES[g.type],hors=T.saison&&T.saison!==saison().id;
+      return `<button class="choix" data-grenier="${n}" ${hors?'disabled':''}><span class="e">${T.e}</span>${T.nom}<small>${hors?'revient '+{printemps:'au printemps',ete:"l'été",automne:"à l'automne",hiver:"l'hiver"}[T.saison]:'gratuit, déjà à vous'}</small></button>`}).join('')
+      :'<p class="sous">Le grenier est vide. Ce que vous rangez ici n\'est jamais perdu.</p>';
+  } else {
+    items=Object.entries(TYPES).filter(([,T])=>T.cat===ong&&(!T.saison||T.saison===saison().id)&&(!T.cadeau||S.fete.finie)).map(([id,T])=>
+      `<button class="choix" data-pose="${id}" ${assez(T.cout)?'':'disabled'}><span class="e">${T.e}</span>${T.nom}<small>${T.aide}<br>${coutTxt(T.cout)}</small></button>`).join('');
+  }
+  return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button>
+    <h2>🔨 Construire</h2><div class="onglets">
+    ${[['ferme','🌱 Jardin'],['deco','🎀 Décorer'],['grenier','📦 Grenier ('+S.grenier.length+')']].map(([k,n])=>`<button data-onglet="${k}" class="${k===ong?'on':''}">${n}</button>`).join('')}
+    </div><div class="grille">${items}</div></div></div>`;
+}
+
+/* ---------- Gestes ---------- */
+function lier(){
+  document.querySelectorAll('[data-stop]').forEach(e=>e.onclick=ev=>ev.stopPropagation());
+  document.querySelectorAll('[data-a]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();action(e.dataset.a)}));
+  document.querySelectorAll('[data-o]').forEach(e=>e.onclick=()=>toucher(+e.dataset.o));
+  document.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>poser(e.dataset.t));
+  document.querySelectorAll('[data-plante]').forEach(e=>e.onclick=()=>planter(e.dataset.plante));
+  document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{mode={type:e.dataset.pose};feuille=null;message=`Touchez une case vert vif pour poser : ${TYPES[mode.type].nom}.`;rendu()});
+  document.querySelectorAll('[data-grenier]').forEach(e=>e.onclick=()=>{const n=+e.dataset.grenier;mode={type:S.grenier[n].type,grenier:n};feuille=null;message=`Touchez une case vert vif pour ressortir : ${TYPES[mode.type].nom}.`;rendu()});
+  document.querySelectorAll('[data-onglet]').forEach(e=>e.onclick=()=>{feuille.onglet=e.dataset.onglet;rendu()});
+}
+function action(a){
+  if(a==='fermer'){feuille=null}
+  else if(a==='construire'){feuille={quoi:'catalogue',onglet:'ferme'}}
+  else if(a==='fini'){mode=null;message='Construction terminée.'}
+  else if(a==='saison'){feuille={quoi:'saison'}}
+  else if(a==='saison-ok'){changerSaison();feuille=null}
+  else if(a==='cartes'){sauve();location.href='index.html';return}
+  else if(a==='ameliorer'){const o=S.b[feuille.k],c=AMELIO[o.niv+1];if(assez(c)){paye(c);o.niv++;message=`${TYPES[o.type].nom} passe au niveau ${o.niv} : le bâtiment grandit et donne plus.`;feuille=null}}
+  else if(a==='ranger'){const o=S.b[feuille.k];S.b.splice(feuille.k,1);if(o.type!=='parcelle'&&o.type!=='route')S.grenier.push({type:o.type});
+    else S.stock.pieces+=TYPES[o.type].cout.pieces;
+    message=o.type==='parcelle'||o.type==='route'?`${TYPES[o.type].nom} retirée, pièces rendues.`:`${TYPES[o.type].nom} rangé au grenier. Rien n'est perdu.`;feuille=null}
+  sauve();rendu();
+}
+function toucher(k){
+  const o=S.b[k],T=TYPES[o.type];
+  if(mode)return;
+  if(pret(o)){
+    if(o.type==='parcelle'){const c=CULTURES[o.culture];
+      if(c.fleur){gagne('fleurs',3);message=`${c.e} Trois belles ${c.nom.toLowerCase()} pour Chloé.`}
+      else{gagne('recolte',2);gagne('pieces',c.gain);if(o.culture==='citrouille')S.stock.citrouille=(S.stock.citrouille||0)+2;message=`${c.e} Récolte : +2 ${c.nom.toLowerCase()} et ${c.gain} pièces au marché.`}
+      o.culture=null;o.plante=null;
+    } else {
+      if(T.besoin&&!assez(T.besoin)){feuille={quoi:'objet',k};rendu();return}
+      if(T.besoin)paye(T.besoin);
+      Object.entries(T.prod).forEach(([r,v])=>gagne(r,v*o.niv));
+      o.depuis=Date.now();message=T.phrase;
+    }
+    verifierFete();sauve();rendu();return;
+  }
+  feuille={quoi:'objet',k};rendu();
+}
+function planter(id){const o=S.b[feuille.k],c=CULTURES[id];if(S.stock.pieces<c.graine)return;
+  S.stock.pieces-=c.graine;o.culture=id;o.plante=Date.now();feuille=null;message=`${c.e} ${c.nom} plantées : prêtes dans ${c.min} minutes.`;sauve();rendu()}
+function poser(t){
+  const [i,j]=t.split(',').map(Number),T=TYPES[mode.type];
+  if(occupe(i,j))return;
+  if(mode.grenier!=null){S.grenier.splice(mode.grenier,1)}
+  else{if(!assez(T.cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}paye(T.cout)}
+  S.b.push({id:Math.random().toString(36).slice(2,9),type:mode.type,i,j,niv:1,depuis:Date.now()});
+  if(T.cat==='deco'&&mode.type!=='route'){S.fete.deco++;if(T.saison&&S.missionSaison&&T.saison===saison().id)S.missionSaison.fait++}
+  message=`${T.e} ${T.nom} posé${['parcelle','route','fontaine'].includes(mode.type)?'e':''}.`;
+  if(mode.grenier!=null||!assez(T.cout))mode=null; // une seule fois depuis le grenier ; on continue tant qu'on peut payer
+  verifierFete();sauve();rendu();
+}
+function verifierFete(){
+  const F=S.fete;if(F.finie)return;
+  if(['pain','bouquet','recolte','deco'].every(k=>F[k]>=FETE[k])){F.finie=true;S.stock.pieces+=200;
+    message='🎉 La fête du village est réussie ! +200 pièces, et une fontaine en cadeau dans « Construire ».'}
+  if(S.missionSaison&&!S.missionSaison.recue&&S.missionSaison.fait>=S.missionSaison.but){S.missionSaison.recue=true;S.stock.pieces+=80;
+    message=`${saison().e} Le village est décoré pour ${S.missionSaison.nom} ! +80 pièces.`}
+}
+function changerSaison(){
+  // ce qui pousse est récolté, les décors de la saison qui part montent au grenier
+  S.b.filter(o=>o.type==='parcelle'&&o.culture).forEach(o=>{const c=CULTURES[o.culture];if(c.fleur)gagne('fleurs',3);else{gagne('recolte',2);gagne('pieces',c.gain)}o.culture=null});
+  const part=saison().id;let n=0;
+  S.b=S.b.filter(o=>{if(TYPES[o.type].saison===part){S.grenier.push({type:o.type});n++;return false}return true});
+  S.saison=(S.saison+1)%4;if(S.saison===0)S.annee++;
+  const noms={printemps:'le printemps',ete:"l'été",automne:"l'automne",hiver:'Noël'};
+  S.missionSaison={nom:noms[saison().id],but:3,fait:0};
+  message=`${saison().e} Voici ${{printemps:'le printemps',ete:"l'été",automne:"l'automne",hiver:"l'hiver"}[saison().id]} !${n?n+' décor'+(n>1?'s':'')+' rangé'+(n>1?'s':'')+' au grenier. ':''}Décorez le village pour ${noms[saison().id]}.`;
+}
+/* Les parties de cartes versent leurs gains dans la caisse du village (même tablette). */
+function encaisser(){
+  let c=0;try{c=+(localStorage.getItem('village:caisse')||0)}catch{}
+  if(c>0){S.stock.pieces+=c;anims.add('pieces');try{localStorage.setItem('village:caisse','0')}catch{}
+    message=`🃏 Vos parties de cartes ont rapporté ${c} pièces au village !`;sauve()}
+}
+if(S){encaisser()}
+rendu();
+// les bulles apparaissent toutes seules quand c'est prêt
+let dernier='';
+setInterval(()=>{if(!S||feuille)return;const sig=S.b.map(o=>pret(o)?1:0).join('')+S.b.filter(o=>o.culture).map(o=>Math.floor((Date.now()-o.plante)/20000)).join();
+  if(sig!==dernier){dernier=sig;rendu()}},2000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){encaisser();rendu()}});
+</script>
+</body>
+</html>
