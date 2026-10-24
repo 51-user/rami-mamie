@@ -93,7 +93,8 @@ svg text{font-family:var(--f-body)}
 <div id="fx"></div>
 <script>
 /* ===================== Données : l'époque Hameau, six bâtiments ===================== */
-const RES={pieces:{e:'🪙',nom:'pièces'},etoiles:{e:'⭐',nom:'étoiles'},legumes:{e:'🥕',nom:'légumes',vend:2},bois:{e:'🪵',nom:'bois',vend:2},oeufs:{e:'🥚',nom:'œufs',vend:3}};
+const RES={pieces:{e:'🪙',nom:'pièces'},etoiles:{e:'⭐',nom:'étoiles'},legumes:{e:'🥕',nom:'légumes',vend:2},bois:{e:'🪵',nom:'bois',vend:2},oeufs:{e:'🥚',nom:'œufs',vend:3},
+ fleurs:{e:'💐',nom:'bouquets',vend:4},fruits:{e:'🍎',nom:'fruits',vend:4},farine:{e:'🌾',nom:'farine',vend:5},pain:{e:'🍞',nom:'pains',vend:8},outils:{e:'🔧',nom:'outils',vend:10}};
 /* sorte : maison (pièces chaque heure), atelier (3 durées), deco (bonus autour), chemin */
 const BAT={
  maison:{nom:'Maison de bois',e:'🏠',sorte:'maison',t:2,cout:{pieces:60},parHeure:10,aide:'Donne des pièces chaque heure ; la réserve tient 3 jours.'},
@@ -102,7 +103,46 @@ const BAT={
  poulailler:{nom:'Poulailler',e:'🐔',sorte:'atelier',t:2,cout:{pieces:90,bois:10},produit:'oeufs',mur:'#F2E3C4',toit:'#B5523A',aide:'Des œufs, qui se vendent bien.'},
  puits:{nom:'Puits',e:'🪣',sorte:'deco',t:1,cout:{pieces:80,bois:15},bonus:.2,aide:'Les bâtiments tout autour produisent 20 % de plus.'},
  massif:{nom:'Massif de fleurs',e:'🌷',sorte:'deco',t:1,cout:{pieces:30,legumes:5},bonus:.1,aide:'Les bâtiments tout autour produisent 10 % de plus.'},
- chemin:{nom:'Chemin',e:'🟫',sorte:'chemin',t:1,cout:{pieces:2},aide:'Relie les bâtiments à la place du village.'}};
+ chemin:{nom:'Chemin',e:'🟫',sorte:'chemin',t:1,cout:{pieces:2},aide:'Relie les bâtiments à la place du village.'},
+ // époque Village
+ boulangerie:{nom:"Boulangerie d'Hugo",e:'🥖',sorte:'atelier',t:2,ep:1,cout:{pieces:200,bois:30},produit:'pain',mur:'#F6DDB2',toit:'#B5651D',aide:'Hugo fait du pain.'},
+ fleuriste:{nom:'Fleurs de Chloé',e:'💐',sorte:'atelier',t:2,ep:1,cout:{pieces:180,legumes:20},produit:'fleurs',mur:'#FADDE6',toit:'#C2457A',aide:'Chloé compose des bouquets.'},
+ verger:{nom:'Verger',e:'🍎',sorte:'atelier',t:2,ep:1,cout:{pieces:150,bois:20},produit:'fruits',aide:'Des pommes et des poires.'},
+ moulin:{nom:'Moulin',e:'🌾',sorte:'atelier',t:2,ep:1,cout:{pieces:250,bois:50},produit:'farine',mur:'#EFE6D2',toit:'#8D6E4F',aide:'De la farine pour le village.'},
+ // époque Bourg
+ marche:{nom:'Marché couvert',e:'🏪',sorte:'maison',t:2,ep:2,cout:{pieces:600,pain:15},parHeure:40,mur:'#E8D9B5',toit:'#C0392B',aide:'Des pièces chaque heure, bien plus qu\'une maison.'},
+ atelier:{nom:'Atelier de Pierre',e:'🔧',sorte:'atelier',t:2,ep:2,cout:{pieces:500,bois:80,oeufs:30},produit:'outils',mur:'#DADAD2',toit:'#55534C',aide:'Pierre fabrique des outils.'},
+ fontaine:{nom:'Fontaine',e:'⛲',sorte:'deco',t:1,ep:2,cout:{pieces:400,farine:20},bonus:.3,aide:'Les bâtiments tout autour produisent 30 % de plus.'},
+ // époque Ville fleurie
+ mairie:{nom:'Mairie',e:'🏛️',sorte:'maison',t:2,ep:3,cout:{pieces:1500,outils:20},parHeure:80,mur:'#E9EEF5',toit:'#3A6EA5',aide:'La fierté du village : beaucoup de pièces chaque heure.'},
+ kiosque:{nom:'Kiosque à musique',e:'🎶',sorte:'deco',t:1,ep:3,cout:{pieces:900,fleurs:40},bonus:.4,aide:'Les bâtiments tout autour produisent 40 % de plus.'},
+ serre:{nom:'Serre',e:'🌿',sorte:'atelier',t:2,ep:3,cout:{pieces:1000,fruits:40},produit:'fleurs',mult:2,mur:'#CFE8EE',toit:'#9FC9D3',aide:'Deux fois plus de bouquets.'}};
+Object.values(BAT).forEach(B=>{B.ep=B.ep||0});
+/* Les époques de Forge of Empires : la frise se parcourt dans l'ordre ; une case « époque » fait monter tout le village. */
+const EPOQUES=[
+ {id:'hameau',nom:'Hameau',chemin:['#E2CF9E','#C9B47F'],place:'#D9D2C0'},
+ {id:'village',nom:'Village',chemin:['#D8B98A','#B9986A'],place:'#D6C3A0',phrase:'Chloé : « Des toits de chaume partout ! Je vais enfin pouvoir ouvrir ma boutique. »'},
+ {id:'bourg',nom:'Bourg',chemin:['#C9C4BA','#9E978A'],place:'#BDB8AE',phrase:'Chloé : « Des pavés et une vraie place ! Pierre installe son atelier. »'},
+ {id:'ville',nom:'Ville fleurie',chemin:['#E3BDB2','#C29A8E'],place:'#E8D2C8',phrase:'Chloé : « Que de fleurs ! On dirait une carte postale. »'}];
+const FRISE=[
+ {id:'ep-village',epoque:1,cout:{etoiles:15,pieces:150}},
+ {id:'boulangerie',cout:{etoiles:10,pieces:100}},{id:'fleuriste',cout:{etoiles:10,pieces:100}},{id:'verger',cout:{etoiles:8,pieces:80}},{id:'moulin',cout:{etoiles:12,pieces:120}},
+ {id:'ep-bourg',epoque:2,cout:{etoiles:60,pieces:800,pain:10}},
+ {id:'marche',cout:{etoiles:25,pieces:300}},{id:'atelier',cout:{etoiles:25,pieces:300}},{id:'fontaine',cout:{etoiles:20,pieces:200}},
+ {id:'ep-ville',epoque:3,cout:{etoiles:150,pieces:2500,outils:20}},
+ {id:'mairie',cout:{etoiles:50,pieces:800}},{id:'kiosque',cout:{etoiles:40,pieces:600}},{id:'serre',cout:{etoiles:40,pieces:600}}];
+const epIdx=()=>Math.max(0,EPOQUES.findIndex(e=>e.id===S.epoque));
+const debloque=k=>BAT[k].ep===0||S.frise.includes(k);
+const mult=o=>(1+.5*(o.ep||0))*(BAT[o.type].mult||1);
+const coutMonter=o=>({pieces:60*((o.ep||0)+1)*BAT[o.type].t*BAT[o.type].t});
+/* Images d'époque : img/v3/<type>-<époque>.webp si elle existe ; sinon une image plus ancienne ; sinon le dessin. */
+const IMGS={}, ANCIENNES={maison:'maison-1',boulangerie:'boulangerie',fleuriste:'fleuriste',atelier:'garage',mairie:'mairie'};
+let attenteImg=null;
+// La liste des images réellement déposées dans img/v3 (remplie à l'assemblage) : aucune requête à l'aveugle, aucune erreur 404.
+const IMAGES_V3=[];
+IMAGES_V3.forEach(cle=>{const im=new Image();
+  im.onload=()=>{IMGS[cle]=true;clearTimeout(attenteImg);attenteImg=setTimeout(()=>{if(S&&!feuille)rendu()},300)};im.src='img/v3/'+cle+'.webp'});
+function imageDe(o){for(let e=o.ep||0;e>=0;e--){const cle=o.type+'-'+EPOQUES[e].id;if(IMGS[cle])return 'v3/'+cle}return ANCIENNES[o.type]||null}
 const DUREES=[{min:5,nom:'Petit',q:3,et:1},{min:60,nom:'Moyen',q:12,et:3},{min:480,nom:'Gros, pour la nuit',q:40,et:8}];
 const MONDE=16, BLOC=4;                         // 16 × 16 cases, découpées en blocs de 4 × 4 ; on part des 4 blocs du centre
 const PLACE={i:7,j:7};                          // la place du village, 2 × 2, fixe : c'est là que mènent les chemins
@@ -120,17 +160,19 @@ function neuf(nom){
   pose('massif',9,9);
   [[6,6],[6,7],[9,6],[9,7]].forEach(([i,j])=>pose('chemin',i,j));
   return {v:3,nom,blocs:['1,1','1,2','2,1','2,2'],ext:0,b,
-    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true};
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[]};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
 if(S&&S.v!==3)S=null;
+if(S&&!S.epoque)S.epoque='hameau';
+if(S&&!S.frise)S.frise=[];   // contrat lu par habitants.js et saisons.js : 'hameau' | 'village' | 'bourg' | 'ville'
 function sauve(){ls.set(CLE,JSON.stringify(S))}
 
 /* ===================== Outils ===================== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let message='', feuille=null, mode=null, dernierPose=null;   // mode : {pose:type} | {deplace:id} | {chemins:true}
+let message='', feuille=null, mode=null, dernierPose=null, fete=false;   // mode : {pose:type} | {deplace:id} | {chemins:true}
 const assez=c=>Object.entries(c).every(([k,v])=>(S.stock[k]||0)>=v);
 const paye=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);
 const txt=c=>Object.entries(c).map(([k,v])=>v+' '+RES[k].e).join(' + ');
@@ -159,7 +201,7 @@ function pret(o,ok){const B=BAT[o.type];if(!estRelie(o,ok))return false;
   if(B.sorte==='atelier')return o.fin!=null&&Date.now()>=o.fin;
   if(B.sorte==='maison')return Date.now()-o.depuis>=60*60000;
   return false}
-function gainMaison(o){const h=Math.min(72,Math.floor((Date.now()-o.depuis)/3600000));return Math.ceil(h*BAT.maison.parHeure*(1+bonus(o)))}
+function gainMaison(o){const h=Math.min(72,Math.floor((Date.now()-o.depuis)/3600000));return Math.ceil(h*BAT[o.type].parHeure*mult(o)*(1+bonus(o)))}
 
 /* ===================== Le son : petits bruits et musique douce, synthétisés (aucun fichier) ===================== */
 let AC=null, musiqueMinuteur=null;
@@ -225,8 +267,9 @@ function imageBat(nom,o,larg){const t=BAT[o.type].t,[x,yb]=P(o.i+t,o.j+t),w=2*TW
   return {h:`<image href="img/${nom}.webp" x="${x-w/2}" y="${yb-h*.72}" width="${w}" height="${h}"/>`,top:yb-h*.72+10}}
 function dessinObjet(o,ok){
   const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
-  if(o.type==='chemin'){return poly(los(o.i,o.j),'#E2CF9E','#C9B47F',`data-o="${o.id}"`)}
-  if(o.type==='maison'){const r=imageBat('maison-1',o,.9);h=r.h;top=r.top;
+  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin;return poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}"`)}
+  const im=imageDe(o);
+  if(im&&(o.type!=='potager'||im.startsWith('v3/'))){const r=imageBat(im,o,.9);h=r.h;top=r.top;
     if(nuit())h+=`<circle cx="${cx-6}" cy="${cy-30}" r="22" fill="#FFD86B" opacity=".25"/>`}
   else if(o.type==='potager'){const L=los(o.i,o.j,2);h=poly(L,'#8A5A3B','#5E3A22');
     for(let r=1;r<6;r++){const a=[L[0][0]+(L[3][0]-L[0][0])*r/6,L[0][1]+(L[3][1]-L[0][1])*r/6],b=[L[1][0]+(L[2][0]-L[1][0])*r/6,L[1][1]+(L[2][1]-L[1][1])*r/6];
@@ -238,7 +281,13 @@ function dessinObjet(o,ok){
       <rect x="${cx-18}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><rect x="${cx+14}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><polygon points="${cx-26},${cy-42} ${cx},${cy-58} ${cx+26},${cy-42}" fill="#8D5524" stroke="#5D4037"/>`;top=cy-60}
   else if(o.type==='massif'){h=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#5B8C3A"/>`;
     ['#E91E63','#FFEB3B','#AB47BC','#FF7043','#fff','#E91E63'].forEach((c,n)=>h+=`<circle cx="${cx-16+n*6.5}" cy="${cy-3+(n%2)*5}" r="4.5" fill="${c}"/>`);top=cy-12}
-  else{const r=boite(o,B.mur,B.toit);h=r.h;top=r.top}
+  else if(o.type==='fontaine'){h=`<ellipse cx="${cx}" cy="${cy}" rx="26" ry="13" fill="#B0BEC5" stroke="#78909C"/><ellipse cx="${cx}" cy="${cy-2}" rx="20" ry="9" fill="#64B5F6"/><rect x="${cx-4}" y="${cy-30}" width="8" height="28" fill="#B0BEC5"/><circle cx="${cx}" cy="${cy-34}" r="8" fill="#90CAF9"/>`;top=cy-44}
+  else if(o.type==='kiosque'){h=`<ellipse cx="${cx}" cy="${cy}" rx="26" ry="13" fill="#EFE6D2" stroke="#8D6E4F"/>${[-18,-6,6,18].map(d=>`<rect x="${cx+d-2}" y="${cy-34}" width="4" height="34" fill="#FFFFFF" stroke="#8D6E4F"/>`).join('')}<polygon points="${cx-30},${cy-34} ${cx},${cy-62} ${cx+30},${cy-34}" fill="#2E7D32" stroke="#1B5E20"/><text x="${cx}" y="${cy-12}" font-size="16" text-anchor="middle">🎶</text>`;top=cy-64}
+  else if(o.type==='verger'){h=poly(los(o.i,o.j,2),'#8FBF5A','#6E9E44');[[.6,.6],[1.4,.6],[.6,1.4],[1.4,1.4]].forEach(([a,c])=>{const [x,y]=P(o.i+a,o.j+c);
+      h+=`<rect x="${x-3}" y="${y-22}" width="6" height="22" fill="#7A4E2D"/><circle cx="${x}" cy="${y-30}" r="15" fill="#3F8F33"/><circle cx="${x-5}" cy="${y-33}" r="3" fill="#E53935"/><circle cx="${x+6}" cy="${y-26}" r="3" fill="#E53935"/>`});top=cy-50}
+  else{const r=boite(o,B.mur||'#E9DCC0',B.toit||'#8D6E4F');h=r.h;top=r.top;
+    if(o.type==='moulin'){const [ax,ay]=[r.top?cx:cx,r.top+18];h+=`<g stroke="#5D4037" stroke-width="5">${[0,90].map(a=>`<line x1="${ax-34}" y1="${ay}" x2="${ax+34}" y2="${ay}" transform="rotate(${a+20} ${ax} ${ay})"/>`).join('')}</g>`}}
+  if((o.ep||0)<epIdx()&&B.sorte!=='chemin')h+=`<g><circle cx="${cx+30}" cy="${top+6}" r="13" fill="#7BB661" stroke="#fff" stroke-width="2"/><text x="${cx+30}" y="${top+12}" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">⬆</text></g>`;
   // bulles : prêt (brille), à lancer (pâle), pas relié (panneau)
   let bulle='';const relie=B.sorte==='deco'||estRelie(o,ok);
   if(!relie)bulle=`<g class="flotte"><rect x="${cx-24}" y="${top-46}" width="48" height="36" rx="8" fill="#FFF3D6" stroke="#B5523A" stroke-width="3"/><text x="${cx}" y="${top-20}" font-size="22" text-anchor="middle">🚧</text></g>`;
@@ -266,7 +315,7 @@ function dessineVillage(){
   achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);
     h+=`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+8}" font-size="24" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`});
   // la place du village
-  h+=poly(los(PLACE.i,PLACE.j,2),'#D9D2C0','#A79F8A');
+  h+=poly(los(PLACE.i,PLACE.j,2),EPOQUES[epIdx()].place,'#A79F8A');
   for(let a=0;a<2;a++)for(let c=0;c<2;c++)h+=poly(los(PLACE.i+a,PLACE.j+c),'none','#BFB6A0');
   const [px,py]=P(PLACE.i+1,PLACE.j+1);h+=`<rect x="${px-2}" y="${py-48}" width="4" height="48" fill="#6D4C41"/><polygon points="${px+2},${py-48} ${px+28},${py-40} ${px+2},${py-32}" fill="#E53935"/>`;
   h+=`<text x="${px}" y="${py+30}" font-size="15" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="4" paint-order="stroke">La place</text>`;
@@ -288,9 +337,11 @@ function rendu(){
     return;
   }
   document.body.classList.toggle('nuit',nuit());
-  const pills=['pieces','etoiles','legumes','bois','oeufs'].map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}">${RES[k].e} ${S.stock[k]||0}</span>`).join('');
+  const vus=['pieces','etoiles',...Object.keys(RES).filter(k=>k!=='pieces'&&k!=='etoiles'&&((S.stock[k]||0)>0||S.b.some(o=>BAT[o.type].produit===k)))];
+  const pills=vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}">${RES[k].e} ${S.stock[k]||0}</span>`).join('');
   const bas=mode?`<button class="big vert" data-a="fini"><span class="e">✅</span>${mode.chemins?'Terminé':'Annuler'}</button>`
     :`<button class="big" data-a="construire"><span class="e">🔨</span>Construire</button>
+     <button class="big alt" data-a="frise"><span class="e">⭐</span>Progrès</button>
      <button class="big alt" data-a="marche"><span class="e">⚖️</span>Marché</button>
      <button class="big alt" data-a="accueil"><span class="e">🏠</span>Accueil</button>`;
   const aide=mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':
@@ -299,16 +350,16 @@ function rendu(){
   $('#app').innerHTML=`
    <div class="haut"><h1>Le village de ${esc(S.nom)}</h1><div class="res">${pills}<button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div></div>
    <div class="milieu"><div class="carte">${dessineVillage()}</div>
-     <div class="cote"><div class="aide">${aide}</div><div class="msg" role="status">${message||'Hameau : la première époque.'}</div></div></div>
-   <div class="bas">${bas}</div>${feuille?feuilleHTML():''}`;
+     <div class="cote"><div class="aide">${aide}</div><div class="msg" role="status">${message||(EPOQUES[epIdx()].nom+' : '+['la première époque.','les toits de chaume.','les pavés et la place.','les fleurs partout.'][epIdx()])}</div></div></div>
+   <div class="bas">${bas}</div>${feuille?feuilleHTML():''}${fete?feteHTML():''}`;
   dernierPose=null;lier();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
 function feuilleHTML(){
   const f=feuille;
-  if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).map(([k,B])=>
+  if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).filter(([k])=>debloque(k)).map(([k,B])=>
     `<button class="choix" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
-  if(f.quoi==='marche'){const l=['legumes','bois','oeufs'].filter(k=>S.stock[k]>0);
+  if(f.quoi==='marche'){const l=Object.keys(RES).filter(k=>RES[k].vend&&S.stock[k]>0);
     return cadre('⚖️ Le marché',l.length?l.map(k=>`<div class="vente"><span class="nom">${RES[k].e} ${RES[k].nom} : <b>${S.stock[k]}</b></span><button data-vend="${k}" data-n="1">Vendre 1 · ${RES[k].vend} 🪙</button><button data-vend="${k}" data-n="${S.stock[k]}">Tout · ${RES[k].vend*S.stock[k]} 🪙</button></div>`).join('')
       :'<p class="sous">Rien à vendre pour l\'instant.</p>')}
   if(f.quoi==='extension'){const prix=PRIX_EXT(S.ext);
@@ -316,14 +367,30 @@ function feuilleHTML(){
   if(f.quoi==='bat'){const o=S.b.find(x=>x.id===f.id);if(!o)return '';const B=BAT[o.type],ok=relies();let corps=`<p class="sous">${B.aide}</p>`;
     if(B.sorte!=='deco'&&B.sorte!=='chemin'&&!estRelie(o,ok))corps+=`<p>🚧 Ce bâtiment n'est pas relié à la place. Posez des chemins jusqu'à lui (Construire → Chemin).</p>`;
     else if(B.sorte==='atelier'){
-      if(o.fin==null)corps+=`<div class="grille">${DUREES.map((d,n)=>{const q=Math.ceil(d.q*(1+bonus(o)));return `<button class="choix" data-lance="${n}"><span class="e">${RES[B.produit].e}</span>${d.nom}<small>${d.min<60?d.min+' minutes':d.min/60+' heure'+(d.min>60?'s':'')}<br>donne ${q} ${RES[B.produit].e} et ${d.et} ⭐</small></button>`}).join('')}</div>`;
+      if(o.fin==null)corps+=`<div class="grille">${DUREES.map((d,n)=>{const q=Math.ceil(d.q*mult(o)*(1+bonus(o)));return `<button class="choix" data-lance="${n}"><span class="e">${RES[B.produit].e}</span>${d.nom}<small>${d.min<60?d.min+' minutes':d.min/60+' heure'+(d.min>60?'s':'')}<br>donne ${q} ${RES[B.produit].e} et ${d.et} ⭐</small></button>`}).join('')}</div>`;
       else corps+=`<p>⏳ En cours : prêt vers <b>${heure(o.fin)}</b>. Rien ne se perd, ça attendra.</p>`}
     else if(B.sorte==='maison')corps+=`<p>🪙 ${gainMaison(o)} pièces en réserve. ${Date.now()-o.depuis<3600000?'Les prochaines vers <b>'+heure(o.depuis+3600000)+'</b>.':''}</p>`;
     if(bonus(o)>0&&B.sorte!=='deco')corps+=`<p>✨ Bonus des décorations voisines : +${Math.round(bonus(o)*100)} %.</p>`;
-    if(o.type!=='chemin')corps+=`<div class="actions"><button class="big alt" data-a="deplacer">↔️ Déplacer</button></div>`;
+    if((o.ep||0)<epIdx())corps+=`<p>⬆️ Il peut monter à l'époque ${EPOQUES[(o.ep||0)+1].nom} : nouvelle allure et +50 % de production.</p>`;
+    if(o.type!=='chemin')corps+=`<div class="actions">${(o.ep||0)<epIdx()?`<button class="big" data-a="monter" ${assez(coutMonter(o))?'':'disabled'}>⬆️ Monter d'époque : ${txt(coutMonter(o))}</button>`:''}<button class="big alt" data-a="deplacer">↔️ Déplacer</button></div>`;
     return cadre(`${B.e} ${B.nom}`,corps)}
+  if(f.quoi==='frise'){let suivant=true;
+    const cases=FRISE.map(c=>{const fait=S.frise.includes(c.id),ouvert=!fait&&suivant;if(!fait)suivant=false;
+      const tit=c.epoque?`🎉 Époque ${EPOQUES[c.epoque].nom}`:`${BAT[c.id].e} ${BAT[c.id].nom}`;
+      return `<button class="choix" data-case="${c.id}" ${ouvert&&assez(c.cout)?'':'disabled'} style="${c.epoque?'border-color:var(--gold);background:#FFF6D6':''}${fait?';opacity:.7':''}">
+        <span class="e">${fait?'✅':ouvert?(c.epoque?'🎉':BAT[c.id].e):'🔒'}</span>${tit}<small>${fait?'fait':txt(c.cout)}</small></button>`}).join('');
+    return cadre(`⭐ Le progrès du village · ${EPOQUES[epIdx()].nom}`,`<p class="sous">Les étoiles se gagnent en ramassant et en jouant aux cartes. Les cases s'ouvrent dans l'ordre.</p><div class="grille">${cases}</div>`)}
   return '';
 }
+function feteHTML(){const E=EPOQUES[epIdx()];
+  return `<div class="voile" style="align-items:center;background:rgba(255,236,170,.92);z-index:9"><div style="text-align:center;padding:24px;max-width:700px">
+    <div style="font-size:90px;line-height:1">🎉</div><h1 style="font-size:46px;margin:12px 0">Bienvenue au ${E.nom} !</h1>
+    <p style="font-size:26px">${E.phrase}</p><p style="font-size:22px">Des bâtiments neufs vous attendent dans le Progrès, et chaque maison peut monter d'époque (⬆).</p>
+    <button class="big" data-a="fete-ok" style="max-width:420px;margin:18px auto 0">Voir mon village</button></div></div>`}
+function confettis(){const fx=$('#fx'),cs=['#E53935','#FDD835','#43A047','#1E88E5','#AB47BC','#FB8C00'];
+  for(let n=0;n<90;n++){const e=document.createElement('div');e.style.cssText=`position:fixed;left:${Math.random()*100}vw;top:-20px;width:10px;height:16px;background:${cs[n%6]};z-index:10;transform:rotate(${Math.random()*360}deg);transition:transform 2.6s ease-in,top 2.6s ease-in`;
+    fx.appendChild(e);setTimeout(()=>{e.style.top='105vh';e.style.transform=`rotate(${Math.random()*900}deg)`},30+Math.random()*600);setTimeout(()=>e.remove(),3400)}
+  [0,.15,.3,.45].forEach((t,k)=>note([523,659,784,1047][k],t,.5,'triangle',.1))}
 
 /* ===================== Gestes ===================== */
 let appui=null;
@@ -333,6 +400,7 @@ function lier(){
   document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;mode=k==='chemin'?{chemins:true}:{pose:k};message='';rendu()});
   document.querySelectorAll('[data-vend]').forEach(e=>e.onclick=()=>{const k=e.dataset.vend,n=Math.min(+e.dataset.n,S.stock[k]);S.stock[k]-=n;S.stock.pieces+=n*RES[k].vend;
     message=`Vendu ${n} ${RES[k].e} pour ${n*RES[k].vend} pièces.`;SON.piece();sauve();rendu()});
+  document.querySelectorAll('[data-case]').forEach(e=>e.onclick=()=>caseFrise(e.dataset.case));
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
   document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
   document.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))});
@@ -348,6 +416,10 @@ function action(a){
   if(a==='fermer')feuille=null;
   else if(a==='construire')feuille={quoi:'magasin'};
   else if(a==='marche')feuille={quoi:'marche'};
+  else if(a==='frise')feuille={quoi:'frise'};
+  else if(a==='fete-ok'){fete=false;message=EPOQUES[epIdx()].phrase}
+  else if(a==='monter'){const o=S.b.find(x=>x.id===feuille.id),c=o&&coutMonter(o);if(o&&(o.ep||0)<epIdx()&&assez(c)){paye(c);o.ep=(o.ep||0)+1;dernierPose=o.id;feuille=null;
+      message=`⬆️ ${BAT[o.type].nom} passe à l'époque ${EPOQUES[o.ep].nom} : +50 % de production.`;sauve();rendu();apresPose(o);const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t/2);etincelles(...versEcran(x,y-30));return}}
   else if(a==='accueil'){sauve();location.href='index.html';return}
   else if(a==='fini'){mode=null;message=''}
   else if(a==='son'){S.musique=!S.musique;musique(S.musique)}
@@ -364,7 +436,7 @@ function toucherCase(i,j){
     paye(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j});SON.pose();sauve();rendu();return}
   if(mode.pose){const k=mode.pose;if(!libre(k,i,j)){message='Pas la place ici : il faut des cases claires libres.';SON.non();rendu();return}
     if(!assez(BAT[k].cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}
-    paye(BAT[k].cout);const o={id:uid(),type:k,i,j};if(BAT[k].sorte==='maison')o.depuis=Date.now();S.b.push(o);
+    paye(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx()};if(BAT[k].sorte==='maison')o.depuis=Date.now();S.b.push(o);
     dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.');
     sauve();rendu();apresPose(o);return}
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
@@ -383,10 +455,15 @@ function toucherObjet(id,ev){
 function ramasser(o,ev){
   const B=BAT[o.type],sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;let gains=[];
   if(B.sorte==='maison'){const g=gainMaison(o);S.stock.pieces+=g;S.stock.etoiles+=1;o.depuis=Date.now();gains=[['pieces',g],['etoiles',1]]}
-  else{const d=DUREES[o.duree||0],q=Math.ceil(d.q*(1+bonus(o)));S.stock[B.produit]+=q;S.stock.etoiles+=d.et;o.fin=null;o.duree=null;gains=[[B.produit,q],['etoiles',d.et]]}
+  else{const d=DUREES[o.duree||0],q=Math.ceil(d.q*mult(o)*(1+bonus(o)));S.stock[B.produit]=(S.stock[B.produit]||0)+q;S.stock.etoiles+=d.et;o.fin=null;o.duree=null;gains=[[B.produit,q],['etoiles',d.et]]}
   message='Ramassé : '+gains.map(([k,n])=>n+' '+RES[k].e).join(' et ')+(B.sorte==='atelier'?'. Touchez ▶ pour relancer.':'.');
   SON.ramasse();sauve();rendu();etincelles(sx,sy);gains.forEach(([k,n],m)=>setTimeout(()=>voler(sx,sy,k,n),m*160));
 }
+function caseFrise(id){const c=FRISE.find(x=>x.id===id);if(!c||S.frise.includes(id)||!assez(c.cout))return;
+  const avant=FRISE.slice(0,FRISE.indexOf(c));if(!avant.every(x=>S.frise.includes(x.id)))return;
+  paye(c.cout);S.frise.push(id);
+  if(c.epoque){S.epoque=EPOQUES[c.epoque].id;feuille=null;fete=true;sauve();rendu();confettis();return}
+  message=`${BAT[id].e} ${BAT[id].nom} est débloqué : il vous attend dans Construire.`;SON.lance();sauve();rendu()}
 function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.fin=Date.now()+DUREES[n].min*60000;feuille=null;
   message=`${RES[BAT[o.type].produit].e} C'est parti : prêt vers ${heure(o.fin)}.`;SON.lance();sauve();rendu()}
 
@@ -401,8 +478,9 @@ rendu();
 document.addEventListener('pointerdown',premierGeste,{once:true});
 // les bulles apparaissent toutes seules quand c'est prêt, et le soir tombe à l'heure de la tablette
 let signe='';
-setInterval(()=>{if(!S||feuille||mode)return;const ok=relies(),s=S.b.map(o=>pret(o,ok)?1:0).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
+setInterval(()=>{if(!S||feuille||mode||fete)return;const ok=relies(),s=S.b.map(o=>pret(o,ok)?1:0).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){encaisser();rendu()}});
 </script>
+<script src="habitants.js"></script><script src="saisons.js"></script>
 </body>
 </html>
