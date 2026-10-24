@@ -374,6 +374,11 @@ function versVillage(n,cle){
   try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
     localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
 }
+/* La gagnante d'une manche de rami reçoit une graine rare pour sa ferme (CONCEPTION-V2, § 6). */
+function versGraine(cle){
+  try{ if(localStorage.getItem('village:graine:'+cle)) return; localStorage.setItem('village:graine:'+cle,'1');
+    localStorage.setItem('village:graines', String((+localStorage.getItem('village:graines')||0)+1)); }catch{}
+}
 const myName=()=>ls.get('nom')||'';
 const backName=()=>ls.get('dos-prenom')||myName();
 function applyTapis(){ const t=ls.get('tapis'); document.body.dataset.tapis=['vert','carreaux','bois'].includes(t)?t:'vert'; }
@@ -588,7 +593,7 @@ function render(force){
         <button class="big" data-act="rami">Rami à deux<small>avec votre partenaire, à distance</small></button>
         <button class="big alt" data-act="solo">Solitaire<small>toute seule, sans connexion</small></button>
       </div>
-      <div class="homebtns"><button class="small" data-act="village">🏡 Mon village</button><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
+      <div class="homebtns"><button class="small" data-act="village">🏡 Ma ferme</button><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
     return;
   }
   if(sc==='solo'){ renderSolo(pan); return; }
@@ -733,9 +738,10 @@ function overHTML(){
   const sub=w===me?'Vous avez gagné la manche.':`${esc(P[w].name)} a gagné la manche.`;
   const fin=(S.carnet||[]).slice(-1)[0], gain=w===me?30:20;
   if(fin) versVillage(gain,'rami-'+fin.t);
+  if(fin&&w===me) versGraine('rami-'+fin.t);
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de manche">
     <h2>${title}</h2><p>${sub}</p>
-    <p>🏡 +${gain} pièces pour votre village.</p>
+    <p>🏡 +${gain} pièces pour votre village.${w===me?' 🌟 Et une graine rare pour votre ferme !':''}</p>
     ${R.rami?'<p><b>Rami !</b> Tout posé d\'un coup : les points comptent double.</p>':''}
     <p>${esc(P[l].name)} garde ${R.loserCards.length} carte${R.loserCards.length>1?'s':''} et prend <b>${R.pts} points</b>.</p>
     <div class="fan" style="flex-wrap:wrap">${R.loserCards.map(i=>cardSVG(i,64)).join('')}</div>
