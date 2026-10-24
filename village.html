@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>La ferme de Mamie</title>
+<title>Le village de Mamie</title>
 <meta name="theme-color" content="#2E5E3A">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Libre+Baskerville:ital,wght@0,700;1,400&display=swap">
 <style>
-/* V2 (CONCEPTION-V2.md, validée le 24/10) : la Ferme en écran principal, le Village en second.
-   Le sol des cases est uni, dessiné ici ; seuls les objets (images NoobAI dans img/) portent du détail. */
+/* V3, étape 1 : le moteur (CONCEPTION-V3.md). Le squelette de Forge of Empires : un terrain en losanges qu'on agrandit,
+   des bâtiments posés et déplacés librement, reliés par des chemins à la place, trois durées de production.
+   Le plaisir du geste : sons, étincelles, pièces qui volent au compteur, rebond, jour et nuit, musique qu'on coupe. */
 :root{
   --gold:#F0C04A; --gold-deep:#C99A22; --gold-ink:#2B1F00;
   --paper:#FBF5E6; --ink:#1E1A14; --ink-dim:#5A5145; --line:#D9CDB4;
@@ -19,53 +20,45 @@
   --f-body:"Atkinson Hyperlegible", "Segoe UI", Roboto, Arial, sans-serif;
   color-scheme:light;
 }
-body[data-saison="printemps"]{--ciel1:#CFE8C2;--ciel2:#F4F8E8}
-body[data-saison="ete"]{--ciel1:#BFE0A8;--ciel2:#FFF6D8}
-body[data-saison="automne"]{--ciel1:#E9CFA4;--ciel2:#FBF0E0}
-body[data-saison="hiver"]{--ciel1:#D6E1EA;--ciel2:#F7F9FC}
-html,body{height:100%}
+html,body{height:100%;overflow-x:hidden}
 body{margin:0;font-family:var(--f-body);font-size:22px;line-height:1.3;color:var(--ink);
-  background:linear-gradient(180deg,var(--ciel1),var(--ciel2)) fixed;
+  background:linear-gradient(180deg,#CFE8C2,#F4F8E8) fixed;transition:background 2s;
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+body.nuit{background:linear-gradient(180deg,#22314F,#3C4A63) fixed}
+body.nuit .haut h1{color:#FFF3D6}
 button{font-family:inherit;color:inherit;cursor:pointer}
 button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
 #app{min-height:100%;display:flex;flex-direction:column;box-sizing:border-box;
   padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .haut{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 h1{font-family:var(--f-display);font-size:28px;margin:0 8px 0 0}
-.saison{font-size:20px;font-weight:700;padding:6px 14px;border-radius:999px;background:var(--paper);border:2px solid var(--line)}
-.res{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.res{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center}
 .pill{background:var(--paper);border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-size:22px;font-weight:700;display:flex;align-items:center;gap:6px;min-height:44px;box-sizing:border-box}
-.pill.anim{animation:pop .5s}
-@keyframes pop{40%{transform:scale(1.18);background:#FFF1B8}}
+.pill.gonfle{animation:gonfle .45s}
+@keyframes gonfle{40%{transform:scale(1.3);background:#FFF1B8}}
+.son{min-width:56px;min-height:48px;border-radius:999px;border:2px solid var(--line);background:var(--paper);font-size:26px}
 .milieu{flex:1;display:flex;gap:14px;min-height:0;margin-top:8px}
-.carte{flex:1;min-width:0;display:flex;align-items:center;justify-content:center}
-.carte svg{width:100%;height:100%;max-height:calc(100vh - 200px);touch-action:manipulation}
-.cote{width:300px;display:flex;flex-direction:column;gap:10px}
+.carte{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
+.carte svg{width:100%;height:100%;max-height:calc(100vh - 190px);touch-action:manipulation}
+.cote{width:290px;display:flex;flex-direction:column;gap:10px}
 @media (max-width:900px){.milieu{flex-direction:column}.cote{width:auto}.carte svg{max-height:62vh}}
-.mission{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:12px 16px}
-.mission h2{font-family:var(--f-display);font-size:20px;margin:0 0 6px}
-.mission p{margin:0 0 8px;font-size:18px;color:var(--ink-dim)}
-.lig{display:flex;justify-content:space-between;font-size:20px;padding:3px 0}
-.lig.ok{color:#2E7D32;font-weight:700}
-.barre{height:12px;border-radius:6px;background:#EDE3CF;overflow:hidden;margin-top:6px}
-.barre i{display:block;height:100%;background:#7BB661}
+.aide{background:#FFF4CC;border:3px solid var(--gold);border-radius:18px;padding:12px 16px;font-size:22px;font-weight:700;line-height:1.35}
 .msg{background:#FFFDF6;border:2px solid var(--line);border-radius:18px;padding:12px 16px;font-size:20px;min-height:56px}
 .bas{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
 .big{flex:1;min-width:150px;font-size:24px;font-weight:700;min-height:76px;border-radius:18px;border:0;
   background:var(--gold);color:var(--gold-ink);box-shadow:0 5px 0 var(--gold-deep);display:flex;align-items:center;justify-content:center;gap:10px}
 .big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--gold-deep)}
 .big.alt{background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #B8B09C}
+.big.vert{background:#7BB661;color:#fff;box-shadow:0 5px 0 #4E8A3A}
 .big[disabled]{opacity:.45;cursor:default}
 .big .e{font-size:30px}
 .voile{position:fixed;inset:0;background:rgba(30,26,20,.35);display:flex;align-items:flex-end;justify-content:center;z-index:5}
 .feuille{background:var(--paper);border-radius:24px 24px 0 0;padding:18px 22px calc(18px + env(safe-area-inset-bottom,0px));width:min(900px,100%);box-sizing:border-box;max-height:82vh;overflow:auto}
 .feuille h2{font-family:var(--f-display);font-size:28px;margin:0 0 4px}
 .feuille .sous{font-size:20px;color:var(--ink-dim);margin:0 0 14px}
-.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
-.choix{background:#fff;border:3px solid var(--line);border-radius:18px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:19px;font-weight:700;min-height:130px}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.choix{background:#fff;border:3px solid var(--line);border-radius:18px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:20px;font-weight:700;min-height:130px}
 .choix .e{font-size:44px;line-height:1}
-.choix img{height:54px}
 .choix small{font-weight:400;color:var(--ink-dim);font-size:16px;text-align:center}
 .choix[disabled]{opacity:.45;cursor:default}
 .vente{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -75,370 +68,341 @@ h1{font-family:var(--f-display);font-size:28px;margin:0 8px 0 0}
 .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
 .actions .big{min-width:220px}
 .fermer{float:right;font-size:20px;min-height:52px;padding:0 18px;border-radius:14px;border:2px solid var(--line);background:#fff}
-.debut{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,var(--ciel1),var(--ciel2));z-index:6;padding:16px;box-sizing:border-box}
+.debut{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#CFE8C2,#F4F8E8);z-index:6;padding:16px;box-sizing:border-box}
 .debut .boite{background:var(--paper);border-radius:24px;padding:28px;max-width:560px;text-align:center;border:2px solid var(--line)}
-.debut h1{font-size:38px;margin-bottom:12px}
 .champ{font-size:32px;font-weight:700;padding:12px 18px;border-radius:16px;border:4px solid var(--gold);width:100%;box-sizing:border-box;text-align:center;margin:14px 0;font-family:var(--f-body)}
-.aide{background:#FFF4CC;border:3px solid var(--gold);border-radius:18px;padding:12px 16px;font-size:24px;font-weight:700;line-height:1.35}
-html,body{overflow-x:hidden}
+/* Bulles, rebond, poussière, étincelles, vols */
 .flotte{animation:flotte 1.6s ease-in-out infinite}
-@keyframes flotte{50%{transform:translateY(-6px)}}
-.ferme-img{filter:grayscale(.85) brightness(.8)}
+@keyframes flotte{50%{transform:translateY(-7px)}}
+.brille{animation:flotte 1.6s ease-in-out infinite, brille 1.2s ease-in-out infinite}
+@keyframes brille{50%{filter:drop-shadow(0 0 8px #FFE27A) brightness(1.12)}}
+.tombe{animation:tombe .55s cubic-bezier(.3,1.6,.5,1) both;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes tombe{0%{transform:translateY(-70px) scaleY(1.1);opacity:0}60%{transform:translateY(4px) scaleY(.9);opacity:1}100%{transform:none}}
+.porte{opacity:.55;animation:flotte 1s ease-in-out infinite}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:8;overflow:hidden}
+.vol{position:fixed;font-size:34px;transition:transform .8s cubic-bezier(.5,-.3,.6,1), opacity .8s;will-change:transform}
+.etin{position:fixed;width:10px;height:10px;border-radius:50%;background:#FFE27A;box-shadow:0 0 8px #FFD23F;animation:etin .7s ease-out forwards}
+@keyframes etin{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+.poussiere{position:fixed;width:26px;height:16px;border-radius:50%;background:rgba(200,180,140,.75);animation:pouss .7s ease-out forwards}
+@keyframes pouss{to{transform:translate(var(--dx),-10px) scale(2.2);opacity:0}}
 svg text{font-family:var(--f-body)}
 </style>
 </head>
-<body data-saison="printemps">
+<body>
 <div id="app"></div>
+<div id="fx"></div>
 <script>
-/* ===================== Données du jeu ===================== */
-const SAISONS=[
- {id:'printemps',nom:'Printemps',e:'🌸',sol:'#9FD07A',bord:'#86B864',fete:'Fête des fleurs',deco:'cerisier'},
- {id:'ete',nom:'Été',e:'☀️',sol:'#A7CF6A',bord:'#8DB654',fete:'Fête de l\'été',deco:'parasol'},
- {id:'automne',nom:'Automne',e:'🍂',sol:'#C7BE74',bord:'#ABA25D',fete:'Fête des récoltes',deco:'epouvantail'},
- {id:'hiver',nom:'Hiver',e:'❄️',sol:'#E6EDF1',bord:'#C6D3DB',fete:'Fête de Noël',deco:'sapin'}];
-/* img = image dans img/ ; sinon le symbole e sert de dessin. vend = pièces au marché. */
-const CULTURES={
- fraise:{nom:'Fraises',e:'🍓',img:'fraise',saison:'printemps',vend:6,fruit:true},
- tomate:{nom:'Tomates',e:'🍅',saison:'ete',vend:6,fruit:true},
- citrouille:{nom:'Citrouilles',e:'🎃',img:'citrouille',saison:'automne',vend:8,fruit:true},
- chou:{nom:'Choux',e:'🥬',img:'chou',saison:'hiver',vend:6,fruit:true},
- ble:{nom:'Blé',e:'🌾',img:'ble',vend:2,pourQui:'Hugo'},
- fleurs:{nom:'Fleurs',e:'🌷',vend:2,pourQui:'Chloé'},
- rose:{nom:'Rose dorée',e:'🌹',vend:40,rare:true}};
-const PRODUITS={
- bouquet:{nom:'Bouquets',e:'💐',vend:20},
- pain:{nom:'Pains',e:'🍞',vend:10},
- tarte:{nom:'Tartes',e:'🥧',vend:30},
- gateau:{nom:'Gâteaux',e:'🎂',vend:60},
- couronne:{nom:'Couronnes',e:'🏵️',vend:120},
- confiture:{nom:'Confitures',e:'🍯',vend:30},
- soupe:{nom:'Soupes',e:'🍲',vend:25}};
-const MAISON=[null,
- {nom:'La cabane',aide:'Le départ.'},
- {nom:'La maisonnette',aide:'Un grenier : les décos de saison y sont rangées, jamais perdues.',cout:150},
- {nom:'La maison avec cuisine',aide:'La cuisine : confitures et soupes, qui valent plus que les récoltes.',cout:400},
- {nom:'La grande maison fleurie',aide:'La véranda : on peut planter les cultures de toutes les saisons.',cout:900}];
-const BOUTIQUES={
- fleuriste:{nom:'La boutique de Chloé',patron:'Chloé',e:'💐',ouvre:{fleurs:10},texteOuvre:'10 fleurs',
-   phrase:'Chloé : « Merci ! Mes vitrines vont enfin sentir bon. »',
-   niv:[null,{recettes:['bouquet']},{cout:120,recettes:['massif']},{cout:300,recettes:['couronne']}]},
- boulangerie:{nom:"La boulangerie d'Hugo",patron:'Hugo',e:'🥖',ouvre:{ble:10},texteOuvre:'10 blés',
-   phrase:'Hugo : « Avec ce blé, le four peut tourner ! »',
-   niv:[null,{recettes:['pain','tarte']},{cout:120,recettes:['gateau']},{cout:300,recettes:[],bonus:'Le panier du jour contient une tarte.'}]},
- garage:{nom:'Le garage de Pierre',patron:'Pierre',e:'🔧',ouvre:{pieces:100},texteOuvre:'100 pièces',
-   phrase:'Pierre : « Le garage est ouvert, ça roule ! »',
-   niv:[null,{outils:['parcelle','travaux']},{cout:120,outils:['arrosoir']},{cout:300,outils:['brouette']}]}};
-const RECETTES={
- bouquet:{nom:'Un bouquet',donne:'bouquet',prend:{fleurs:3},chez:'fleuriste'},
- massif:{nom:'Un massif pour la ferme',deco:'massif',prend:{bouquet:2},chez:'fleuriste'},
- couronne:{nom:'Une couronne',donne:'couronne',prend:{bouquet:2,rose:1},chez:'fleuriste'},
- pain:{nom:'Un pain',donne:'pain',prend:{ble:2},chez:'boulangerie'},
- tarte:{nom:'Une tarte',donne:'tarte',prend:{fruits:2,ble:1},chez:'boulangerie'},
- gateau:{nom:'Un gâteau',donne:'gateau',prend:{fruits:3,ble:2},chez:'boulangerie'},
- confiture:{nom:'Une confiture',donne:'confiture',prend:{fruits:3},chez:'maison'},
- soupe:{nom:'Une soupe',donne:'soupe',prend:{fruits:2,ble:1},chez:'maison'}};
-const DECOS={massif:{nom:'Massif de fleurs',e:'💮'},cerisier:{nom:'Cerisier en fleurs',e:'🌸',saison:'printemps'},
- parasol:{nom:'Parasol',e:'⛱️',saison:'ete'},epouvantail:{nom:'Épouvantail',e:'🎃',saison:'automne'},sapin:{nom:'Sapin décoré',e:'🎄',saison:'hiver'}};
-const FETE={bouquet:3,tarte:3,recoltes:12};
-const PRIX_PARCELLE=60, MAX_PARCELLES=8;
-
-/* ===================== Le temps : une journée = une visite ===================== */
-const jour=()=>{const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000)};
-function saisonDuJour(j){return (S.saison0+Math.floor((j-S.debut)/7))%4}
-const saison=()=>SAISONS[S.saisonVue];
-const joursRestants=()=>7-((jour()-S.debut)%7);
+/* ===================== Données : l'époque Hameau, six bâtiments ===================== */
+const RES={pieces:{e:'🪙',nom:'pièces'},etoiles:{e:'⭐',nom:'étoiles'},legumes:{e:'🥕',nom:'légumes',vend:2},bois:{e:'🪵',nom:'bois',vend:2},oeufs:{e:'🥚',nom:'œufs',vend:3}};
+/* sorte : maison (pièces chaque heure), atelier (3 durées), deco (bonus autour), chemin */
+const BAT={
+ maison:{nom:'Maison de bois',e:'🏠',sorte:'maison',t:2,cout:{pieces:60},parHeure:10,aide:'Donne des pièces chaque heure ; la réserve tient 3 jours.'},
+ potager:{nom:'Potager',e:'🥕',sorte:'atelier',t:2,cout:{pieces:40},produit:'legumes',aide:'Des légumes, en 5 minutes, 1 heure ou 8 heures.'},
+ bucheron:{nom:'Cabane du bûcheron',e:'🪓',sorte:'atelier',t:2,cout:{pieces:70},produit:'bois',mur:'#B07A4A',toit:'#6B4A2E',aide:'Du bois pour construire.'},
+ poulailler:{nom:'Poulailler',e:'🐔',sorte:'atelier',t:2,cout:{pieces:90,bois:10},produit:'oeufs',mur:'#F2E3C4',toit:'#B5523A',aide:'Des œufs, qui se vendent bien.'},
+ puits:{nom:'Puits',e:'🪣',sorte:'deco',t:1,cout:{pieces:80,bois:15},bonus:.2,aide:'Les bâtiments tout autour produisent 20 % de plus.'},
+ massif:{nom:'Massif de fleurs',e:'🌷',sorte:'deco',t:1,cout:{pieces:30,legumes:5},bonus:.1,aide:'Les bâtiments tout autour produisent 10 % de plus.'},
+ chemin:{nom:'Chemin',e:'🟫',sorte:'chemin',t:1,cout:{pieces:2},aide:'Relie les bâtiments à la place du village.'}};
+const DUREES=[{min:5,nom:'Petit',q:3,et:1},{min:60,nom:'Moyen',q:12,et:3},{min:480,nom:'Gros, pour la nuit',q:40,et:8}];
+const MONDE=16, BLOC=4;                         // 16 × 16 cases, découpées en blocs de 4 × 4 ; on part des 4 blocs du centre
+const PLACE={i:7,j:7};                          // la place du village, 2 × 2, fixe : c'est là que mènent les chemins
+const PRIX_EXT=n=>150*Math.pow(2,n);
 
 /* ===================== Mémoire de la tablette ===================== */
-const CLE='ferme:etat';
+const CLE='village3:etat';
 const ls={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
-function saisonReelle(){const m=new Date().getMonth();return m<2||m===11?3:m<5?0:m<8?1:2}
-const CASES_PARCELLES=[[4,1],[4,2],[4,3],[4,4],[5,1],[5,2],[5,3],[5,4]];
+const uid=()=>Math.random().toString(36).slice(2,9);
 function neuf(nom){
-  const j=jour(), s0=saisonReelle(), c0=Object.entries(CULTURES).find(([,c])=>c.saison===SAISONS[s0].id)[0];
-  // quatre parcelles déjà semées la veille : la première visite a tout de suite quelque chose à ramasser
-  const parcelles=[c0,c0,'fleurs','ble'].map((culture,n)=>({i:CASES_PARCELLES[n][0],j:CASES_PARCELLES[n][1],culture,plante:j-1,derniere:null,arrose:null}));
-  return {v:2,nom,debut:j,saison0:s0,saisonVue:s0,maison:1,parcelles,decos:[],grenier:[],
-    stock:{pieces:30,fleurs:0,ble:0,rose:0},produits:{},graines:0,
-    boutiques:{fleuriste:0,boulangerie:0,garage:0},arrosoir:false,brouette:false,
-    panier:null,fete:{saison:s0,bouquet:0,tarte:0,recoltes:0,finie:false}};
+  const t=Date.now(), b=[];
+  const pose=(type,i,j,extra)=>b.push(Object.assign({id:uid(),type,i,j},extra||{}));
+  pose('maison',4,6,{depuis:t-75*60000});
+  pose('potager',10,6,{fin:t-1000,duree:0});           // une première récolte prête : la première visite a déjà de quoi ramasser
+  pose('massif',9,9);
+  [[6,6],[6,7],[9,6],[9,7]].forEach(([i,j])=>pose('chemin',i,j));
+  return {v:3,nom,blocs:['1,1','1,2','2,1','2,2'],ext:0,b,
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
-if(S&&S.v!==2)S=null;
+if(S&&S.v!==3)S=null;
 function sauve(){ls.set(CLE,JSON.stringify(S))}
 
 /* ===================== Outils ===================== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let message='', anims=new Set(), ecran='ferme', feuille=null;
-const fruits=()=>Object.entries(CULTURES).filter(([,c])=>c.fruit).reduce((s,[k])=>s+(S.stock[k]||0),0);
-function nb(k){return k==='fruits'?fruits():k in CULTURES||k==='pieces'?(S.stock[k]||0):(S.produits[k]||0)}
-function assez(p){return Object.entries(p).every(([k,v])=>nb(k)>=v)}
-function prendre(p){Object.entries(p).forEach(([k,v])=>{
-  if(k==='fruits'){let r=v;Object.entries(CULTURES).filter(([,c])=>c.fruit).sort((a,b)=>(S.stock[b[0]]||0)-(S.stock[a[0]]||0)).forEach(([f])=>{const t=Math.min(r,S.stock[f]||0);S.stock[f]-=t;r-=t})}
-  else if(k in CULTURES||k==='pieces')S.stock[k]-=v; else S.produits[k]-=v})}
-function nomDe(k){return k==='fruits'?'fruits ou légumes':k==='pieces'?'pièces':(CULTURES[k]||PRODUITS[k]).nom.toLowerCase()}
-function eDe(k){return k==='fruits'?'🍓':k==='pieces'?'🪙':(CULTURES[k]||PRODUITS[k]).e}
-function txt(p){return Object.entries(p).map(([k,v])=>v+' '+eDe(k)).join(' + ')}
-function gagne(k,n){if(k in CULTURES||k==='pieces')S.stock[k]=(S.stock[k]||0)+n;else S.produits[k]=(S.produits[k]||0)+n;anims.add(k in CULTURES?'recoltes':k)}
-const pret=p=>p.culture&&(p.derniere??p.plante)<jour();
-const peutPlanter=c=>!c.saison||c.saison===saison().id||S.maison>=4;
+let message='', feuille=null, mode=null, dernierPose=null;   // mode : {pose:type} | {deplace:id} | {chemins:true}
+const assez=c=>Object.entries(c).every(([k,v])=>(S.stock[k]||0)>=v);
+const paye=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);
+const txt=c=>Object.entries(c).map(([k,v])=>v+' '+RES[k].e).join(' + ');
+const heure=ms=>{const d=new Date(ms);return d.getHours()+' h '+String(d.getMinutes()).padStart(2,'0')};
+const possede=(i,j)=>i>=0&&j>=0&&i<MONDE&&j<MONDE&&S.blocs.includes(Math.floor(i/BLOC)+','+Math.floor(j/BLOC));
+const surPlace=(i,j)=>i>=PLACE.i&&i<PLACE.i+2&&j>=PLACE.j&&j<PLACE.j+2;
+const occupe=(i,j,sauf)=>S.b.find(o=>o.id!==sauf&&i>=o.i&&i<o.i+BAT[o.type].t&&j>=o.j&&j<o.j+BAT[o.type].t);
+function libre(type,i,j,sauf){const t=BAT[type].t;for(let a=0;a<t;a++)for(let c=0;c<t;c++){
+  if(!possede(i+a,j+c)||surPlace(i+a,j+c)||occupe(i+a,j+c,sauf))return false}return true}
 
-/* ===================== À l'ouverture : saison, panier, caisse des cartes ===================== */
-function ouverture(){
-  const sj=saisonDuJour(jour());
-  while(S.saisonVue!==sj)changerSaison();
-  if(S.panier!==jour()&&!message)message='🧺 Votre panier du jour vous attend sur la maison.';
-  let c=0;try{c=+(localStorage.getItem('village:caisse')||0)}catch{}
-  if(c>0){S.stock.pieces+=c;anims.add('pieces');try{localStorage.setItem('village:caisse','0')}catch{}
-    message=`🃏 Vos parties de cartes ont rapporté ${c} pièces !`}
-  let g=0;try{g=+(localStorage.getItem('village:graines')||0)}catch{}
-  if(g>0){S.graines+=g;try{localStorage.setItem('village:graines','0')}catch{}
-    message+=` 🌟 Et ${g} graine${g>1?'s':''} rare${g>1?'s':''} pour la gagnante !`}
-  sauve();
+/* Les chemins : un bâtiment est relié si une case qui le borde est la place ou un chemin relié à la place. */
+function relies(){
+  const ok=new Set(), file=[];
+  for(let a=0;a<2;a++)for(let c=0;c<2;c++){ok.add((PLACE.i+a)+','+(PLACE.j+c));file.push([PLACE.i+a,PLACE.j+c])}
+  while(file.length){const [i,j]=file.shift();
+    for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(i+di)+','+(j+dj),o=occupe(i+di,j+dj);
+      if(!ok.has(k)&&o&&o.type==='chemin'){ok.add(k);file.push([i+di,j+dj])}}}
+  return ok;
 }
-function changerSaison(){
-  // ce qui est prêt est ramassé d'office ; ce qui n'est plus de saison est récolté puis la parcelle se libère
-  const part=SAISONS[S.saisonVue].id;
-  S.parcelles.forEach(p=>{if(!p.culture)return;const c=CULTURES[p.culture];
-    if(pret(p))gagne(p.culture,1);
-    if(c.saison&&c.saison!==SAISONS[(S.saisonVue+1)%4].id&&S.maison<4){p.culture=null}});
-  S.decos=S.decos.filter(d=>{if(DECOS[d.type].saison===part){S.grenier.push(d.type);return false}return true});
-  S.saisonVue=(S.saisonVue+1)%4;
-  S.fete={saison:S.saisonVue,bouquet:0,tarte:0,recoltes:0,finie:false};
-  message=`${saison().e} Voici ${{printemps:'le printemps',ete:"l'été",automne:"l'automne",hiver:"l'hiver"}[saison().id]} ! Les décos de la saison passée sont au grenier.`;
+function estRelie(o,ok){const t=BAT[o.type].t;
+  for(let a=-1;a<=t;a++)for(let c=-1;c<=t;c++){if((a<0||a>=t)===(c<0||c>=t))continue;if(ok.has((o.i+a)+','+(o.j+c)))return true}
+  return false}
+function bonus(o){let b=0;S.b.forEach(d=>{const B=BAT[d.type];if(B.sorte!=='deco')return;
+  const t=BAT[o.type].t;if(d.i>=o.i-2&&d.i<=o.i+t+1&&d.j>=o.j-2&&d.j<=o.j+t+1)b+=B.bonus});return Math.min(b,.6)}
+function pret(o,ok){const B=BAT[o.type];if(!estRelie(o,ok))return false;
+  if(B.sorte==='atelier')return o.fin!=null&&Date.now()>=o.fin;
+  if(B.sorte==='maison')return Date.now()-o.depuis>=60*60000;
+  return false}
+function gainMaison(o){const h=Math.min(72,Math.floor((Date.now()-o.depuis)/3600000));return Math.ceil(h*BAT.maison.parHeure*(1+bonus(o)))}
+
+/* ===================== Le son : petits bruits et musique douce, synthétisés (aucun fichier) ===================== */
+let AC=null, musiqueMinuteur=null;
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch{AC=null}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function note(f,t0,dur,type,vol){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,a.currentTime+t0);g.gain.linearRampToValueAtTime(vol||.12,a.currentTime+t0+.01);
+  g.gain.exponentialRampToValueAtTime(.0005,a.currentTime+t0+dur);o.connect(g).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+dur+.05)}
+const SON={
+  ramasse(){note(988,0,.18,'sine',.14);note(1319,.08,.25,'sine',.12);note(1760,.16,.3,'triangle',.06)},
+  piece(){note(1568,0,.12,'triangle',.07)},
+  pose(){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(180,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(60,a.currentTime+.2);g.gain.setValueAtTime(.25,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.25);
+    o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+.3);note(660,.05,.15,'triangle',.05)},
+  lance(){note(523,0,.12,'triangle',.08);note(784,.1,.18,'triangle',.08)},
+  non(){note(220,0,.2,'sine',.08)}};
+const GAMME=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
+function musique(on){
+  clearInterval(musiqueMinuteur);musiqueMinuteur=null;if(!on||!audio())return;
+  let k=3,pas=0;
+  musiqueMinuteur=setInterval(()=>{if(document.hidden)return;
+    if(pas%8===0){note(GAMME[[0,3,4,2][(pas/8)%4]]/2,0,2.6,'sine',.035)}
+    if(Math.random()<.7){k=Math.max(0,Math.min(GAMME.length-1,k+[-2,-1,1,2][Math.floor(Math.random()*4)]));note(GAMME[k],0,.9,'triangle',.03)}
+    pas++},420);
+}
+let sonPret=false;
+function premierGeste(){if(sonPret)return;sonPret=true;audio();if(S&&S.musique)musique(true)}
+
+/* ===================== Effets à l'écran ===================== */
+function versEcran(x,y){const svg=$('.carte svg');if(!svg)return [innerWidth/2,innerHeight/2];const p=svg.createSVGPoint();p.x=x;p.y=y;
+  const q=p.matrixTransform(svg.getScreenCTM());return [q.x,q.y]}
+function etincelles(sx,sy){const fx=$('#fx');for(let n=0;n<12;n++){const e=document.createElement('div');e.className='etin';
+  const a=n/12*Math.PI*2,r=40+Math.random()*30;e.style.left=sx-5+'px';e.style.top=sy-5+'px';e.style.setProperty('--dx',Math.cos(a)*r+'px');e.style.setProperty('--dy',Math.sin(a)*r+'px');
+  fx.appendChild(e);setTimeout(()=>e.remove(),750)}}
+function poussiere(sx,sy){const fx=$('#fx');for(let n=0;n<6;n++){const e=document.createElement('div');e.className='poussiere';
+  e.style.left=sx-13+(n-3)*12+'px';e.style.top=sy-8+'px';e.style.setProperty('--dx',(n-3)*14+'px');fx.appendChild(e);setTimeout(()=>e.remove(),750)}}
+function voler(sx,sy,k,n){
+  const cible=document.querySelector(`[data-res="${k}"]`);if(!cible)return;const r=cible.getBoundingClientRect(),tx=r.left+24,ty=r.top+20;
+  const combien=Math.min(6,Math.max(1,Math.round(n/4)));
+  for(let m=0;m<combien;m++){const e=document.createElement('div');e.className='vol';e.textContent=RES[k].e;
+    e.style.left=sx-17+'px';e.style.top=sy-17+'px';$('#fx').appendChild(e);
+    setTimeout(()=>{e.style.transform=`translate(${tx-sx}px,${ty-sy}px) scale(.7)`;e.style.opacity='.3'},40+m*90);
+    setTimeout(()=>{e.remove();const c=document.querySelector(`[data-res="${k}"]`);if(c){c.classList.remove('gonfle');void c.offsetWidth;c.classList.add('gonfle')}SON.piece()},880+m*90)}
 }
 
 /* ===================== Dessin en losanges ===================== */
-const TW=56, TH=28;
-const OY=150;
-function P(i,j,N){return [N*TW+(i-j)*TW,OY+(i+j)*TH]}
-function poly(pts,f,s,extra){return `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="${f}" stroke="${s}" stroke-width="1.2" stroke-linejoin="round" ${extra||''}/>`}
-function losange(i,j,N,s=1){return [P(i,j,N),P(i+s,j,N),P(i+s,j+s,N),P(i,j+s,N)]}
-function sol(N,chemins){
-  let h='';const sa=saison();
-  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const ch=chemins.has(i+','+j);
-    h+=poly(losange(i,j,N),ch?(sa.id==='hiver'?'#D5DCE0':'#E2CF9E'):sa.sol,ch?(sa.id==='hiver'?'#BAC5CC':'#C9B47F'):sa.bord)}
-  const g=P(0,N,N),d=P(N,0,N),bas=P(N,N,N);
-  h+=poly([g,bas,[bas[0],bas[1]+18],[g[0],g[1]+18]],'#8D6E4F','#6B4F36');
-  h+=poly([bas,d,[d[0],d[1]+18],[bas[0],bas[1]+18]],'#7A5E42','#6B4F36');
-  return h;
+const TW=34, TH=17, OX=MONDE*TW, OY=70;
+const P=(i,j)=>[OX+(i-j)*TW,OY+(i+j)*TH];
+function poly(pts,f,s,extra){return `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="${f}" stroke="${s}" stroke-width="1" stroke-linejoin="round" ${extra||''}/>`}
+const los=(i,j,t=1)=>[P(i,j),P(i+t,j),P(i+t,j+t),P(i,j+t)];
+const up=(p,z)=>[p[0],p[1]-z];
+function nuit(){const h=new Date().getHours();return h>=20||h<7}
+function boite(o,mur,toit){const t=BAT[o.type].t,A=P(o.i,o.j),B=P(o.i+t,o.j),C=P(o.i+t,o.j+t),D=P(o.i,o.j+t),z=34;
+  let h=poly([D,C,up(C,z),up(D,z)],mur,'#00000055')+poly([C,B,up(B,z),up(C,z)],mur,'#00000055','style="filter:brightness(.85)"');
+  const ap=[(A[0]+C[0])/2,(A[1]+C[1])/2-z-30];
+  h+=poly([up(D,z),up(C,z),ap],toit,'#00000055')+poly([up(C,z),up(B,z),ap],toit,'#00000055','style="filter:brightness(.8)"');
+  const mx=(D[0]+C[0])/2,my=(D[1]+C[1])/2;
+  h+=`<polygon points="${mx-6},${my+3} ${mx+6},${my-3} ${mx+6},${my-21} ${mx-6},${my-15}" fill="#6D4C41"/>`;
+  const fen=nuit()?'#FFD86B':'#CFE3F0';h+=`<rect x="${mx-26}" y="${my-24}" width="11" height="11" fill="${fen}" stroke="#5D4037"/><rect x="${mx+18}" y="${my-30}" width="11" height="11" fill="${fen}" stroke="#5D4037"/>`;
+  h+=`<circle cx="${ap[0]}" cy="${ap[1]+28}" r="15" fill="#FFF9E8" stroke="#00000044"/><text x="${ap[0]}" y="${ap[1]+36}" font-size="19" text-anchor="middle">${BAT[o.type].e}</text>`;
+  return {h,top:ap[1]};
 }
-/* Un objet dessiné : son pied tombe sur le bas du losange qu'il occupe ; largeur en fraction du losange. */
-/* Bâtiment : le bas de la face du dessus de son socle (vers 72 % de l'image) tombe sur le bas du losange occupé.
-   Plante : son pied tombe au centre de la case. */
-function image(nom,i,j,N,s,larg,ratio,classe){
-  const plante=s===1&&!/^(maison|boulangerie|fleuriste|garage|mairie)/.test(nom);
-  const [x,yb]=plante?P(i+.5,j+.5,N):P(i+s,j+s,N), w=2*TW*s*larg, h=w*ratio;
-  const y=plante?yb-h*0.9:yb-h*0.72;
-  return `<image href="img/${nom}.webp" x="${x-w/2}" y="${y}" width="${w}" height="${h}" ${classe?`class="${classe}"`:''}/>`;
+function imageBat(nom,o,larg){const t=BAT[o.type].t,[x,yb]=P(o.i+t,o.j+t),w=2*TW*t*larg,h=w*.98;
+  return {h:`<image href="img/${nom}.webp" x="${x-w/2}" y="${yb-h*.72}" width="${w}" height="${h}"/>`,top:yb-h*.72+10}}
+function dessinObjet(o,ok){
+  const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
+  if(o.type==='chemin'){return poly(los(o.i,o.j),'#E2CF9E','#C9B47F',`data-o="${o.id}"`)}
+  if(o.type==='maison'){const r=imageBat('maison-1',o,.9);h=r.h;top=r.top;
+    if(nuit())h+=`<circle cx="${cx-6}" cy="${cy-30}" r="22" fill="#FFD86B" opacity=".25"/>`}
+  else if(o.type==='potager'){const L=los(o.i,o.j,2);h=poly(L,'#8A5A3B','#5E3A22');
+    for(let r=1;r<6;r++){const a=[L[0][0]+(L[3][0]-L[0][0])*r/6,L[0][1]+(L[3][1]-L[0][1])*r/6],b=[L[1][0]+(L[2][0]-L[1][0])*r/6,L[1][1]+(L[2][1]-L[1][1])*r/6];
+      h+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#6B4329" stroke-width="2" stroke-linecap="round"/>`}
+    if(o.fin!=null){const img=Date.now()>=o.fin?'citrouille':(o.fin-Date.now()>(o.duree?DUREES[o.duree].min:5)*30000?'pousse':'plante');
+      [[.6,.6],[1.4,.6],[.6,1.4],[1.4,1.4]].forEach(([a,c])=>{const [x,y]=P(o.i+a,o.j+c);h+=`<image href="img/${img}.webp" x="${x-15}" y="${y-30}" width="30" height="32"/>`})}
+    top=cy-30}
+  else if(o.type==='puits'){h=`<ellipse cx="${cx}" cy="${cy+2}" rx="20" ry="10" fill="#9E9E9E" stroke="#616161"/><rect x="${cx-20}" y="${cy-14}" width="40" height="16" fill="#BDBDBD" stroke="#616161"/><ellipse cx="${cx}" cy="${cy-14}" rx="20" ry="10" fill="#4FA3D9" stroke="#616161"/>
+      <rect x="${cx-18}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><rect x="${cx+14}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><polygon points="${cx-26},${cy-42} ${cx},${cy-58} ${cx+26},${cy-42}" fill="#8D5524" stroke="#5D4037"/>`;top=cy-60}
+  else if(o.type==='massif'){h=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#5B8C3A"/>`;
+    ['#E91E63','#FFEB3B','#AB47BC','#FF7043','#fff','#E91E63'].forEach((c,n)=>h+=`<circle cx="${cx-16+n*6.5}" cy="${cy-3+(n%2)*5}" r="4.5" fill="${c}"/>`);top=cy-12}
+  else{const r=boite(o,B.mur,B.toit);h=r.h;top=r.top}
+  // bulles : prêt (brille), à lancer (pâle), pas relié (panneau)
+  let bulle='';const relie=B.sorte==='deco'||estRelie(o,ok);
+  if(!relie)bulle=`<g class="flotte"><rect x="${cx-24}" y="${top-46}" width="48" height="36" rx="8" fill="#FFF3D6" stroke="#B5523A" stroke-width="3"/><text x="${cx}" y="${top-20}" font-size="22" text-anchor="middle">🚧</text></g>`;
+  else if(pret(o,ok)){const e=B.sorte==='maison'?'🪙':RES[B.produit].e;
+    bulle=`<g class="brille" style="transform-box:fill-box"><circle cx="${cx}" cy="${top-26}" r="22" fill="#FFE27A" stroke="#C99A22" stroke-width="3"/><text x="${cx}" y="${top-17}" font-size="24" text-anchor="middle">${e}</text></g>`}
+  else if(B.sorte==='atelier'&&o.fin==null)bulle=`<g class="flotte"><circle cx="${cx}" cy="${top-26}" r="19" fill="#FFFDF6" stroke="#B8B09C" stroke-width="3"/><text x="${cx}" y="${top-18}" font-size="22" text-anchor="middle" fill="#7A6A50">▶</text></g>`;
+  const cls=(o.id===dernierPose?'tombe ':'')+(mode&&mode.deplace===o.id?'porte':'');
+  // pendant une pose, un déplacement ou des chemins, les bâtiments s'effacent à moitié et laissent toucher les cases cachées derrière
+  const st=mode?'pointer-events:none;opacity:.5':'cursor:pointer';
+  return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
-const RATIO={'maison-1':.98,'maison-2':1.04,'maison-3':1.04,'maison-4':1.05,boulangerie:1.02,fleuriste:1.03,garage:1.04,mairie:1.04,
-  pousse:.86,plante:.98,fraise:.89,citrouille:1.11,chou:1.03,ble:4.4};
-function bulle(x,y,e,data){return `<g class="flotte" ${data} style="cursor:pointer;transform-box:fill-box"><circle cx="${x}" cy="${y}" r="24" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+9}" font-size="26" text-anchor="middle">${e}</text></g>`}
-function parcelleSVG(p,k,N){
-  const L=losange(p.i,p.j,N);let h=poly(L,saison().id==='hiver'?'#A89480':'#8A5A3B','#5E3A22');
-  for(let r=1;r<4;r++){const a=[L[0][0]+(L[3][0]-L[0][0])*r/4,L[0][1]+(L[3][1]-L[0][1])*r/4],b=[L[1][0]+(L[2][0]-L[1][0])*r/4,L[1][1]+(L[2][1]-L[1][1])*r/4];
-    h+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#6B4329" stroke-width="2" stroke-linecap="round"/>`}
-  if(p.arrose!=null)h+=poly(L,'#4FA3D9','none','opacity=".25"');
-  const [cx,cy]=P(p.i+.5,p.j+.5,N);
-  if(p.culture){const c=CULTURES[p.culture];
-    if(pret(p)){h+=c.img?image(c.img,p.i,p.j,N,1,c.img==='ble'?.22:.62,RATIO[c.img]):`<text x="${cx}" y="${cy+12}" font-size="34" text-anchor="middle">${c.e}</text>`;
-      h+=bulle(cx,cy-56,c.e,`data-p="${k}"`)}
-    else h+=image(p.derniere==null?'pousse':'plante',p.i,p.j,N,1,.62,RATIO[p.derniere==null?'pousse':'plante']);
-  }
-  return `<g data-p="${k}" style="cursor:pointer">${h}</g>`;
-}
-function dessineFerme(){
-  const N=7, chemins=new Set(['3,0','3,1','3,2','3,3','3,4','3,5','3,6']);let h=sol(N,chemins);
-  const objets=[];
-  const et=S.maison, ech=[0,1,1.08,1.16,1.24][et];
-  objets.push({o:1+1+2,svg:`<g data-a="maison" style="cursor:pointer">${image('maison-'+et,0,0,N,2,ech,RATIO['maison-'+et])}</g>`
-    +(S.panier!==jour()?bulle(P(1,1,N)[0]+70,P(1,1,N)[1]-110,'🧺','data-a="panier"'):'')});
-  S.parcelles.forEach((p,k)=>objets.push({o:p.i+p.j,svg:parcelleSVG(p,k,N)}));
-  S.decos.forEach((d,k)=>{const [x,y]=P(d.i+.5,d.j+.5,N);objets.push({o:d.i+d.j,svg:`<text data-d="${k}" x="${x}" y="${y+14}" font-size="40" text-anchor="middle" style="cursor:pointer">${DECOS[d.type].e}</text>`})});
-  objets.sort((a,b)=>a.o-b.o).forEach(o=>h+=o.svg);
-  return `<svg viewBox="0 0 ${2*N*TW} ${2*N*TH+OY+50}" role="img" aria-label="La ferme vue de biais"><title>La ferme</title>${h}</svg>`;
-}
-const PLACES={boulangerie:[0,0],fleuriste:[0,4],garage:[4,0],mairie:[4,4]};
 function dessineVillage(){
-  const N=6, chemins=new Set();for(let k=0;k<N;k++){chemins.add('2,'+k);chemins.add('3,'+k);chemins.add(k+',2');chemins.add(k+',3')}
-  let h=sol(N,chemins);
-  Object.entries(PLACES).sort((a,b)=>(a[1][0]+a[1][1])-(b[1][0]+b[1][1])).forEach(([id,[i,j]])=>{
-    const ouv=id==='mairie'||S.boutiques[id]>0;
-    h+=`<g data-b="${id}" style="cursor:pointer">${image(id,i,j,N,2,.8,RATIO[id],ouv?'':'ferme-img')}`;
-    const [x,y]=P(i+1.2,j+1.2,N), nom=id==='mairie'?'Mairie':BOUTIQUES[id].patron;
-    h+=`<text x="${x}" y="${y+62}" font-size="20" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="5" paint-order="stroke">${nom}${ouv&&id!=='mairie'?' · niv. '+S.boutiques[id]:''}</text>`;
-    if(!ouv)h+=`<g transform="translate(${x-46},${y-70})"><rect width="92" height="34" rx="8" fill="#7A4E2D" stroke="#4E3018" stroke-width="2"/><text x="46" y="24" font-size="19" font-weight="700" text-anchor="middle" fill="#FFF3D6">Fermé</text></g>`;
-    h+='</g>';});
-  return `<svg viewBox="0 0 ${2*N*TW} ${2*N*TH+OY+70}" role="img" aria-label="Le village vu de biais"><title>Le village</title>${h}</svg>`;
+  const ok=relies();let h='';const n=nuit();
+  // le sol : cases possédées unies ; blocs voisins à acheter, plus sombres, avec leur panneau
+  const achetables=new Set();
+  S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,y])=>{const bk=(a+x)+','+(c+y);
+    if(a+x>=0&&c+y>=0&&a+x<MONDE/BLOC&&c+y<MONDE/BLOC&&!S.blocs.includes(bk))achetables.add(bk)})});
+  // le cadre suit le terrain : ce qu'on possède et ce qu'on peut acheter, rien d'autre
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const borne=(i,j)=>los(i,j).forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
+  for(let i=0;i<MONDE;i++)for(let j=0;j<MONDE;j++){const bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC);
+    if(possede(i,j)||achetables.has(bk))borne(i,j);
+    if(possede(i,j)){const vise=mode&&!occupe(i,j)&&!surPlace(i,j);
+      h+=poly(los(i,j),vise?'#B9E59A':'#A3D27C','#8CBC66',`data-c="${i},${j}"`)}
+    else if(achetables.has(bk))h+=poly(los(i,j),'#7FA35F','#6E9152',`data-x="${bk}"`)}
+  achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);
+    h+=`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+8}" font-size="24" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`});
+  // la place du village
+  h+=poly(los(PLACE.i,PLACE.j,2),'#D9D2C0','#A79F8A');
+  for(let a=0;a<2;a++)for(let c=0;c<2;c++)h+=poly(los(PLACE.i+a,PLACE.j+c),'none','#BFB6A0');
+  const [px,py]=P(PLACE.i+1,PLACE.j+1);h+=`<rect x="${px-2}" y="${py-48}" width="4" height="48" fill="#6D4C41"/><polygon points="${px+2},${py-48} ${px+28},${py-40} ${px+2},${py-32}" fill="#E53935"/>`;
+  h+=`<text x="${px}" y="${py+30}" font-size="15" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="4" paint-order="stroke">La place</text>`;
+  S.b.filter(o=>o.type==='chemin').forEach(o=>h+=dessinObjet(o,ok));
+  S.b.filter(o=>o.type!=='chemin').sort((a,b)=>(a.i+a.j+BAT[a.type].t)-(b.i+b.j+BAT[b.type].t)).forEach(o=>h+=dessinObjet(o,ok));
+  const vb=[x0-20,y0-110,x1-x0+40,y1-y0+140];
+  if(n)h+=`<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#1A2A55" opacity=".28" pointer-events="none"/>`;
+  return `<svg viewBox="${vb.join(' ')}" role="img" aria-label="Le village vu de biais"><title>Le village</title>${h}</svg>`;
 }
 
-/* ===================== Écrans ===================== */
+/* ===================== Écran ===================== */
 function rendu(){
-  if(!S&&ls.get('rami:nom')){  // 0.1 : le prénom donné à l'accueil sert ici, sans le redemander
-    S=neuf(ls.get('rami:nom'));message='Bienvenue ! Touchez les bulles pour ramasser, et le panier sur la maison.';sauve();ouverture();
-  }
+  if(!S&&ls.get('rami:nom')){S=neuf(ls.get('rami:nom'));message='Bienvenue au village ! Touchez la bulle qui brille.';sauve();encaisser()}
   if(!S){
-    const nomCartes='';
-    $('#app').innerHTML=`<div class="debut"><div class="boite"><h1>La ferme</h1>
-      <p>Une petite ferme à soi, et le village de la famille : la boulangerie d'Hugo, les fleurs de Chloé, le garage de Pierre.</p>
-      <label for="nom">Votre prénom</label><input id="nom" class="champ" maxlength="16" value="${esc(nomCartes)}" autocomplete="off">
-      <button class="big" id="go" style="width:100%">Entrer à la ferme</button></div></div>`;
-    $('#go').onclick=()=>{const n=$('#nom').value.trim();if(!n){$('#nom').focus();return}S=neuf(n);
-      message='Bienvenue ! Touchez les bulles pour ramasser, et le panier sur la maison.';sauve();rendu()};
+    $('#app').innerHTML=`<div class="debut"><div class="boite"><h1>Le village</h1>
+      <label for="nom">Votre prénom</label><input id="nom" class="champ" maxlength="16" autocomplete="off">
+      <button class="big" id="go" style="width:100%">Entrer au village</button></div></div>`;
+    $('#go').onclick=()=>{const n=$('#nom').value.trim();if(!n){$('#nom').focus();return}ls.set('rami:nom',n);rendu()};
     return;
   }
-  document.body.dataset.saison=saison().id;
-  const recoltes=Object.keys(CULTURES).reduce((s,k)=>s+(S.stock[k]||0),0);
-  const pills=`<span class="pill ${anims.has('pieces')?'anim':''}">🪙 ${S.stock.pieces}</span><span class="pill ${anims.has('recoltes')?'anim':''}">🧺 ${recoltes}</span>`
-    +(S.graines?`<span class="pill">🌟 ${S.graines}</span>`:'');
-  anims.clear();
-  const F=S.fete, tot=F.finie?1:Object.keys(FETE).reduce((s,k)=>s+Math.min(F[k],FETE[k])/FETE[k],0)/3;
-  const fete=F.finie?`<div class="mission"><h2>🎉 ${saison().fete} : réussie !</h2><p>La prochaine fête viendra avec la saison suivante.</p></div>`
-    :`<div class="mission"><h2>🎪 ${saison().fete}</h2><p>À apporter à la mairie (au village) :</p>${Object.keys(FETE).map(k=>
-      `<div class="lig ${F[k]>=FETE[k]?'ok':''}"><span>${k==='recoltes'?'🧺 récoltes':eDe(k)+' '+PRODUITS[k].nom.toLowerCase()}</span><span>${F[k]} / ${FETE[k]}</span></div>`).join('')}
-      <div class="barre"><i style="width:${Math.round(tot*100)}%"></i></div></div>`;
-  const ferme=ecran==='ferme';
+  document.body.classList.toggle('nuit',nuit());
+  const pills=['pieces','etoiles','legumes','bois','oeufs'].map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}">${RES[k].e} ${S.stock[k]||0}</span>`).join('');
+  const bas=mode?`<button class="big vert" data-a="fini"><span class="e">✅</span>${mode.chemins?'Terminé':'Annuler'}</button>`
+    :`<button class="big" data-a="construire"><span class="e">🔨</span>Construire</button>
+     <button class="big alt" data-a="marche"><span class="e">⚖️</span>Marché</button>
+     <button class="big alt" data-a="accueil"><span class="e">🏠</span>Accueil</button>`;
+  const aide=mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':
+      mode.deplace?'Touchez la case où le poser.':`Touchez une case claire pour poser : ${BAT[mode.pose].nom}.`)
+    :'Touchez ce qui brille pour ramasser. Touchez ▶ pour lancer un travail. Un appui long sur un bâtiment le déplace.';
   $('#app').innerHTML=`
-   <div class="haut"><h1>${ferme?'La ferme de '+esc(S.nom):'Le village'}</h1><span class="saison">${saison().e} ${saison().nom} · encore ${joursRestants()} j</span><div class="res">${pills}</div></div>
-   <div class="milieu"><div class="carte">${ferme?dessineFerme():dessineVillage()}</div>
-     <div class="cote">${ferme?'<div class="aide">Touche ce qui brille pour ramasser. Plante une graine sur une parcelle vide. Reviens chaque jour : tout t\'attend.</div>':''}${fete}<div class="msg" role="status">${message||(ferme?'Touchez une parcelle pour planter, une bulle pour ramasser.':'Touchez une boutique pour entrer.')}</div></div></div>
-   <div class="bas">
-     <button class="big" data-a="marche"><span class="e">⚖️</span>Marché</button>
-     <button class="big ${ferme?'':'alt'}" data-a="${ferme?'village':'ferme'}"><span class="e">${ferme?'🏘️':'🏡'}</span>${ferme?'Village':'Ma ferme'}</button>
-     <button class="big alt" data-a="cartes"><span class="e">🏠</span>Accueil</button></div>
-   ${feuille?feuilleHTML():''}`;
-  lier();
+   <div class="haut"><h1>Le village de ${esc(S.nom)}</h1><div class="res">${pills}<button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div></div>
+   <div class="milieu"><div class="carte">${dessineVillage()}</div>
+     <div class="cote"><div class="aide">${aide}</div><div class="msg" role="status">${message||'Hameau : la première époque.'}</div></div></div>
+   <div class="bas">${bas}</div>${feuille?feuilleHTML():''}`;
+  dernierPose=null;lier();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
-function recetteBtn(id){const r=RECETTES[id],sortie=r.donne?PRODUITS[r.donne]:DECOS[r.deco];
-  return `<button class="choix" data-r="${id}" ${assez(r.prend)?'':'disabled'}><span class="e">${sortie.e}</span>${r.nom}<small>avec ${txt(r.prend)}${r.donne?'<br>se vend '+PRODUITS[r.donne].vend+' 🪙':''}</small></button>`}
 function feuilleHTML(){
   const f=feuille;
-  if(f.quoi==='marche'){
-    const lignes=[...Object.entries(CULTURES).map(([k,c])=>[k,c,S.stock[k]||0]),...Object.entries(PRODUITS).map(([k,c])=>[k,c,S.produits[k]||0])].filter(([,,n])=>n>0);
-    return cadre('⚖️ Le marché',`<p class="sous">Vendre tout de suite, ou garder : les fleurs pour Chloé, le blé pour Hugo, les fruits pour les tartes.</p>${lignes.length?lignes.map(([k,c,n])=>
-      `<div class="vente"><span class="nom">${c.e} ${c.nom} : <b>${n}</b>${c.pourQui?` <small>(${c.pourQui} en a besoin)</small>`:''}</span><button data-vend="${k}" data-n="1">Vendre 1 · ${c.vend} 🪙</button><button data-vend="${k}" data-n="${n}">Tout · ${c.vend*n} 🪙</button></div>`).join(''):'<p>Rien à vendre pour l\'instant : ramassez à la ferme.</p>'}`);
-  }
-  if(f.quoi==='parcelle'){const p=S.parcelles[f.k];
-    if(!p.culture){const dispo=Object.entries(CULTURES).filter(([k,c])=>c.rare?S.graines>0:peutPlanter(c));
-      return cadre('🌱 Que planter ?',`<p class="sous">Chaque parcelle donne une récolte par jour. Rien ne flétrit.</p><div class="grille">${dispo.map(([k,c])=>
-        `<button class="choix" data-plante="${k}">${c.img?`<img src="img/${c.img}.webp" alt="">`:`<span class="e">${c.e}</span>`}${c.nom}<small>${c.rare?'graine rare ('+S.graines+')':c.saison?'de '+saison().nom.toLowerCase():'toute l\'année'}${c.pourQui?'<br>pour '+c.pourQui:''}</small></button>`).join('')}</div>`);}
-    const c=CULTURES[p.culture];
-    return cadre(`${c.e} ${c.nom}`,`<p class="sous">${pret(p)?'Prête : touchez la bulle pour ramasser.':'La prochaine récolte sera prête demain.'}</p>
-      <div class="actions">${S.arrosoir&&p.arrose==null?'<button class="big" data-a="arroser">💧 Arroser (récolte doublée)</button>':''}<button class="big alt" data-a="arracher">Changer de culture</button></div>`);
-  }
-  if(f.quoi==='maison'){const M=MAISON[S.maison];
-    let corps=`<p class="sous">${M.aide}</p>`;
-    if(S.maison>=3)corps+=`<h3>🍳 La cuisine</h3><div class="grille">${['confiture','soupe'].map(recetteBtn).join('')}</div>`;
-    if(S.maison>=2)corps+=`<h3>📦 Le grenier</h3>${S.grenier.length?`<div class="grille">${S.grenier.map((t,n)=>{const D=DECOS[t],hors=D.saison&&D.saison!==saison().id;
-      return `<button class="choix" data-g="${n}" ${hors?'disabled':''}><span class="e">${D.e}</span>${D.nom}<small>${hors?'revient avec sa saison':'ressortir à la ferme'}</small></button>`}).join('')}</div>`:'<p class="sous">Vide pour l\'instant. Rien de ce qui y entre n\'est perdu.</p>'}`;
-    if(S.maison<4)corps+=`<p>Prochaine étape : <b>${MAISON[S.maison+1].nom}</b>. Les travaux se font chez Pierre, au village.</p>`;
-    return cadre(`🏡 ${M.nom}`,corps);
-  }
-  if(f.quoi==='boutique'){const id=f.id;
-    if(id==='mairie'){const F=S.fete;
-      return cadre('🏛️ La mairie',`<p class="sous">Le maire : « ${F.finie?'Quelle belle fête, merci à vous deux !':'Aidez-moi à préparer la '+saison().fete.toLowerCase()+' !'} »</p>
-        ${F.finie?'':`<div class="actions">${['bouquet','tarte'].map(k=>`<button class="big" data-don="${k}" ${(S.produits[k]||0)&&F[k]<FETE[k]?'':'disabled'}>Donner 1 ${PRODUITS[k].e}</button>`).join('')}
-        <button class="big" data-don="recoltes" ${Object.keys(CULTURES).some(k=>S.stock[k]>0)&&F.recoltes<FETE.recoltes?'':'disabled'}>Donner 1 🧺 récolte</button></div>
-        <p class="sous">Récompense : 300 🪙 et une déco unique de la saison.</p>`}`);}
-    const B=BOUTIQUES[id], niv=S.boutiques[id];
-    if(!niv)return cadre(`${B.e} ${B.nom}`,`<p class="sous">Volets fermés. ${B.patron} ouvrira contre <b>${B.texteOuvre}</b>.</p>
-      <div class="actions"><button class="big" data-a="ouvrir" ${assez(B.ouvre)?'':'disabled'}>Donner ${txt(B.ouvre)}</button></div>`);
-    let corps='';
-    const recs=B.niv.slice(1,niv+1).flatMap(n=>n.recettes||[]);
-    if(recs.length)corps+=`<div class="grille">${recs.map(recetteBtn).join('')}</div>`;
-    if(id==='garage'){
-      corps+=`<div class="grille">
-        <button class="choix" data-a="parcelle" ${S.stock.pieces>=PRIX_PARCELLE&&S.parcelles.length<MAX_PARCELLES?'':'disabled'}><span class="e">🟫</span>Une parcelle de plus<small>${S.parcelles.length}/${MAX_PARCELLES} · ${PRIX_PARCELLE} 🪙</small></button>
-        ${S.maison<4?`<button class="choix" data-a="travaux" ${S.stock.pieces>=MAISON[S.maison+1].cout?'':'disabled'}><span class="e">🔨</span>${MAISON[S.maison+1].nom}<small>${MAISON[S.maison+1].cout} 🪙</small></button>`:''}
-        ${niv>=2?`<div class="choix"><span class="e">💧</span>L'arrosoir<small>${S.arrosoir?'à vous : touchez une parcelle':'—'}</small></div>`:''}
-        ${niv>=3?`<div class="choix"><span class="e">🛒</span>La brouette<small>une bulle ramasse toute la ferme</small></div>`:''}</div>`;
-    }
-    if(niv<3){const n=B.niv[niv+1];corps+=`<div class="actions"><button class="big" data-a="niveau" ${S.stock.pieces>=n.cout?'':'disabled'}>⬆️ Niveau ${niv+1} : ${n.cout} 🪙</button></div>
-      <p class="sous">Au niveau ${niv+1} : ${(n.recettes||[]).map(r=>RECETTES[r].nom.toLowerCase()).concat((n.outils||[]).map(o=>({arrosoir:"l'arrosoir",brouette:'la brouette'}[o]))).concat(n.bonus?[n.bonus.toLowerCase()]:[]).join(', ')}.</p>`}
-    return cadre(`${B.e} ${B.nom} · niveau ${niv}`,corps);
-  }
-  if(f.quoi==='poser'){return ''}
+  if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).map(([k,B])=>
+    `<button class="choix" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
+  if(f.quoi==='marche'){const l=['legumes','bois','oeufs'].filter(k=>S.stock[k]>0);
+    return cadre('⚖️ Le marché',l.length?l.map(k=>`<div class="vente"><span class="nom">${RES[k].e} ${RES[k].nom} : <b>${S.stock[k]}</b></span><button data-vend="${k}" data-n="1">Vendre 1 · ${RES[k].vend} 🪙</button><button data-vend="${k}" data-n="${S.stock[k]}">Tout · ${RES[k].vend*S.stock[k]} 🪙</button></div>`).join('')
+      :'<p class="sous">Rien à vendre pour l\'instant.</p>')}
+  if(f.quoi==='extension'){const prix=PRIX_EXT(S.ext);
+    return cadre('🌳 Agrandir le village',`<p class="sous">Un morceau de terrain de 4 × 4 cases de plus.</p><div class="actions"><button class="big" data-a="acheter" ${S.stock.pieces>=prix?'':'disabled'}>Agrandir pour ${prix} 🪙</button></div>`)}
+  if(f.quoi==='bat'){const o=S.b.find(x=>x.id===f.id);if(!o)return '';const B=BAT[o.type],ok=relies();let corps=`<p class="sous">${B.aide}</p>`;
+    if(B.sorte!=='deco'&&B.sorte!=='chemin'&&!estRelie(o,ok))corps+=`<p>🚧 Ce bâtiment n'est pas relié à la place. Posez des chemins jusqu'à lui (Construire → Chemin).</p>`;
+    else if(B.sorte==='atelier'){
+      if(o.fin==null)corps+=`<div class="grille">${DUREES.map((d,n)=>{const q=Math.ceil(d.q*(1+bonus(o)));return `<button class="choix" data-lance="${n}"><span class="e">${RES[B.produit].e}</span>${d.nom}<small>${d.min<60?d.min+' minutes':d.min/60+' heure'+(d.min>60?'s':'')}<br>donne ${q} ${RES[B.produit].e} et ${d.et} ⭐</small></button>`}).join('')}</div>`;
+      else corps+=`<p>⏳ En cours : prêt vers <b>${heure(o.fin)}</b>. Rien ne se perd, ça attendra.</p>`}
+    else if(B.sorte==='maison')corps+=`<p>🪙 ${gainMaison(o)} pièces en réserve. ${Date.now()-o.depuis<3600000?'Les prochaines vers <b>'+heure(o.depuis+3600000)+'</b>.':''}</p>`;
+    if(bonus(o)>0&&B.sorte!=='deco')corps+=`<p>✨ Bonus des décorations voisines : +${Math.round(bonus(o)*100)} %.</p>`;
+    if(o.type!=='chemin')corps+=`<div class="actions"><button class="big alt" data-a="deplacer">↔️ Déplacer</button></div>`;
+    return cadre(`${B.e} ${B.nom}`,corps)}
   return '';
 }
 
 /* ===================== Gestes ===================== */
+let appui=null;
 function lier(){
   document.querySelectorAll('[data-stop]').forEach(e=>e.onclick=ev=>ev.stopPropagation());
-  document.querySelectorAll('[data-a]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();action(e.dataset.a)}));
-  document.querySelectorAll('[data-p]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();toucherParcelle(+e.dataset.p)}));
-  document.querySelectorAll('[data-plante]').forEach(e=>e.onclick=()=>planter(e.dataset.plante));
-  document.querySelectorAll('[data-vend]').forEach(e=>e.onclick=()=>vendre(e.dataset.vend,+e.dataset.n));
-  document.querySelectorAll('[data-b]').forEach(e=>e.onclick=()=>{feuille={quoi:'boutique',id:e.dataset.b};message='';rendu()});
-  document.querySelectorAll('[data-r]').forEach(e=>e.onclick=()=>cuisiner(e.dataset.r));
-  document.querySelectorAll('[data-don]').forEach(e=>e.onclick=()=>donner(e.dataset.don));
-  document.querySelectorAll('[data-g]').forEach(e=>e.onclick=()=>{const t=S.grenier.splice(+e.dataset.g,1)[0];poserDeco(t);feuille=null;sauve();rendu()});
+  document.querySelectorAll('[data-a]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();action(e.dataset.a)}));
+  document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;mode=k==='chemin'?{chemins:true}:{pose:k};message='';rendu()});
+  document.querySelectorAll('[data-vend]').forEach(e=>e.onclick=()=>{const k=e.dataset.vend,n=Math.min(+e.dataset.n,S.stock[k]);S.stock[k]-=n;S.stock.pieces+=n*RES[k].vend;
+    message=`Vendu ${n} ${RES[k].e} pour ${n*RES[k].vend} pièces.`;SON.piece();sauve();rendu()});
+  document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
+  document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
+  document.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))});
+  document.querySelectorAll('g[data-o],polygon[data-o]').forEach(e=>{
+    e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{appui.long=true;
+      if(BAT[S.b.find(o=>o.id===id).type].sorte!=='chemin'){mode={deplace:id};feuille=null;message='Touchez la case où le poser.';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
+    e.addEventListener('pointerup',()=>{if(appui)clearTimeout(appui.t)});
+    e.addEventListener('pointerleave',()=>{if(appui)clearTimeout(appui.t)});
+    e.addEventListener('click',ev=>{ev.stopPropagation();const fin=appui&&appui.long&&appui.id===e.dataset.o;appui=null;if(fin)return;toucherObjet(e.dataset.o,ev)});
+  });
 }
-function caseLibre(){
-  const pris=new Set([...S.parcelles.map(p=>p.i+','+p.j),...S.decos.map(d=>d.i+','+d.j),'0,0','0,1','1,0','1,1']);
-  for(const [i,j] of [[0,3],[1,3],[0,5],[1,5],[2,5],[0,6],[1,6],[2,6],[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[6,6],[5,5],[5,6],[4,5],[4,6],[2,0],[2,1],[2,2],[2,3],[2,4]])
-    if(!pris.has(i+','+j))return [i,j];
-  return null;
-}
-function poserDeco(t){const c=caseLibre();if(!c){S.grenier.push(t);message='La ferme est pleine : la déco reste au grenier.';return}
-  S.decos.push({type:t,i:c[0],j:c[1]});message=`${DECOS[t].e} ${DECOS[t].nom} posé à la ferme.`}
 function action(a){
-  const B=feuille&&feuille.id&&BOUTIQUES[feuille.id];
-  if(a==='fermer'){feuille=null}
-  else if(a==='marche'){feuille={quoi:'marche'}}
-  else if(a==='village'){ecran='village';feuille=null;message=''}
-  else if(a==='ferme'){ecran='ferme';feuille=null;message=''}
-  else if(a==='cartes'){sauve();location.href='index.html';return}
-  else if(a==='maison'){feuille={quoi:'maison'}}
-  else if(a==='panier'){if(S.panier!==jour()){S.panier=jour();const r=Math.random();gagne('pieces',20);
-      let t='🧺 Le panier du jour : 20 pièces';
-      if(r<0.15){S.graines++;t+=' et une 🌟 graine rare !'}else{const k=['fleurs','ble'][Math.floor(Math.random()*2)];gagne(k,2);t+=` et 2 ${CULTURES[k].e}`}
-      if(S.boutiques.boulangerie>=3){gagne('tarte',1);t+=', plus une 🥧 tarte d\'Hugo'}
-      message=t+'.'}}
-  else if(a==='arroser'){S.parcelles[feuille.k].arrose=jour();message='💧 Arrosée : la prochaine récolte sera doublée.';feuille=null}
-  else if(a==='arracher'){const p=S.parcelles[feuille.k];if(pret(p))recolter(p);p.culture=null;feuille={quoi:'parcelle',k:feuille.k}}
-  else if(a==='ouvrir'&&B&&assez(B.ouvre)){prendre(B.ouvre);S.boutiques[feuille.id]=1;message=B.phrase;feuille=null}
-  else if(a==='niveau'&&B){const n=B.niv[S.boutiques[feuille.id]+1];if(S.stock.pieces>=n.cout){S.stock.pieces-=n.cout;S.boutiques[feuille.id]++;
-      if(feuille.id==='garage'){if(S.boutiques.garage>=2)S.arrosoir=true;if(S.boutiques.garage>=3)S.brouette=true}
-      message=`${B.patron} passe au niveau ${S.boutiques[feuille.id]} !`}}
-  else if(a==='parcelle'&&S.stock.pieces>=PRIX_PARCELLE&&S.parcelles.length<MAX_PARCELLES){S.stock.pieces-=PRIX_PARCELLE;const [i,j]=CASES_PARCELLES[S.parcelles.length];
-      S.parcelles.push({i,j,culture:null,plante:null,derniere:null,arrose:null});message='🟫 Pierre a préparé une nouvelle parcelle à la ferme.'}
-  else if(a==='travaux'&&S.maison<4&&S.stock.pieces>=MAISON[S.maison+1].cout){S.stock.pieces-=MAISON[S.maison+1].cout;S.maison++;
-      message=`🔨 Pierre a fini les travaux : voici ${MAISON[S.maison].nom.toLowerCase()} ! ${MAISON[S.maison].aide}`;feuille=null}
+  if(a==='fermer')feuille=null;
+  else if(a==='construire')feuille={quoi:'magasin'};
+  else if(a==='marche')feuille={quoi:'marche'};
+  else if(a==='accueil'){sauve();location.href='index.html';return}
+  else if(a==='fini'){mode=null;message=''}
+  else if(a==='son'){S.musique=!S.musique;musique(S.musique)}
+  else if(a==='deplacer'){mode={deplace:feuille.id};feuille=null;message='Touchez la case où le poser.'}
+  else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);S.ext++;feuille=null;
+    message='🌳 Le village s\'agrandit !';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
   sauve();rendu();
 }
-function recolter(p){const n=p.arrose!=null&&p.arrose<jour()?2:1;gagne(p.culture,n);p.derniere=jour();p.arrose=null;return n}
-function toucherParcelle(k){
-  const p=S.parcelles[k];
-  if(pret(p)){
-    const liste=S.brouette?S.parcelles.filter(pret):[p];let t=[];
-    liste.forEach(q=>{const n=recolter(q);t.push(n+' '+CULTURES[q.culture].e)});
-    message=`Ramassé : ${t.join(', ')}. ${CULTURES[p.culture].pourQui?CULTURES[p.culture].pourQui+' en aura besoin.':'À vendre au marché, ou à garder pour une tarte.'}`;
-    sauve();rendu();return;
-  }
-  feuille={quoi:'parcelle',k};rendu();
+function toucherCase(i,j){
+  if(!mode){return}
+  if(mode.chemins){const o=occupe(i,j);if(surPlace(i,j))return;
+    if(o&&o.type==='chemin'){S.b=S.b.filter(x=>x!==o);S.stock.pieces+=BAT.chemin.cout.pieces;sauve();rendu();return}
+    if(o)return;if(!assez(BAT.chemin.cout)){message='Il manque des pièces pour le chemin.';SON.non();rendu();return}
+    paye(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j});SON.pose();sauve();rendu();return}
+  if(mode.pose){const k=mode.pose;if(!libre(k,i,j)){message='Pas la place ici : il faut des cases claires libres.';SON.non();rendu();return}
+    if(!assez(BAT[k].cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}
+    paye(BAT[k].cout);const o={id:uid(),type:k,i,j};if(BAT[k].sorte==='maison')o.depuis=Date.now();S.b.push(o);
+    dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.');
+    sauve();rendu();apresPose(o);return}
+  if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
+    if(!libre(o.type,i,j,o.id)){message='Pas la place ici.';SON.non();rendu();return}
+    o.i=i;o.j=j;dernierPose=o.id;mode=null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`;sauve();rendu();apresPose(o)}
 }
-function planter(id){const p=S.parcelles[feuille.k];if(CULTURES[id].rare){if(!S.graines)return;S.graines--}
-  p.culture=id;p.plante=jour();p.derniere=null;feuille=null;message=`${CULTURES[id].e} Planté ! Première récolte demain.`;sauve();rendu()}
-function vendre(k,n){const c=CULTURES[k]||PRODUITS[k];const a=Math.min(n,nb(k));if(!a)return;
-  if(k in CULTURES)S.stock[k]-=a;else S.produits[k]-=a;gagne('pieces',a*c.vend);message=`Vendu ${a} ${c.e} pour ${a*c.vend} pièces.`;sauve();rendu()}
-function cuisiner(id){const r=RECETTES[id];if(!assez(r.prend))return;prendre(r.prend);
-  if(r.donne){gagne(r.donne,1);message=`${PRODUITS[r.donne].e} ${r.nom} est prêt${r.donne==='tarte'||r.donne==='soupe'||r.donne==='confiture'||r.donne==='couronne'?'e':''} !`}
-  else{poserDeco(r.deco)}
-  sauve();rendu()}
-function donner(k){const F=S.fete;if(F.finie)return;
-  if(k==='recoltes'){const c=Object.keys(CULTURES).find(x=>S.stock[x]>0);if(!c)return;S.stock[c]--;F.recoltes++}
-  else{if(!(S.produits[k]>0))return;S.produits[k]--;F[k]++}
-  if(Object.keys(FETE).every(x=>F[x]>=FETE[x])){F.finie=true;gagne('pieces',300);poserDeco(saison().deco);
-    message=`🎉 ${saison().fete} est réussie ! +300 pièces et ${DECOS[saison().deco].e} ${DECOS[saison().deco].nom.toLowerCase()} à la ferme.`;feuille=null}
-  else message='Le maire : « Merci ! »';
-  sauve();rendu()}
+function apresPose(o){SON.pose();const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t);const [sx,sy]=versEcran(x,y);setTimeout(()=>poussiere(sx,sy-6),320)}
+function toucherObjet(id,ev){
+  const o=S.b.find(x=>x.id===id);if(!o)return;
+  if(mode){if(mode.chemins&&o.type==='chemin'){toucherCase(o.i,o.j);return}if(mode.deplace||mode.pose)toucherCase(o.i,o.j);return}
+  const ok=relies();
+  if(pret(o,ok)){ramasser(o,ev);return}
+  if(o.type==='chemin')return;
+  feuille={quoi:'bat',id};rendu();
+}
+function ramasser(o,ev){
+  const B=BAT[o.type],sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;let gains=[];
+  if(B.sorte==='maison'){const g=gainMaison(o);S.stock.pieces+=g;S.stock.etoiles+=1;o.depuis=Date.now();gains=[['pieces',g],['etoiles',1]]}
+  else{const d=DUREES[o.duree||0],q=Math.ceil(d.q*(1+bonus(o)));S.stock[B.produit]+=q;S.stock.etoiles+=d.et;o.fin=null;o.duree=null;gains=[[B.produit,q],['etoiles',d.et]]}
+  message='Ramassé : '+gains.map(([k,n])=>n+' '+RES[k].e).join(' et ')+(B.sorte==='atelier'?'. Touchez ▶ pour relancer.':'.');
+  SON.ramasse();sauve();rendu();etincelles(sx,sy);gains.forEach(([k,n],m)=>setTimeout(()=>voler(sx,sy,k,n),m*160));
+}
+function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.fin=Date.now()+DUREES[n].min*60000;feuille=null;
+  message=`${RES[BAT[o.type].produit].e} C'est parti : prêt vers ${heure(o.fin)}.`;SON.lance();sauve();rendu()}
 
-if(S)ouverture();
+/* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
+function encaisser(){
+  let c=0;try{c=+(localStorage.getItem('village:caisse')||0)}catch{}
+  if(c>0&&S){S.stock.pieces+=c;S.stock.etoiles+=Math.ceil(c/10);try{localStorage.setItem('village:caisse','0')}catch{}
+    message=`🃏 Vos parties de cartes ont rapporté ${c} pièces et ${Math.ceil(c/10)} ⭐ !`;sauve()}
+}
+if(S)encaisser();
 rendu();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){ouverture();rendu()}});
+document.addEventListener('pointerdown',premierGeste,{once:true});
+// les bulles apparaissent toutes seules quand c'est prêt, et le soir tombe à l'heure de la tablette
+let signe='';
+setInterval(()=>{if(!S||feuille||mode)return;const ok=relies(),s=S.b.map(o=>pret(o,ok)?1:0).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){encaisser();rendu()}});
 </script>
 </body>
 </html>

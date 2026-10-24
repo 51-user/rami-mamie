@@ -601,7 +601,7 @@ function render(force){
     app.innerHTML=`<div class="center">
       <h1>Bonjour ${esc(myName())} !</h1>
       <div class="choice">
-        <button class="big" data-act="village">🏡 La ferme<small>récolter, planter, ouvrir le village</small></button>
+        <button class="big" data-act="village">🏡 Le village<small>bâtir, produire, ramasser</small></button>
         <button class="big alt" data-act="rami">🃏 Rami à deux<small>avec votre partenaire, à distance</small></button>
         <button class="big alt" data-act="solo">🂡 Solitaire<small>toute seule, sans connexion</small></button>
       </div>
@@ -753,7 +753,7 @@ function overHTML(){
   if(fin&&w===me) versGraine('rami-'+fin.t);
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de manche">
     <h2>${title}</h2><p>${sub}</p>
-    <p>🏡 +${gain} pièces pour votre ferme.${w===me?' 🌟 Et une graine rare !':''}</p>
+    <p>🏡 +${gain} pièces pour votre village.${w===me?' 🌟 Et une graine rare !':''}</p>
     ${R.rami?'<p><b>Rami !</b> Tout posé d\'un coup : les points comptent double.</p>':''}
     <p>${esc(P[l].name)} garde ${R.loserCards.length} carte${R.loserCards.length>1?'s':''} et prend <b>${R.pts} points</b>.</p>
     <div class="fan" style="flex-wrap:wrap">${R.loserCards.map(i=>cardSVG(i,64)).join('')}</div>
@@ -955,7 +955,7 @@ function renderSolo(pan){
       <div class="solgrid">${cols}</div>
     </div>
     ${SOL.won&&!panel?`<div class="overlay"><div class="panel" role="dialog" aria-label="Solitaire réussi">
-      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p><p>🏡 +15 pièces pour votre ferme.</p>
+      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p><p>🏡 +15 pièces pour votre village.</p>
       <div class="fan">${[0,13,26,39].map(s=>cardSVG(s+12,90)).join('')}</div>
       <button class="big" data-act="solonew2">Nouvelle partie</button></div></div>`:''}${pan}`;
 }
