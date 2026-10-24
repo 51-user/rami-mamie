@@ -125,7 +125,7 @@ h1{font-family:var(--f-display);font-size:52px;line-height:1.1;margin:0;text-wra
 
 /* Accueil : deux grands choix */
 .choice{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
-.choice .big{font-size:40px;min-height:150px;width:min(380px,100%);padding:0 30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.choice .big{font-size:40px;min-height:150px;width:min(340px,100%);padding:0 30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .choice .big small{font-size:21px;font-weight:400}
 
 /* Solitaire : une grille de 7 colonnes ; la ligne du haut porte pioche, défausse et les 4 fondations. */
@@ -586,14 +586,26 @@ function render(force){
   const f=flash?`<p class="err" role="alert">${esc(flash)}</p>`:'<p class="err"></p>';
   const pan=panel==='cartes'?cartesHTML():panel==='regles'?rulesHTML():panel==='carnet'?carnetPanel():'';
   if(sc==='choice'){
+    // Version 0.1 : un seul accueil à trois tuiles ; le prénom est demandé une fois, puis gardé (ferme et cartes)
+    if(!myName()){
+      app.innerHTML=`<div class="center">
+        <div class="fan">${[null,13,25,38,51].map(i=>cardSVG(i,110)).join('')}</div>
+        <h1>Bienvenue !</h1>
+        <form id="fAccueil" class="center" style="padding:0;gap:16px">
+          <label for="prenom" class="lead"><b>Votre prénom</b></label>
+          <input id="prenom" class="field" autocomplete="off" placeholder="Jeanne">
+          <button class="big" type="submit">C'est moi</button>${f}
+        </form></div>`;
+      return;
+    }
     app.innerHTML=`<div class="center">
-      <div class="fan">${[null,13,25,38,51].map(i=>cardSVG(i,110)).join('')}</div>
-      <h1>Cartes en famille</h1>
+      <h1>Bonjour ${esc(myName())} !</h1>
       <div class="choice">
-        <button class="big" data-act="rami">Rami à deux<small>avec votre partenaire, à distance</small></button>
-        <button class="big alt" data-act="solo">Solitaire<small>toute seule, sans connexion</small></button>
+        <button class="big" data-act="village">🏡 La ferme<small>récolter, planter, ouvrir le village</small></button>
+        <button class="big alt" data-act="rami">🃏 Rami à deux<small>avec votre partenaire, à distance</small></button>
+        <button class="big alt" data-act="solo">🂡 Solitaire<small>toute seule, sans connexion</small></button>
       </div>
-      <div class="homebtns"><button class="small" data-act="village">🏡 Ma ferme</button><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
+      <div class="homebtns"><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
     return;
   }
   if(sc==='solo'){ renderSolo(pan); return; }
@@ -741,7 +753,7 @@ function overHTML(){
   if(fin&&w===me) versGraine('rami-'+fin.t);
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de manche">
     <h2>${title}</h2><p>${sub}</p>
-    <p>🏡 +${gain} pièces pour votre village.${w===me?' 🌟 Et une graine rare pour votre ferme !':''}</p>
+    <p>🏡 +${gain} pièces pour votre ferme.${w===me?' 🌟 Et une graine rare !':''}</p>
     ${R.rami?'<p><b>Rami !</b> Tout posé d\'un coup : les points comptent double.</p>':''}
     <p>${esc(P[l].name)} garde ${R.loserCards.length} carte${R.loserCards.length>1?'s':''} et prend <b>${R.pts} points</b>.</p>
     <div class="fan" style="flex-wrap:wrap">${R.loserCards.map(i=>cardSVG(i,64)).join('')}</div>
@@ -943,7 +955,7 @@ function renderSolo(pan){
       <div class="solgrid">${cols}</div>
     </div>
     ${SOL.won&&!panel?`<div class="overlay"><div class="panel" role="dialog" aria-label="Solitaire réussi">
-      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p><p>🏡 +15 pièces pour votre village.</p>
+      <h2>Bravo${name?' '+esc(name):''} !</h2><p>Solitaire réussi en ${SOL.moves} coups.</p><p>🏡 +15 pièces pour votre ferme.</p>
       <div class="fan">${[0,13,26,39].map(s=>cardSVG(s+12,90)).join('')}</div>
       <button class="big" data-act="solonew2">Nouvelle partie</button></div></div>`:''}${pan}`;
 }
@@ -952,7 +964,7 @@ function renderSolo(pan){
 app.addEventListener('submit',e=>{
   e.preventDefault();
   if(e.target.id==='fHome') enterRoom(document.getElementById('mot').value);
-  if(e.target.id==='fName') setName(document.getElementById('prenom').value);
+  if(e.target.id==='fName'||e.target.id==='fAccueil') setName(document.getElementById('prenom').value);
 });
 app.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]'); if(!t||t.disabled) return;
