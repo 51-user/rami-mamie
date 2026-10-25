@@ -125,7 +125,7 @@
   }
 
   /* Les portraits déjà déposés dans cartes/figures (une figure absente de cette liste garde sa version provisoire). */
-  const CartesFaces={face,dos,parNumero,installer,ROUGE,NOIR,RATIO:1.4,cheminFigures:'cartes/figures/',portraits:['r-coeur','r-carreau','r-pique','r-trefle','d-coeur','d-pique','v-coeur','v-carreau','v-pique','v-trefle']};
+  const CartesFaces={face,dos,parNumero,installer,ROUGE,NOIR,RATIO:1.4,cheminFigures:'cartes/figures/',portraits:['r-coeur','r-carreau','r-pique','r-trefle','d-coeur','d-pique','d-trefle','v-coeur','v-carreau','v-pique','v-trefle']};
   window.CartesFaces=CartesFaces;
   if(document.body) installer(); else addEventListener('DOMContentLoaded',installer);
 })();

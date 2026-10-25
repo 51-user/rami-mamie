@@ -209,6 +209,12 @@ html body .hand.eventail .card.tenue{z-index:300!important}
 html body .hand.eventail .card > svg{filter:drop-shadow(-3px 4px 6px rgba(30,15,4,.38))}
 html body .hand.eventail .card.sel > svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 6px var(--lueur)) drop-shadow(-3px 6px 8px rgba(30,15,4,.35))}
 
+/* ---------- L'accueil : les quatre tuiles toujours à l'écran, en 2 × 2, en paysage comme en portrait ---------- */
+html body .choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(760px,100%)}
+html body .choice .big{width:auto;min-width:0;min-height:clamp(92px,17vh,150px);padding:8px 10px;font-size:clamp(22px,4.6vw,38px)}
+html body .choice .big small{font-size:clamp(14px,2.6vw,20px)}
+html body .center:has(> .choice){gap:clamp(10px,2.5vh,24px);padding-block:8px}
+
 /* ---------- L'envol des cartes quand on gagne ---------- */
 .envol{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
 .envol svg{position:absolute;left:0;top:0;filter:drop-shadow(0 3px 4px rgba(30,15,4,.4))}

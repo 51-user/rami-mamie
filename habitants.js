@@ -135,10 +135,14 @@ function couche(){
   let s=`<g id="h-couche" style="${actif?'':'pointer-events:none;opacity:.5'}">`;
   presents().forEach(H=>{
     const marque=h.attente.some(a=>a.qui===H.id)?'✨':(h.parle[H.id]!==aujourd?'💬':'');
-    s+=`<g data-h-qui="${H.id}" style="cursor:pointer" role="button" aria-label="Parler à ${H.nom}"><g class="h-marche"><g transform="scale(1.6)">`
-      +`<circle cx="0" cy="-20" r="20" fill="#fff" opacity="0"/>${perso(H)}`
+    // 25/10 : habitants à la moitié de la hauteur d'une maison du hameau (échelle de la carte, donc vraie à tout zoom) ;
+    // le nom en petit sur une plaque fine, juste sous les pieds
+    const lw=Math.round(H.nom.length*4.6+10);
+    s+=`<g data-h-qui="${H.id}" style="cursor:pointer" role="button" aria-label="Parler à ${H.nom}"><g class="h-marche"><g transform="scale(.85)">`
+      +`<circle cx="0" cy="-20" r="26" fill="#fff" opacity="0"/>${perso(H)}`
       +(marque?`<g class="flotte"><circle cx="11" cy="-44" r="8.5" fill="#FFFDF6" stroke="#B8B09C" stroke-width="1.5"/><text x="11" y="-40" font-size="10" text-anchor="middle">${marque}</text></g>`:'')
-      +`</g></g><text x="0" y="17" font-size="14" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="3" paint-order="stroke">${H.nom}</text></g>`});
+      +`</g></g><g class="h-nom"><rect x="${-lw/2}" y="2.5" width="${lw}" height="11" rx="3" fill="#FBF0D2" fill-opacity=".9" stroke="#6B4022" stroke-width=".8"/>`
+      +`<text x="0" y="10.6" font-size="8" font-weight="700" text-anchor="middle" fill="#3E2410" font-family="Fredoka, Arial, sans-serif">${H.nom}</text></g></g>`});
   s+='</g>';
   const voile=svg.querySelector('rect[fill="#1A2A55"]');
   if(voile)voile.insertAdjacentHTML('beforebegin',s);else svg.insertAdjacentHTML('beforeend',s);

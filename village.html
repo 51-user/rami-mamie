@@ -105,6 +105,18 @@ const BAT={
  poulailler:{nom:'Poulailler',e:'🐔',sorte:'atelier',t:2,cout:{pieces:90,bois:10},produit:'oeufs',mur:'#F2E3C4',toit:'#B5523A',aide:'Des œufs, qui se vendent bien.'},
  puits:{nom:'Puits',e:'🪣',sorte:'deco',t:1,cout:{pieces:80,bois:15},bonus:.2,aide:'Les bâtiments tout autour produisent 20 % de plus.'},
  massif:{nom:'Massif de fleurs',e:'🌷',sorte:'deco',t:1,cout:{pieces:30,legumes:3},bonus:.1,aide:'Les bâtiments tout autour produisent 10 % de plus.'},
+ banc:{nom:'Banc',e:'🪑',sorte:'deco',t:1,cout:{pieces:15},bonus:.05,aide:'Un banc de bois pour s\'asseoir.'},
+ lanterne:{nom:'Lanterne',e:'🏮',sorte:'deco',t:1,cout:{pieces:15},bonus:.05,aide:'Une lanterne qui s\'allume le soir.'},
+ haie:{nom:'Haie',e:'🌿',sorte:'deco',t:1,cout:{pieces:8},bonus:.03,aide:'Un bout de haie bien taillée.'},
+ cloture:{nom:'Clôture en bois',e:'🪵',sorte:'deco',t:1,cout:{pieces:6},bonus:.02,aide:'Un morceau de clôture.'},
+ pot:{nom:'Pot de fleurs',e:'🪴',sorte:'deco',t:1,cout:{pieces:10},bonus:.04,aide:'Des fleurs en pot.'},
+ 'massif-rose':{nom:'Massif rose',e:'🌸',sorte:'deco',t:1,cout:{pieces:20},bonus:.05,aide:'Des fleurs roses.'},
+ 'massif-jaune':{nom:'Massif jaune',e:'🌼',sorte:'deco',t:1,cout:{pieces:20},bonus:.05,aide:'Des fleurs jaunes.'},
+ 'massif-bleu':{nom:'Massif bleu',e:'💠',sorte:'deco',t:1,cout:{pieces:20},bonus:.05,aide:'Des fleurs bleues.'},
+ ornement:{nom:'Arbre d\'ornement',e:'🌳',sorte:'deco',t:1,cout:{pieces:25},bonus:.05,aide:'Un petit arbre taillé en boule.'},
+ nichoir:{nom:'Nichoir',e:'🐦',sorte:'deco',t:1,cout:{pieces:15},bonus:.04,aide:'Une petite maison pour les oiseaux.'},
+ epouvantail:{nom:'Épouvantail',e:'🧑‍🌾',sorte:'deco',t:1,cout:{pieces:20},bonus:.05,aide:'Il garde les potagers.'},
+ mare:{nom:'Mare',e:'🦆',sorte:'deco',t:1,cout:{pieces:30},bonus:.06,aide:'Une petite mare.'},
  chemin:{nom:'Chemin',e:'🟫',sorte:'chemin',t:1,cout:{pieces:2},aide:'Relie les bâtiments à la place du village.'},
  arbre:{nom:'Jeune arbre',e:'🌱',sorte:'nature',t:1,cout:{pieces:5},aide:'Une jeune pousse, qui devient un arbre à couper en 3 heures.'},
  // époque Village
@@ -152,7 +164,8 @@ function imageDe(o){for(let e=o.ep||0;e>=0;e--){const cle=o.type+'-'+EPOQUES[e].
 const DUREES=[{min:5,nom:'Petit',q:3,et:1},{min:60,nom:'Moyen',q:12,et:3},{min:480,nom:'Gros, pour la nuit',q:40,et:8}];
 const MONDE=40, BLOC=4;                         // 40 × 40 cases (25/10, Florian : « que la carte soit assez grande »), en blocs de 4 × 4 ; on part des 4 blocs du centre
 const PLACE={i:19,j:19};                          // la place du village, 2 × 2, fixe : c'est là que mènent les chemins
-const PRIX_EXT=n=>100+40*n;                     // un prix qui reste doux, même au vingtième morceau
+const PRIX_EXT=n=>100+40*n;
+const DEPART=()=>{const l=[];for(let a=3;a<=6;a++)for(let c=3;c<=6;c++)l.push(a+','+c);return l};   // 16 × 16 cases autour de la place                     // un prix qui reste doux, même au vingtième morceau
 
 /* ===================== Mémoire de la tablette ===================== */
 const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
@@ -164,7 +177,7 @@ function neuf(nom){
   const pose=(type,i,j,extra)=>b.push(Object.assign({id:uid(),type,i,j},extra||{}));
   // rien encore que la place et la forêt : Pierre guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
-  return {v:3,monde:40,nom,blocs:['4,4','4,5','5,4','5,5'],ext:0,b,
+  return {v:3,monde:40,nom,blocs:DEPART(),ext:0,b,
     stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{}},boutons:[]};
 }
 let S=null;
@@ -172,6 +185,8 @@ try{S=JSON.parse(ls.get(CLE))}catch{}
 if(S&&S.v!==3)S=null;
 if(S&&!S.epoque)S.epoque='hameau';
 if(S&&!S.frise)S.frise=[];
+// 25/10, Florian : « le terrain est un peu petit » : 16 × 16 cases dès le départ, sans rien perdre
+if(S)S.blocs=[...new Set([...(S.blocs||[]),...DEPART()])];
 if(S&&!S.monde){S.blocs=S.blocs.map(k=>{const [a,c]=k.split(',').map(Number);return (a+3)+','+(c+3)});S.b.forEach(o=>{o.i+=12;o.j+=12});S.monde=40}   // contrat lu par habitants.js et saisons.js : 'hameau' | 'village' | 'bourg' | 'ville'
 if(S&&S.base)delete S.base;   // un village commun déjà fusionné reste, tel quel, le village de cette tablette
 function sauve(){if(MOI)return;ls.set(CLE,JSON.stringify(S));if(window.envoyerSoeur)envoyerSoeur()}   // la sœur reçoit aussitôt, si elle est là
@@ -369,6 +384,22 @@ function imageCalee(nom,o){const t=BAT[o.type].t,c=CALAGE[nom]||[0,195,400,195,4
   const id='coupe-'+o.id;
   return {h:`<clipPath id="${id}"><polygon points="${L[0]},${haut} ${L[0]},${L[1]} ${B[0]},${B[1]} ${R[0]},${R[1]} ${R[0]},${haut}"/></clipPath>
     <image href="img/${nom}.webp" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${id})"/>`,top:Math.max(y+10,my-TH*t*3.2)}}
+const fleursDe=(cx,cy,cs)=>`<ellipse cx="${cx}" cy="${cy}" rx="22" ry="10" fill="#5B8C3A"/>`+[0,1,2,3,4,5].map(n=>`<circle cx="${cx-15+n*6}" cy="${cy-3+(n%2)*5}" r="4.5" fill="${cs[n%cs.length]}"/>`).join('');
+const DECO_IMG={banc:'banc',lanterne:'lanterne',haie:'haie',cloture:'cloture-bois',pot:'pot','massif-rose':'massif-rose','massif-jaune':'massif-jaune','massif-bleu':'massif-bleu',
+  ornement:'arbre-ornement',nichoir:'nichoir',epouvantail:'epouvantail',mare:'mare'};
+const DECO_DESSIN={
+ banc:(x,y)=>`<rect x="${x-16}" y="${y-12}" width="32" height="5" rx="2" fill="#A0703F" stroke="#5D4037"/><rect x="${x-16}" y="${y-20}" width="32" height="4" rx="2" fill="#B5844A" stroke="#5D4037"/><rect x="${x-14}" y="${y-8}" width="3" height="9" fill="#5D4037"/><rect x="${x+11}" y="${y-8}" width="3" height="9" fill="#5D4037"/>`,
+ lanterne:(x,y)=>`<rect x="${x-1.5}" y="${y-34}" width="3" height="34" fill="#3E3A36"/><rect x="${x-6}" y="${y-44}" width="12" height="12" rx="2" fill="${nuit()?'#FFD86B':'#FFF3C4'}" stroke="#3E3A36" stroke-width="2"/><path d="M${x-8} ${y-44}h16l-8 -6z" fill="#3E3A36"/>`,
+ haie:(x,y)=>`<ellipse cx="${x}" cy="${y-6}" rx="22" ry="10" fill="#3F7A2F" stroke="#2C5A20"/><ellipse cx="${x-6}" cy="${y-10}" rx="9" ry="5" fill="#4E9238"/>`,
+ cloture:(x,y)=>`<g stroke="#8D6E4F" stroke-width="2.4" stroke-linecap="round"><line x1="${x-20}" y1="${y-2}" x2="${x+20}" y2="${y-2}"/><line x1="${x-20}" y1="${y-8}" x2="${x+20}" y2="${y-8}"/><line x1="${x-18}" y1="${y+1}" x2="${x-18}" y2="${y-13}"/><line x1="${x}" y1="${y+1}" x2="${x}" y2="${y-13}"/><line x1="${x+18}" y1="${y+1}" x2="${x+18}" y2="${y-13}"/></g>`,
+ pot:(x,y)=>`<path d="M${x-8} ${y-12}h16l-3 12h-10z" fill="#C0683A" stroke="#7A3E1E"/>`+[[-5,-16,'#E91E63'],[0,-20,'#FFEB3B'],[5,-16,'#AB47BC']].map(([a,b,c])=>`<circle cx="${x+a}" cy="${y+b}" r="4" fill="${c}"/>`).join(''),
+ 'massif-rose':(x,y)=>fleursDe(x,y,['#F48FB1','#EC407A','#FFFFFF']),
+ 'massif-jaune':(x,y)=>fleursDe(x,y,['#FFEB3B','#FBC02D','#FFFFFF']),
+ 'massif-bleu':(x,y)=>fleursDe(x,y,['#64B5F6','#1E88E5','#FFFFFF']),
+ ornement:(x,y)=>`<rect x="${x-2}" y="${y-16}" width="4" height="16" fill="#7A4E2D"/><circle cx="${x}" cy="${y-26}" r="13" fill="#3F8F33" stroke="#2C5A20"/><rect x="${x-9}" y="${y-4}" width="18" height="6" rx="2" fill="#C0683A"/>`,
+ nichoir:(x,y)=>`<rect x="${x-1.5}" y="${y-30}" width="3" height="30" fill="#6D4C41"/><rect x="${x-8}" y="${y-44}" width="16" height="14" fill="#E9C46A" stroke="#7A4E2D"/><path d="M${x-10} ${y-44}l10 -9l10 9z" fill="#B5523A"/><circle cx="${x}" cy="${y-38}" r="3" fill="#3E2410"/>`,
+ epouvantail:(x,y)=>`<rect x="${x-1.5}" y="${y-36}" width="3" height="36" fill="#7A4E2D"/><rect x="${x-16}" y="${y-28}" width="32" height="3" fill="#7A4E2D"/><rect x="${x-8}" y="${y-30}" width="16" height="16" fill="#C0392B"/><circle cx="${x}" cy="${y-38}" r="6" fill="#F2D49B"/><path d="M${x-10} ${y-42}h20l-10 -8z" fill="#E0A030"/>`,
+ mare:(x,y)=>`<ellipse cx="${x}" cy="${y}" rx="24" ry="11" fill="#4D9BD6" stroke="#3F86BD"/><ellipse cx="${x-6}" cy="${y-2}" rx="7" ry="2" fill="#FFFFFF" opacity=".5"/><circle cx="${x+14}" cy="${y-6}" r="3" fill="#4E9238"/>`};
 function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher (le fantôme de la pose)
   const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
   if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin,terre=epIdx()<2&&TUILES();   // en terre au Hameau et au Village, pavés ensuite
@@ -386,6 +417,8 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
     top=cy-30}
   else if(o.type==='puits'){h=`<ellipse cx="${cx}" cy="${cy+2}" rx="20" ry="10" fill="#9E9E9E" stroke="#616161"/><rect x="${cx-20}" y="${cy-14}" width="40" height="16" fill="#BDBDBD" stroke="#616161"/><ellipse cx="${cx}" cy="${cy-14}" rx="20" ry="10" fill="#4FA3D9" stroke="#616161"/>
       <rect x="${cx-18}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><rect x="${cx+14}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><polygon points="${cx-26},${cy-42} ${cx},${cy-58} ${cx+26},${cy-42}" fill="#8D5524" stroke="#5D4037"/>`;top=cy-60}
+  else if(DECO_DESSIN[o.type]){const f=DECO_IMG[o.type];   // l'image de la session Images, posée sur sa case ; sinon le dessin
+    h=f?`<image href="img/v3/deco-${f}.webp" x="${cx-TW}" y="${cy+TH*.6-2*TW}" width="${2*TW}" height="${2*TW}" preserveAspectRatio="xMidYMax meet"/>`:DECO_DESSIN[o.type](cx,cy);top=cy-30}
   else if(o.type==='massif'){h=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#5B8C3A"/>`;
     ['#E91E63','#FFEB3B','#AB47BC','#FF7043','#fff','#E91E63'].forEach((c,n)=>h+=`<circle cx="${cx-16+n*6.5}" cy="${cy-3+(n%2)*5}" r="4.5" fill="${c}"/>`);top=cy-12}
   else if(o.type==='fontaine'){h=`<ellipse cx="${cx}" cy="${cy}" rx="26" ry="13" fill="#B0BEC5" stroke="#78909C"/><ellipse cx="${cx}" cy="${cy-2}" rx="20" ry="9" fill="#64B5F6"/><rect x="${cx-4}" y="${cy-30}" width="8" height="28" fill="#B0BEC5"/><circle cx="${cx}" cy="${cy-34}" r="8" fill="#90CAF9"/>`;top=cy-44}
@@ -569,8 +602,8 @@ function dessineVillage(){
   if(MOI)achetables.clear();
   achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number);
     h+=poly(los(a*BLOC,c*BLOC,BLOC),'transparent','#FFF4D6',`data-x="${bk}" stroke-dasharray="6 6" style="fill:rgba(255,244,214,.06)"`)});
-  achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);
-    nature.push({o:999,svg:`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+8}" font-size="24" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`})});
+  [...achetables].slice(0,1).forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);   // un seul petit « + » ; les pointillés montrent les autres
+    nature.push({o:999,svg:`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="10" fill="#FFF9E8" fill-opacity=".85" stroke="#8A6A3E" stroke-width="2"/><text x="${x}" y="${y+5}" font-size="15" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`})});
   // la place du village, pavée
   h+=poly(los(PLACE.i,PLACE.j,2),EPOQUES[epIdx()].place,'#A79F8A','style="fill:url(#paves)"');
   const [px,py]=P(PLACE.i+1,PLACE.j+1);h+=`<rect x="${px-2}" y="${py-48}" width="4" height="48" fill="#6D4C41"/><polygon points="${px+2},${py-48} ${px+28},${py-40} ${px+2},${py-32}" fill="#E53935"/>`;
@@ -889,7 +922,7 @@ const FIL=[
  {id:'terrain',qui:'pierre',court:'Agrandir le terrain',dit:'Le hameau est à l\'étroit. Touchez un « + » au bord du terrain pour l\'agrandir.',
   fait:()=>(S.ext||0)>=1,cible:'plus',gain:{pieces:60,etoiles:2},bravo:'Que de place ! Le hameau respire.'},
  {id:'deco',qui:'pierre',court:'Poser un puits ou des fleurs',dit:'Une décoration fait produire plus les bâtiments tout autour. Posez un puits ou un massif de fleurs, près de vos bâtiments.',
-  fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',ouvre:['puits','massif'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
+  fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',ouvre:['puits','massif','banc','lanterne','haie','cloture','pot','massif-rose','massif-jaune','massif-bleu','ornement','nichoir','epouvantail','mare'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
  {id:'etoiles',qui:'pierre',court:'Réunir 15 ⭐',dit:'Le hameau grandit ! Réunissez 15 étoiles : chaque récolte et chaque tâche en donne. Avec 15 étoiles, il pourra devenir un village.',
   fait:()=>(S.stock.etoiles||0)>=15||epIdx()>=1,cible:'pill:etoiles',gain:{pieces:120},bravo:'15 étoiles ! Le hameau est prêt à devenir un village.',bouton:'frise'},
  {id:'ep-village',qui:'pierre',court:'Devenir un village',dit:'Touchez « Progrès », puis « Époque Village ». Hugo et Chloé pourront ouvrir leurs boutiques !',
