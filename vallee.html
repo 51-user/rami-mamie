@@ -183,7 +183,7 @@ function neuf(nom){
   // rien encore que la place et la forêt : Pierre guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
   return {v:3,monde:40,nom,blocs:DEPART(),ext:0,b,
-    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1,v3:1},boutons:[],terre:[],graines:{},v4:{marche:0,boutique:false,labour:false}};
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1,v3:1,v4:1},boutons:[],terre:[],graines:{},v4:{marche:0,boutique:false,labour:false}};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
@@ -457,7 +457,7 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
     top=cy-30}
   else if(o.type==='puits'){h=`<ellipse cx="${cx}" cy="${cy+2}" rx="20" ry="10" fill="#9E9E9E" stroke="#616161"/><rect x="${cx-20}" y="${cy-14}" width="40" height="16" fill="#BDBDBD" stroke="#616161"/><ellipse cx="${cx}" cy="${cy-14}" rx="20" ry="10" fill="#4FA3D9" stroke="#616161"/>
       <rect x="${cx-18}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><rect x="${cx+14}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><polygon points="${cx-26},${cy-42} ${cx},${cy-58} ${cx+26},${cy-42}" fill="#8D5524" stroke="#5D4037"/>`;top=cy-60}
-  else if(o.type==='caisse'||o.type==='etal'){h=(o.type==='caisse'?dessinCaisse:dessinEtal)(cx,cy);top=cy-44}
+  else if(B.sorte==='fixe'){h=dessinFixe(o,cx,cy);top=cy-44}   // caisse, étal, arroseur, bocal, coffre
   else if(DECO_DESSIN[o.type]){const f=DECO_IMG[o.type];   // l'image de la session Images, calée sur sa case comme les arbres ; sinon le dessin
     h=f&&HAUT_NATURE['deco-'+f]?imageCase('deco-'+f,o.i,o.j):DECO_DESSIN[o.type](cx,cy);top=cy-30}
   else if(o.type==='massif'){h=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#5B8C3A"/>`;
@@ -708,7 +708,7 @@ function rendu(){
   dernierPose=null;lier();
   document.body.classList.toggle('a-monu',aBouton('monument'));
   if(brillent.size){const b=[...brillent];setTimeout(()=>b.forEach(a=>brillent.delete(a)),3500)}
-  if(S.fil&&!MOI&&!SCENE)setTimeout(()=>{avancerFil();annoncerFete();if(S.v4){faner();motChamps();preavis()}},40);
+  if(S.fil&&!MOI&&!SCENE)setTimeout(()=>{avancerFil();annoncerFete();if(S.v4){faner();motChamps();preavis();motEco();distribuerLettres()}},40);
   if(typeVise())majFantome();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
@@ -716,6 +716,7 @@ function feuilleHTML(){
   const f=feuille;
   if(f.quoi==='boutique')return boutiqueHTML();
   if(f.quoi==='semer')return semerHTML();
+  if(f.quoi==='bocal')return bocalHTML();
   if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).filter(([k])=>debloque(k)&&montre(k)).map(([k,B])=>
     k==='chemin'?SORTES_CHEMIN.map(([so,nom,e])=>`<button class="choix" data-pose="chemin" data-sorte="${so}" ${assez(B.cout)?'':'disabled'}><span class="e">${e}</span>Chemin : ${nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join(''):
     `<button class="choix${S.fil&&ici()&&(ici().cible==='bat:'+k||(ici().id==='deco'&&k==='puits'))?' guide':''}" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
@@ -783,6 +784,8 @@ function lier(){
   document.querySelectorAll('[data-semer]').forEach(e=>e.onclick=()=>{const f=feuille,t=f&&terreA(f.i,f.j);if(t&&!t.c&&(S.graines[e.dataset.semer]||0)>0)semer(t,e.dataset.semer)});
   document.querySelectorAll('[data-graine]').forEach(e=>e.onclick=ev=>{const k=e.dataset.graine,n=+e.dataset.n,c=prixGraine(k)*n;if(S.stock.pieces<c)return;
     S.stock.pieces-=c;S.graines[k]=(S.graines[k]||0)+n;message=`🌱 ${n} graine${n>1?'s':''} de ${CULTURES[k].nom.toLowerCase()} : touchez un champ pour planter.`;SON.piece();sauve();rendu()});
+  document.querySelectorAll('[data-outil]').forEach(e=>e.onclick=()=>acheterOutil(e.dataset.outil));
+  document.querySelectorAll('[data-bocal]').forEach(e=>e.onclick=()=>remplirBocal(e.dataset.bocal));
   document.querySelectorAll('[data-couleur]').forEach(e=>e.onclick=()=>{const o=feuille&&S.b.find(x=>x.id===feuille.id);if(!o)return;o.c=+e.dataset.couleur||0;o.maj=Date.now();SON.tac();sauve();rendu()});
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
   document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode||VISITE)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
@@ -862,7 +865,7 @@ function poser(){const k=typeVise();if(!k)return;const i=mode.i,j=mode.j;
       message=`🌱 Planté ! Ce sera un arbre vers ${heure(t+POUSSE_H*3600000)}.`;SON.pose();sauve();rendu();return}
     if(!assez(BAT[k].cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}
     retire(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx(),maj:Date.now(),par:S.nom};if(mode.r)o.r=1;if(BAT[k].sorte==='maison')o.depuis=Date.now()-(ici()&&ici().id==='maison'?3600000:0);S.b.push(o);
-    dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.')+bienArrange();
+    dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(['deco','fixe'].includes(BAT[k].sorte)?'':' Reliez-le à la place par un chemin.')+bienArrange();
     sauve();rendu();apresPose(o);return}
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
     o.i=i;o.j=j;o.r=mode.r?1:0;o.maj=Date.now();dernierPose=o.id;mode=mode.arranger?{arranger:true}:null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`+bienArrange();sauve();rendu();apresPose(o)}
@@ -878,6 +881,8 @@ function toucherObjet(id,ev){
   if(o.type==='chemin')return;
   if(o.type==='caisse'){vendre(ev);return}
   if(o.type==='etal'){feuille={quoi:'boutique'};SON.lance();rendu();return}
+  if(o.type==='bocal'){toucherBocal(o,ev);return}
+  if(o.type==='arroseur'){message='💦 L\'arroseur arrose tout seul les huit cases qui l\'entourent.';rendu();return}
   feuille={quoi:'bat',id};rendu();
 }
 function ramasser(o,ev){
@@ -990,10 +995,14 @@ const FIL=[
   fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',bouton:'arranger',ouvre:['puits','massif','banc','lanterne','haie','cloture','pot','massif-rose','massif-jaune','massif-bleu','ornement','nichoir','epouvantail','mare','arche','bassin','cloture-blanche'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
  {id:'autour',qui:'pierre',court:'Trois décos autour de la maison',dit:'Posez trois décorations tout autour de votre maison, sur les cases qui la bordent. C\'est joli, et ça la fait produire plus. Avec « Arranger », vous pouvez tout déplacer à votre goût.',
   fait:()=>S.b.some(o=>o.type==='maison'&&autour(o)>=3),cible:'bat:banc',gain:{pieces:30,etoiles:2},bravo:'Quelle jolie maison ! On voit que vous aimez arranger.'},
+ {id:'qualite',qui:'pierre',court:'Une belle récolte ★',dit:'Une récolte peut être plus belle que les autres : ★ argent, ★★ or, ★★★ iridium. Elle se vend plus cher. Arrosez une culture, puis ramassez-la : arrosée, elle donne plus souvent une belle récolte.',
+  fait:()=>(S.v4&&S.v4.belles||0)>=1,cible:'terre-pousse',gain:{pieces:50,etoiles:2},bravo:'Une belle récolte ! Chaque récolte vous donne aussi du savoir-faire : plus il grandit, plus les belles récoltes viennent souvent. Mon étal vous dit où vous en êtes.'},
  {id:'etoiles',qui:'pierre',court:'Réunir 15 ⭐',dit:'Le hameau grandit ! Réunissez 15 étoiles : chaque récolte et chaque tâche en donne. Avec 15 étoiles, il pourra devenir un village.',
   fait:()=>(S.stock.etoiles||0)>=15||epIdx()>=1,cible:'pill:etoiles',gain:{pieces:120},bravo:'15 étoiles ! Le hameau est prêt à devenir un village.',bouton:'frise'},
  {id:'ep-village',qui:'pierre',court:'Devenir un village',dit:'Touchez « Progrès », puis « Époque Village ». Hugo et Chloé pourront ouvrir leurs boutiques !',
   fait:()=>epIdx()>=1,cible:'btn:frise'},
+ {id:'outils',qui:'pierre',court:'La hache de cuivre',dit:'Mon étal vend maintenant des outils. La hache de cuivre, pour 500 pièces, coupe les vieilles souches : elles donnent du bois dur. Ensuite viendra la pioche d\'acier, pour les gros rochers.',
+  fait:()=>!!(S.v4&&S.v4.outils&&S.v4.outils.hache),cible:'obj:etal',gain:{pieces:100,etoiles:3},bravo:'Une belle hache ! Les vieilles souches ne vous résisteront plus.'},
  // le Village : Chloé et Hugo
  {id:'commande',qui:'hugo',court:'Donner une commande',dit:'Ouvrez « Commandes » et donnez ce qu\'on vous demande. Chaque commande rapporte des étoiles et un cœur.',
   evt:'commande',cible:'btn:commandes',gain:{pieces:60},bravo:'Merci ! Les voisins vont adorer.'},
@@ -1015,7 +1024,8 @@ FIL.forEach(q=>{if(!q.gain)q.gain={pieces:80,etoiles:3};if(!q.bravo)q.bravo='Bra
 const ici=()=>S.fil&&FIL[S.fil.n]||null;
 // les bâtiments du Hameau se montrent dans Construire à mesure que le fil les présente
 const OUVRE_FIL=k=>FIL.findIndex(q=>(q.ouvre||[]).includes(k));
-const montre=k=>{if(EN_ATTENTE.includes(k)||BAT[k].sorte==='fixe')return false;const B=BAT[k];if(B.ep>0)return S.frise.includes(k);const i=OUVRE_FIL(k);return i<0||!S.fil||i<=S.fil.n||compte(k)>0};
+const montre=k=>{if(EN_ATTENTE.includes(k))return false;if(BAT[k].sorte==='fixe')return !!(BAT[k].ouvre&&BAT[k].ouvre());   // arroseur, bocal : quand le savoir-faire les ouvre
+  const B=BAT[k];if(B.ep>0)return S.frise.includes(k);const i=OUVRE_FIL(k);return i<0||!S.fil||i<=S.fil.n||compte(k)>0};
 const BASE=['construire','soeur','accueil'];
 const aBouton=a=>BASE.includes(a)||(S.boutons||[]).includes(a);
 let brillent=new Set();
@@ -1047,7 +1057,7 @@ function sceneSuivante(){SCENE=SCENES.shift()||null;montrerScene()}
 function montrerScene(){let el=document.getElementById('guide');
   if(!SCENE){if(el)el.remove();return}
   if(!el){el=document.createElement('div');el.id='guide';el.className='voile';document.body.appendChild(el)}
-  const s=SCENE,der=s.k>=s.l.length-1,p=window.HAB_PORTRAIT?HAB_PORTRAIT(s.qui,96):'';
+  const s=SCENE,der=s.k>=s.l.length-1,p=s.qui==='lettre'?enveloppe():window.HAB_PORTRAIT?HAB_PORTRAIT(s.qui,96):'';
   el.innerHTML=`<div class="feuille guide"><div class="h-tete"><div class="h-portrait">${p}</div><h2>${NOMS[s.qui]||''}</h2></div>
     <div class="h-bulle">${s.l[s.k]}</div>${s.l.length>1?`<p class="h-note" style="text-align:right">${s.k+1} / ${s.l.length}</p>`:''}
     <div class="actions"><button class="big" data-g="suite"><span class="e">${der?'👍':'▶'}</span>${der?'D\'accord !':'La suite'}</button></div></div>`;
@@ -1171,7 +1181,8 @@ const terreA=(i,j)=>(S.terre||[]).find(t=>t.i===i&&t.j===j);
 const semaineIci=()=>S.saison?S.saison.semaine:0;
 const saisonIci=()=>window.SAISONS_VILLAGE?SAISONS_VILLAGE.saison():'automne';
 const auj=()=>window.__dateSaison?new Date(window.__dateSaison):new Date();
-function pousser(t,now){if(!t.c)return;const a=Math.max(t.t,Math.min(now,t.ar||0));
+function pousser(t,now){if(!t.c)return;if(arroseAuto(t)){t.ar=now+ARROSE_MS;t.a1=1}   // un arroseur voisin : toujours arrosée
+  const a=Math.max(t.t,Math.min(now,t.ar||0));
   t.p+=Math.max(0,a-t.t)*ARROSE_X+Math.max(0,now-Math.max(a,t.t));t.t=now}
 const mur=t=>t.c&&t.p>=CULTURES[t.c].min*60000;
 const etapeDe=t=>{const f=t.p/(CULTURES[t.c].min*60000);return f>=1?3:f>=2/3?2:f>=1/3?1:0};
@@ -1196,23 +1207,25 @@ function toucherTerre(i,j,ev){const t=terreA(i,j);if(!t||VISITE)return;premierGe
     semer(t,dispo[0]);return}
   if(mur(t)){recolter(t,sx,sy);return}
   if((t.ar||0)>now){message=`💧 Déjà arrosé : ${CULTURES[t.c].nom.toLowerCase()} pousse plus vite.`;rendu();return}
-  t.ar=now+ARROSE_MS;t.maj=now;SON.tac();arrosoir(sx,sy);message=`💧 Arrosé : ${CULTURES[t.c].nom.toLowerCase()} poussera plus vite pendant deux heures.`;
+  t.ar=now+ARROSE_MS;t.a1=1;t.maj=now;const nv=arroserAutour(t,now);SON.tac();arrosoir(sx,sy);
+  message=`💧 Arrosé${nv?' avec '+nv+' case'+(nv>1?'s':'')+' autour':''} : ${CULTURES[t.c].nom.toLowerCase()} poussera plus vite pendant deux heures${qualOuverte()?', et donnera plus souvent une belle récolte':''}.`;
   etapeV4('arroser');sauve();rendu()}
-function semer(t,k){S.graines[k]--;const now=Date.now();Object.assign(t,{c:k,p:0,t:now,ar:0,sem:semaineIci(),maj:now});feuille=null;
+function semer(t,k){S.graines[k]--;const now=Date.now();Object.assign(t,{c:k,p:0,t:now,ar:0,a1:0,sem:semaineIci(),maj:now});feuille=null;
   message=`🌱 ${CULTURES[k].nom} semé${/s$/.test(CULTURES[k].nom)?'s':''} : mûr en ${duree(CULTURES[k].min)} (plus vite si on arrose).`;SON.pose();etapeV4('planter');sauve();rendu()}
-function recolter(t,sx,sy){const k=t.c,c=CULTURES[k];S.stock[k]=(S.stock[k]||0)+1;
-  if(c.rep){t.p=(c.min-c.rep)*60000;t.ar=0}else{t.c=null;t.p=0;t.ar=0}t.maj=Date.now();
-  message=`${RES[k].e} ${c.nom} ${c.rep?'ramassé'+(/s$/.test(c.nom)?'es':'')+' : '+(c.rep>=60?'ça repousse en '+duree(c.rep)+'.':'ça repousse.'):'dans le panier.'}`;
+function recolter(t,sx,sy){const k=t.c,c=CULTURES[k];S.stock[k]=(S.stock[k]||0)+1;const q=qualiteRecolte(t,k);
+  if(c.rep){t.p=(c.min-c.rep)*60000;t.ar=0}else{t.c=null;t.p=0;t.ar=0}t.a1=0;t.maj=Date.now();
+  message=(q>=0?`${QUAL[q].e} Belle récolte, qualité ${QUAL[q].nom} : elle se vendra ×${String(QUAL[q].x).replace('.',',')} ! `:'')+`${RES[k].e} ${c.nom} ${c.rep?'ramassé'+(/s$/.test(c.nom)?'es':'')+' : '+(c.rep>=60?'ça repousse en '+duree(c.rep)+'.':'ça repousse.'):'dans le panier.'}`;
   SON.ramasse();etapeV4('ramasser');sauve();rendu();etincelles(sx,sy);voler(sx,sy,k,1)}
 const duree=m=>m<60?m+' minutes':m%60?Math.floor(m/60)+' h '+m%60:(m/60)+' heure'+(m>60?'s':'');
 function arrosoir(sx,sy){const fx=$('#fx');if(!fx)return;for(let n=0;n<8;n++){const e=document.createElement('div');e.textContent='💧';
   e.style.cssText=`position:fixed;left:${sx-8+(n%4-1.5)*10}px;top:${sy-40}px;font-size:16px;z-index:9;transition:top .7s ease-in,opacity .7s;pointer-events:none`;
   fx.appendChild(e);setTimeout(()=>{e.style.top=(sy-6)+'px';e.style.opacity='0'},30+n*40);setTimeout(()=>e.remove(),900)}}
 /* La caisse de vente : tout ce qui a été récolté part, payé aussitôt */
-function vendre(ev){const l=Object.keys(CULTURES).concat(Object.keys(CUEILLIR)).filter(k=>(S.stock[k]||0)>0);
+function vendre(ev){const l=VENDABLES().filter(k=>(S.stock[k]||0)>0);
   if(!l.length){message='📦 La caisse attend vos récoltes : ramassez, puis touchez-la pour vendre.';rendu();return}
-  let tot=0;l.forEach(k=>{tot+=S.stock[k]*(CULTURES[k]||CUEILLIR[k]).val;S.stock[k]=0});S.stock.pieces+=tot;
-  message=`📦 Vendu : +${tot} 🪙.`;SON.piece();etapeV4('vendre');sauve();rendu();
+  let tot=0,plus=0;l.forEach(k=>{const v=prixVente(k),q=(S.qual&&S.qual[k])||[0,0,0];tot+=S.stock[k]*v;plus+=Math.round(v*(q[0]*.25+q[1]*.5+q[2]));S.stock[k]=0;if(S.qual)delete S.qual[k]});
+  tot+=plus;S.stock.pieces+=tot;
+  message=`📦 Vendu : +${tot} 🪙${plus?` (dont ${plus} pour les belles récoltes ★)`:''}.`;SON.piece();etapeV4('vendre');sauve();rendu();
   const sx=ev&&ev.clientX||innerWidth/2,sy=ev&&ev.clientY||innerHeight/2;etincelles(sx,sy);voler(sx,sy,'pieces',tot)}
 /* Labourer : en mode « Labourer », le doigt qui glisse prépare les cases ; touchée, une case vide redevient de l'herbe */
 let labourant=null;
@@ -1240,9 +1253,10 @@ function ouvrirBoutique(){S.v4.boutique=true;S.v4.labour=true;poserFixe('etal',P
     'Avec le bouton « Labourer », glissez le doigt sur l\'herbe pour préparer d\'autres cases. Vous pouvez dessiner votre champ comme vous voulez.'],
     ()=>{donnerBouton('labourer');annoncer()});sauve();rendu()}
 // l'étal et la caisse : posés une fois, sur une case libre au plus près de l'endroit voulu
-function poserFixe(type,i0,j0){if(S.b.some(o=>o.type===type))return;
+// loin : jamais sur le tour de la place, où les habitants se tiennent et où s'écrit son nom
+function poserFixe(type,i0,j0,loin){if(S.b.some(o=>o.type===type))return;
   for(let r=0;r<8;r++)for(let a=-r;a<=r;a++)for(let c=-r;c<=r;c++){if(Math.max(Math.abs(a),Math.abs(c))!==r)continue;
-    const i=i0+a,j=j0+c;if(libre(type,i,j)){S.b.push({id:uid(),type,i,j,ep:0,maj:Date.now(),par:S.nom});return}}}
+    const i=i0+a,j=j0+c;if(loin&&i>=PLACE.i-1&&i<=PLACE.i+2&&j>=PLACE.j-1&&j<=PLACE.j+2)continue;if(libre(type,i,j)){S.b.push({id:uid(),type,i,j,ep:0,maj:Date.now(),par:S.nom});return}}}
 // une partie neuve : le carré de terre, la graine, la caisse ; Pierre accueille
 function debutV4(){const t=Date.now(),cases=[[PLACE.i+3,PLACE.j+1],[PLACE.i+4,PLACE.j+1],[PLACE.i+3,PLACE.j+2],[PLACE.i+4,PLACE.j+2]];   // un peu à l'écart de la place, pour ne pas cacher son nom
   S.nature=(S.nature||[]).filter(n=>!cases.concat([[PLACE.i+3,PLACE.j]]).some(([i,j])=>n.i===i&&n.j===j));   // le champ et la place de la caisse
@@ -1252,10 +1266,13 @@ function debutV4(){const t=Date.now(),cases=[[PLACE.i+3,PLACE.j+1],[PLACE.i+4,PL
     'Pour commencer, je vous ai labouré un petit carré de terre, et voici une graine de radis.',MARCHES[0].dit]);sauve()}
 // une partie d'avant : elle garde tout, et reçoit les champs par un mot de Pierre
 function recevoirChamps(){S.v4={marche:MARCHES.length,boutique:true,labour:true,mot:0};S.terre=S.terre||[];S.graines=S.graines||{radis:4};
-  poserFixe('caisse',PLACE.i+3,PLACE.j+3);poserFixe('etal',PLACE.i-1,PLACE.j+2);S.boutons=S.boutons||[];if(!S.boutons.includes('labourer'))S.boutons.push('labourer')}
+  poserFixe('caisse',PLACE.i+3,PLACE.j,true);poserFixe('etal',PLACE.i-1,PLACE.j+2);   // la caisse au même endroit qu'une partie neuve : elle ne cache pas le nom de la place
+  S.boutons=S.boutons||[];if(!S.boutons.includes('labourer'))S.boutons.push('labourer')}
 function motChamps(){if(!S.v4||S.v4.mot!==0||SCENE)return;S.v4.mot=1;sauve();
   scene('pierre',['J\'ai une nouveauté pour vous : des champs !','Touchez « Labourer » puis glissez le doigt sur l\'herbe : la terre se prépare, case par case.',
-    'Les graines sont à mon étal, près de la place, et la caisse à côté rachète vos récoltes. Je vous ai offert quatre graines de radis pour essayer.'])}
+    'Les graines sont à mon étal, près de la place, et la caisse à côté rachète vos récoltes. Je vous ai offert quatre graines de radis pour essayer.',
+    // la même partie reçoit aussi l'économie : un seul mot, pas deux scènes à la suite
+    ...(qualOuverte()&&!S.v4.motEco?(S.v4.motEco=1,['Et une récolte peut être plus belle que les autres : ★ argent, ★★ or ou ★★★ iridium. Elle se vend plus cher, et vient plus souvent si on a arrosé.'+(passe('outils')?' Mon étal vend aussi des outils, pour les vieilles souches et les gros rochers.':'')]):[])])}
 // la caisse de vente : une caisse de bois à couvercle ; l'étal de Pierre : un petit comptoir sous un auvent rayé
 function dessinCaisse(x,y){const b='#A8743F',f='#8A5A2E',d='#5D3A1A';
   return `<ellipse cx="${x}" cy="${y+3}" rx="20" ry="7" fill="#00000026"/>
@@ -1276,9 +1293,9 @@ function dessinEtal(x,y){const d='#5D3A1A';
   <rect x="${x-11}" y="${y-58}" width="22" height="9" rx="2" fill="#FBF0D2" stroke="${d}" stroke-width="1"/><text x="${x}" y="${y-51.5}" font-size="6.5" font-weight="700" text-anchor="middle" fill="${d}" font-family="Fredoka, Arial, sans-serif">GRAINES</text>`}
 // ce qui s'ouvre et se dessine dans la feuille de l'étal
 function boutiqueHTML(){const sa=saisonIci(),l=Object.entries(CULTURES).filter(([,c])=>c.s.includes(sa));
-  return cadre("🌱 L'étal de Pierre",`<p class="sous">Les graines de ${NOM_SAISON[sa]}. Elles fanent quand la saison change : plantez ce qui aura le temps de mûrir.</p><div class="grille">${l.map(([k,c])=>{const p=prixGraine(k),n=(S.graines||{})[k]||0;
+  return cadre("🌱 L'étal de Pierre",`${savoirHTML()}<p class="sous">Les graines de ${NOM_SAISON[sa]}. Elles fanent quand la saison change : plantez ce qui aura le temps de mûrir.</p><div class="grille">${l.map(([k,c])=>{const p=prixGraine(k),n=(S.graines||{})[k]||0;
     return `<div class="choix graine"><span class="e">${icone(k)}</span><b>${c.nom}</b><small>mûr en ${duree(c.min)}${c.rep?', repousse en '+duree(c.rep):''}<br>se vend ${c.val} 🪙 · graine ${p} 🪙${n?'<br>vous en avez '+n:''}</small>
-      <span class="acheter"><button data-graine="${k}" data-n="1" ${S.stock.pieces>=p?'':'disabled'}>1 graine</button><button data-graine="${k}" data-n="5" ${S.stock.pieces>=5*p?'':'disabled'}>5 graines</button></span></div>`}).join('')}</div>`)}
+      <span class="acheter"><button data-graine="${k}" data-n="1" ${S.stock.pieces>=p?'':'disabled'}>1 graine</button><button data-graine="${k}" data-n="5" ${S.stock.pieces>=5*p?'':'disabled'}>5 graines</button></span></div>`}).join('')}</div>${outilsHTML()}`)}
 function semerHTML(){const sa=saisonIci(),l=Object.keys(S.graines||{}).filter(k=>S.graines[k]>0&&CULTURES[k].s.includes(sa));
   return cadre('🌱 Que planter ?',`<div class="grille">${l.map(k=>`<button class="choix" data-semer="${k}"><span class="e">${icone(k)}</span>${CULTURES[k].nom}<small>vous en avez ${S.graines[k]} · mûr en ${duree(CULTURES[k].min)}</small></button>`).join('')}</div>`)}
 // les cases labourées, le champ et ses plantes, dans le dessin du village
@@ -1297,7 +1314,7 @@ function dessinTerre(vu,ok){let sol='';const plantes=[],now=Date.now();
    (15 % par grand arbre et par nuit, à 3 cases au plus, jamais collés à un grand arbre). La cueillette : 1 à 4 trouvailles par
    jour au bord du terrain, 6 au plus. Les cases déjà occupées d'une partie ne deviennent jamais des friches. */
 const FRICHE={herbe:{gain:()=>Math.random()<.5?[['fibre',1]]:[],fait:'Herbe arrachée'},caillou:{gain:()=>[['pierre',1]],fait:'Caillou ramassé'},branche:{gain:()=>[['bois',1]],fait:'Branche ramassée'}};
-const DURS={vsouche:{nom:'vieille souche',outil:'une meilleure hache'},roc:{nom:'gros rocher',outil:'une meilleure pioche'}};
+const DURS={vsouche:{nom:'vieille souche',f:1,outil:'une meilleure hache'},roc:{nom:'gros rocher',outil:'une meilleure pioche'}};
 const CUEILLIR={champignon:{nom:'Champignons',val:25},mures:{nom:'Mûres',val:20},fleurschamps:{nom:'Fleurs des champs',val:30}};
 /* Les dessins, au pied de la case (0,0), dans le trait du village */
 const DESSIN_V4={
@@ -1358,14 +1375,136 @@ function cueillette(){const deja=S.nature.filter(n=>CUEILLIR[n.t]).length;let n=
   while(n-->0&&bord.length){const [i,j]=bord.splice(Math.floor(Math.random()*bord.length),1)[0];ajouterNature(i,j,types[Math.floor(Math.random()*types.length)])}}
 // toucher la friche, une trouvaille, ou ce qui attend un meilleur outil
 function toucherV4(n,ev){const sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;
-  if(DURS[n.t]){const d=DURS[n.t];S.v4.durs=S.v4.durs||{};
-    if(!S.v4.durs[n.t]){S.v4.durs[n.t]=1;sauve();scene('pierre',[`Cette ${d.nom} est trop dure pour vos mains et vos outils d'aujourd'hui.`,`Il faudra ${d.outil}. Je vous en reparlerai : en attendant, elle ne gêne personne.`])}
-    else{message=`Cette ${d.nom} attend ${d.outil}.`;SON.non();rendu()}return}
+  if(DURS[n.t]&&!aOutil(DURS[n.t].k)){const d=DURS[n.t];S.v4.durs=S.v4.durs||{};
+    if(!S.v4.durs[n.t]){S.v4.durs[n.t]=1;sauve();scene('pierre',[`${d.f?'Cette':'Ce'} ${d.nom} est trop dur${d.f?'e':''} pour vos mains et vos outils d'aujourd'hui.`,`Il faudra ${d.outil}. Je vous en reparlerai : en attendant, ${d.f?'elle':'il'} ne gêne personne.`])}
+    else{message=`${d.f?'Cette':'Ce'} ${d.nom} attend ${d.outil}.`;SON.non();rendu()}return}
   S.nature=S.nature.filter(x=>x!==n);let gains=[];
-  if(FRICHE[n.t]){gains=FRICHE[n.t].gain();S.v4.nettoye=(S.v4.nettoye||0)+1;message=`🧹 ${FRICHE[n.t].fait}`+(gains.length?` : +${gains.map(([k,q])=>q+' '+RES[k].e).join(' ')}.`:'.');SON.tac()}
+  if(DURS[n.t]){gains=DURS[n.t].gain.map(x=>x.slice());S.stock.etoiles=(S.stock.etoiles||0)+1;message=`${n.t==='roc'?'⛏️ Le gros rocher est cassé':'🪓 La vieille souche est coupée'} : +${gains.map(([k,q])=>q+' '+RES[k].e).join(' ')} et 1 ⭐.`;SON.coupe()}
+  else if(FRICHE[n.t]){gains=FRICHE[n.t].gain();S.v4.nettoye=(S.v4.nettoye||0)+1;message=`🧹 ${FRICHE[n.t].fait}`+(gains.length?` : +${gains.map(([k,q])=>q+' '+RES[k].e).join(' ')}.`:'.');SON.tac()}
   else if(CUEILLIR[n.t]){gains=[[n.t,1]];message=`🧺 ${CUEILLIR[n.t].nom} cueilli${/s$/.test(CUEILLIR[n.t].nom)?'s':''} : la caisse les rachète.`;SON.ramasse()}
   gains.forEach(([k,q])=>S.stock[k]=(S.stock[k]||0)+q);sauve();rendu();
   if(gains.length){etincelles(sx,sy);gains.forEach(([k,q],m)=>setTimeout(()=>voler(sx,sy,k,q),m*160))}}
+
+/* ===================== V4, étape 3 : l'économie (CONCEPTION-V4, sections 2 et 4) =====
+   La qualité : une récolte peut être ★ argent, ★★ or ou ★★★ iridium, vendue ×1,25, ×1,5 ou ×2. La chance va de 1 % à 20 % avec le
+   savoir-faire, et l'arrosoir la double (non arrosée, moitié moins). Le savoir-faire monte à chaque récolte, en logarithme du prix
+   (16 × ln(0,018 × prix + 1), paliers du vrai jeu). Les outils de Pierre, par paliers d'environ ×2,5 : la hache de cuivre (vieilles
+   souches → bois dur), la pioche d'acier (gros rochers → pierre), le grand arrosoir (une case touchée arrose aussi ses voisines).
+   Au savoir-faire 2, une lettre de Pierre ouvre les arroseurs (les 8 cases autour restent arrosées) ; au savoir-faire 4, les bocaux
+   (un fruit → une confiture, 2 × son prix + 50, en 2 heures). S.qual = {culture:[argent,or,iridium]} : la part de belles récoltes
+   dans S.stock ; S.v4.xp, S.v4.belles, S.v4.outils, S.v4.lettres. */
+const QUAL=[{e:'★',nom:'argent',x:1.25},{e:'★★',nom:'or',x:1.5},{e:'★★★',nom:'iridium',x:2}];
+const NIVEAUX=[100,380,770,1300,2150,3300,4800,6900,10000,15000];
+const niveauSF=()=>NIVEAUX.filter(x=>(S.v4&&S.v4.xp||0)>=x).length;
+const passe=id=>{const k=FIL.findIndex(q=>q.id===id);return !!(S.fil&&k>=0&&S.fil.n>=k&&!enOuverture())};   // la marche est atteinte (en cours ou finie)
+const qualOuverte=()=>passe('qualite');
+// les outils, dessinés dans le trait des réserves
+const svgOutil=c=>`<svg viewBox="-16 -16 32 32" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em">${c}</svg>`;
+const DESSIN_OUTIL={
+ hache:`<path d="M-11 12L7 -8" stroke="#7A4E2D" stroke-width="3.4" stroke-linecap="round"/><path d="M-11 12L7 -8" stroke="#A0703F" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M2 -12q7-4 12 1q-3 3-3 9q-5-1-9-6z" fill="#D07A3A" stroke="#7A3A12" stroke-width="1.2"/><path d="M11 -10q-1 4-1 7" stroke="#F2B07A" stroke-width="1.2" fill="none"/>`,
+ pioche:`<path d="M-10 13L6 -6" stroke="#7A4E2D" stroke-width="3.4" stroke-linecap="round"/><path d="M-10 13L6 -6" stroke="#A0703F" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M-8 -9q9-6 21 4q-10-5-14-2q-4-1-7-2z" fill="#B8C4CC" stroke="#4E5A62" stroke-width="1.2"/><path d="M-2 -9q6-2 12 2" stroke="#E8F0F4" stroke-width="1" fill="none"/>`,
+ arrosoir:`<path d="M-11 -2h15v11q0 3-3 3h-9q-3 0-3-3z" fill="#6AA8D2" stroke="#2E5A7A" stroke-width="1.2"/><path d="M-9 -2q6-9 11 0" fill="none" stroke="#2E5A7A" stroke-width="2"/>
+  <path d="M4 3l9 -9" stroke="#2E5A7A" stroke-width="2.6" stroke-linecap="round"/><ellipse cx="13.5" cy="-7" rx="3.2" ry="2" transform="rotate(-45 13.5 -7)" fill="#9CCAE8" stroke="#2E5A7A" stroke-width="1"/>
+  <path d="M-8 1h9" stroke="#B8DCF2" stroke-width="1.4"/>`};
+const OUTILS={
+ hache:{nom:'Hache de cuivre',e:svgOutil(DESSIN_OUTIL.hache),prix:500,aide:'Coupe les vieilles souches : elles donnent du bois dur.'},
+ pioche:{nom:"Pioche d'acier",e:svgOutil(DESSIN_OUTIL.pioche),prix:1250,apres:'hache',aide:'Casse les gros rochers : ils donnent beaucoup de pierre.'},
+ arrosoir:{nom:'Grand arrosoir',il:1,e:svgOutil(DESSIN_OUTIL.arrosoir),prix:3000,apres:'pioche',niveau:1,aide:'Une case arrosée arrose aussi les cases plantées tout autour.'}};
+const aOutil=k=>!!(S.v4&&S.v4.outils&&S.v4.outils[k]);
+// le bois dur : une bûche claire, dans le trait des réserves
+RES.boisdur={e:`<svg viewBox="-12 -12 24 24" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em"><path d="M-9 -1l12 -6l6 4l-12 6z" fill="#B07A44" stroke="#4A2A12" stroke-width="1"/><path d="M-9 -1l12 -6v6l-12 6z" fill="#8A5A2E" stroke="#4A2A12" stroke-width="1"/><ellipse cx="-9" cy="2" rx="3" ry="3.6" fill="#E2B47A" stroke="#4A2A12" stroke-width="1"/><ellipse cx="-9" cy="2" rx="1.3" ry="1.6" fill="none" stroke="#9E7040" stroke-width=".7"/></svg>`,nom:'bois dur',vend:15};
+DURS.vsouche.outil='la hache de cuivre';DURS.vsouche.k='hache';DURS.vsouche.gain=[['boisdur',2],['bois',4]];
+DURS.roc.outil="la pioche d'acier";DURS.roc.k='pioche';DURS.roc.gain=[['pierre',15]];
+// les confitures : 2 × le prix du fruit + 50, comme le bocal du vrai jeu
+const FRUITS_BOCAL=['fraise','melon','mures'];
+const prixFruit=k=>(CULTURES[k]||CUEILLIR[k]).val;
+const nomFruit=k=>(CULTURES[k]||CUEILLIR[k]).nom.toLowerCase();
+const COUL_CONF={fraise:'#D7385E',melon:'#F2B84A',mures:'#5A2A6E'};
+const pot=c=>`<path d="M-6 -9h12v2q2 1 2 4v9q0 4-4 4h-8q-4 0-4-4v-9q0-3 2-4z" fill="${c}" stroke="#3A2A1A" stroke-width="1"/><path d="M-5 -2h3v7h-3z" fill="#FFFFFF" opacity=".35"/><rect x="-7" y="-12" width="14" height="4" rx="1" fill="#F4EBD3" stroke="#3A2A1A" stroke-width="1"/><path d="M-7 -12l2 -2h10l2 2" fill="#E8A0B8" stroke="#3A2A1A" stroke-width=".8"/>`;
+FRUITS_BOCAL.forEach(k=>{RES['confiture-'+k]={e:`<svg viewBox="-10 -16 20 28" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em">${pot(COUL_CONF[k])}</svg>`,nom:'confiture de '+nomFruit(k),vend:2*prixFruit(k)+50}});
+const BOCAL_MS=2*3600000;
+// le prix à la caisse de tout ce qu'elle rachète
+const prixVente=k=>CULTURES[k]?CULTURES[k].val:CUEILLIR[k]?CUEILLIR[k].val:k.startsWith('confiture-')?RES[k].vend:0;
+const VENDABLES=()=>Object.keys(CULTURES).concat(Object.keys(CUEILLIR),FRUITS_BOCAL.map(k=>'confiture-'+k));
+// les belles récoltes ne dépassent jamais le stock : ce qu'on donne ou met en bocal part d'abord parmi les normales
+function borneQual(k){const q=S.qual&&S.qual[k];if(!q)return;let trop=q[0]+q[1]+q[2]-(S.stock[k]||0);
+  for(let n=0;n<3&&trop>0;n++){const m=Math.min(q[n],trop);q[n]-=m;trop-=m}}
+function prendre(k,n){S.stock[k]=(S.stock[k]||0)-n;borneQual(k)}
+// une récolte : sa qualité et le savoir-faire qu'elle rapporte ; renvoie l'indice de qualité (-1 : normale)
+function qualiteRecolte(t,k){if(!qualOuverte())return -1;
+  const v=CULTURES[k].val,av=niveauSF();S.v4.xp=Math.round(((S.v4.xp||0)+16*Math.log(.018*v+1))*10)/10;
+  const arrose=!!t.a1,p=(.01+.019*av)*(arrose?1:.5);let q=-1;
+  if(Math.random()<p){const r=Math.random();q=r<.1?2:r<.4?1:0}
+  if(q<0&&arrose&&ici()&&ici().id==='qualite'&&!(S.v4.belles>0))q=0;   // la toute première récolte arrosée de cette marche : une ★, pour voir
+  if(q>=0){S.qual=S.qual||{};const l=S.qual[k]=S.qual[k]||[0,0,0];l[q]++;S.v4.belles=(S.v4.belles||0)+1}
+  const ap=niveauSF();if(ap>av)setTimeout(()=>monteeSF(ap),900);
+  return q}
+// une montée de savoir-faire : un mot ; aux niveaux 2 et 4, la lettre de Pierre qui ouvre la suite
+function monteeSF(n){message=`🌾 Savoir-faire : niveau ${n} ! Les belles récoltes viendront plus souvent.`;SON.piece();rendu();
+  if(n>=2&&!S.v4.lArroseur){S.v4.lArroseur=1;lettre('pierre',[`Chère ${esc(S.nom)},`,'Vous voilà bonne jardinière ! J\'ai appris à fabriquer des arroseurs : posé entre vos cultures, un arroseur arrose tout seul les huit cases qui l\'entourent, sans jamais s\'arrêter.','Vous les trouverez dans « Construire ».','Pierre'])}
+  if(n>=4&&!S.v4.lBocal){S.v4.lBocal=1;lettre('pierre',[`Chère ${esc(S.nom)},`,'Avec votre savoir-faire, vous pouvez faire des confitures ! Un bocal transforme un fruit (fraise, melon ou mûres) en confiture, qui vaut deux fois plus, et même un peu mieux.','Les bocaux sont dans « Construire ».','Pierre'])}
+  sauve()}
+/* Les lettres : elles arrivent comme une scène, sous une enveloppe ; S.v4.lettres garde celles qui attendent leur jour */
+function lettre(qui,l,jour){S.v4.lettres=S.v4.lettres||[];S.v4.lettres.push({qui,l,j:jour||0});sauve()}
+function distribuerLettres(){const L=S.v4&&S.v4.lettres;if(!L||!L.length||SCENE||feuille||mode)return;
+  const k=L.findIndex(x=>(x.j||0)<=jourN());if(k<0)return;const x=L.splice(k,1)[0];sauve();
+  if(x.don)Object.entries(x.don).forEach(([r,v])=>S.stock[r]=(S.stock[r]||0)+v);
+  SON.piece();scene('lettre',[`<div class="lettre">${x.l.map(p=>`<p>${p}</p>`).join('')}</div>`])}   // une lettre se lit d'un seul tenant
+function enveloppe(){return `<svg viewBox="0 0 96 96" width="96" height="96" aria-hidden="true"><rect x="10" y="24" width="76" height="52" rx="5" fill="#FBF0D2" stroke="#5D3A1A" stroke-width="3"/><path d="M12 27l36 27l36-27" fill="none" stroke="#5D3A1A" stroke-width="3" stroke-linejoin="round"/><path d="M12 74l27-22M84 74l-27-22" stroke="#C8B890" stroke-width="2"/><circle cx="48" cy="54" r="8" fill="#C2457A" stroke="#8E1E4A" stroke-width="2"/></svg>`}
+NOMS.lettre='Une lettre';
+// une partie plus avancée que la marche de la qualité ou des outils : Pierre explique d'un coup ce qui est nouveau, une fois
+function motEco(){if(!S.v4||S.v4.motEco||SCENE||!qualOuverte()||ici()&&ici().id==='qualite')return;S.v4.motEco=1;sauve();
+  scene('pierre',['Du nouveau dans la vallée ! Une récolte peut maintenant être plus belle que les autres : ★ argent, ★★ or ou ★★★ iridium. Elle se vend plus cher.',
+    'Arrosée, une culture donne plus souvent une belle récolte. Et plus vous récoltez, plus vous gagnez en savoir-faire : les belles récoltes viennent de plus en plus souvent.',
+    ...(passe('outils')?['Mon étal vend aussi des outils : la hache de cuivre pour les vieilles souches, puis la pioche d\'acier pour les gros rochers.']:[])])}
+// le grand arrosoir : les cases plantées autour de celle qu'on arrose
+function arroserAutour(t,now){if(!aOutil('arrosoir'))return 0;let n=0;
+  (S.terre||[]).forEach(x=>{if(x!==t&&x.c&&!mur(x)&&Math.abs(x.i-t.i)<=1&&Math.abs(x.j-t.j)<=1&&!((x.ar||0)>now)){pousser(x,now);x.ar=now+ARROSE_MS;x.a1=1;x.maj=now;n++}});return n}
+// un arroseur arrose les huit cases qui l'entourent
+const arroseAuto=t=>S.b.some(o=>o.type==='arroseur'&&Math.abs(o.i-t.i)<=1&&Math.abs(o.j-t.j)<=1);
+/* L'arroseur, le bocal : posés depuis Construire quand le savoir-faire les ouvre ; dessinés dans le trait de la caisse */
+BAT.arroseur={nom:'Arroseur',e:`<svg viewBox="-16 -40 32 46" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em">${dessinArroseur(0,0)}</svg>`,sorte:'fixe',t:1,ep:0,cout:{pieces:150,pierre:5},ouvre:()=>niveauSF()>=2&&!!S.v4.lArroseur,aide:'Arrose tout seul les huit cases qui l\'entourent. Posez-le au milieu de vos cultures.'};
+BAT.bocal={nom:'Bocal à confiture',e:`<svg viewBox="-18 -34 36 42" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em">${dessinBocal(0,0)}</svg>`,sorte:'fixe',t:1,ep:0,cout:{pieces:200,bois:30,pierre:20},ouvre:()=>niveauSF()>=4&&!!S.v4.lBocal,aide:'Un fruit devient une confiture, qui vaut bien plus. Prête en 2 heures.'};
+function dessinArroseur(x,y){const d='#3E4A52';
+  return `<ellipse cx="${x}" cy="${y+3}" rx="13" ry="5" fill="#00000026"/><path d="M${x-7} ${y-2}L${x} ${y+2}L${x+7} ${y-2}L${x} ${y-6}Z" fill="#9AA5AC" stroke="${d}" stroke-width="1"/>
+  <rect x="${x-2}" y="${y-24}" width="4" height="22" fill="#B8C2C8" stroke="${d}" stroke-width="1"/><circle cx="${x}" cy="${y-26}" r="5" fill="#E2B447" stroke="${d}" stroke-width="1"/>
+  <path d="M${x-5} ${y-26}h-6M${x+5} ${y-26}h6M${x} ${y-31}v-4" stroke="${d}" stroke-width="1.6" stroke-linecap="round"/>
+  <g class="gicle">${[-1,1].map(s=>`<path d="M${x+s*11} ${y-26}q${s*7} -3 ${s*11} 6" stroke="#6EC1EA" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-dasharray="2 2.5"/><circle cx="${x+s*22}" cy="${y-19}" r="1.4" fill="#6EC1EA"/>`).join('')}</g>`}
+function dessinBocal(x,y,o){const d='#4A2A12',k=o&&o.conf&&o.conf.k,pret=k&&o.conf.fin<=Date.now();
+  let h=`<ellipse cx="${x}" cy="${y+3}" rx="18" ry="6" fill="#00000026"/><path d="M${x-15} ${y-4}L${x} ${y+3}L${x+15} ${y-4}L${x} ${y-11}Z" fill="#C08A50" stroke="${d}" stroke-width="1.1"/>
+  <path d="M${x-15} ${y-4}v4L${x} ${y+7}L${x+15} ${y}v-4L${x} ${y+3}Z" fill="#8A5A2E" stroke="${d}" stroke-width="1"/>
+  <g transform="translate(${x} ${y-14}) scale(1.35)">${pot(k?COUL_CONF[k]:'#E8F2F4')}</g>`;
+  if(!k)h+=`<path d="M${x-5} ${y-26}h10" stroke="#B8C8CC" stroke-width="1"/>`;
+  if(pret)h+=`<g class="brille" style="transform-box:fill-box"><circle cx="${x}" cy="${y-56}" r="18" fill="#FFE27A" stroke="#C99A22" stroke-width="3"/><g transform="translate(${x} ${y-54})">${pot(COUL_CONF[k])}</g></g>`;
+  else if(k)h+=`<g class="flotte"><circle cx="${x}" cy="${y-52}" r="14" fill="#FFFDF6" stroke="#B8B09C" stroke-width="2.5"/><text x="${x}" y="${y-46}" font-size="16" text-anchor="middle">⏳</text></g>`;
+  return h}
+function dessinFixe(o,cx,cy){
+  if(o.type==='caisse')return dessinCaisse(cx,cy);if(o.type==='etal')return dessinEtal(cx,cy);
+  if(o.type==='arroseur')return dessinArroseur(cx,cy);if(o.type==='bocal')return dessinBocal(cx,cy,o);
+  if(o.type==='coffre'&&typeof dessinCoffre==='function')return dessinCoffre(cx,cy);return ''}
+// toucher un bocal : vide, on choisit un fruit ; plein, il attend ; prêt, on prend la confiture
+function toucherBocal(o,ev){const now=Date.now(),c=o.conf;
+  if(c&&c.fin<=now){const k='confiture-'+c.k;S.stock[k]=(S.stock[k]||0)+1;o.conf=null;o.maj=now;message=`${RES[k].e} Une ${RES[k].nom} ! La caisse la rachète ${RES[k].vend} 🪙.`;
+    SON.ramasse();sauve();rendu();const sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;etincelles(sx,sy);voler(sx,sy,k,1);return}
+  if(c){message=`🫙 La confiture de ${nomFruit(c.k)} sera prête vers ${heure(c.fin)}.`;rendu();return}
+  feuille={quoi:'bocal',id:o.id};SON.lance();rendu()}
+function bocalHTML(){const l=FRUITS_BOCAL.filter(k=>(S.stock[k]||0)>0);
+  return cadre(`${BAT.bocal.e} Le bocal à confiture`,l.length?`<p class="sous">Choisissez un fruit : il devient une confiture en 2 heures.</p><div class="grille">${l.map(k=>
+    `<button class="choix" data-bocal="${k}"><span class="e">${RES[k].e}</span>${CULTURES[k]?CULTURES[k].nom:CUEILLIR[k].nom}<small>vous en avez ${S.stock[k]} · se vend ${prixFruit(k)} 🪙<br>en confiture : ${RES['confiture-'+k].vend} 🪙</small></button>`).join('')}</div>`
+    :`<p class="sous">Il faut un fruit : des fraises (au printemps), un melon (en été) ou des mûres (à cueillir au bord du terrain).</p>`)}
+function remplirBocal(k){const o=feuille&&S.b.find(x=>x.id===feuille.id);if(!o||o.conf||!(S.stock[k]>0))return;
+  prendre(k,1);o.conf={k,fin:Date.now()+BOCAL_MS};o.maj=Date.now();feuille=null;message=`🫙 En bocal : la confiture de ${nomFruit(k)} sera prête vers ${heure(o.conf.fin)}.`;SON.pose();sauve();rendu()}
+// les outils, en bas de la feuille de l'étal, une fois la marche des outils atteinte
+function outilsHTML(){if(!passe('outils'))return '';
+  return `<h3 class="sous-titre">🧰 Les outils de Pierre</h3><div class="grille">${Object.entries(OUTILS).map(([k,o])=>{const a=aOutil(k),ferme=(o.apres&&!aOutil(o.apres))||(o.niveau&&niveauSF()<o.niveau);
+    return `<div class="choix graine"><span class="e outil">${o.e}</span><b>${o.nom}</b><small>${o.aide}<br>${a?'✅ à vous':ferme?'🔒 '+(o.apres&&!aOutil(o.apres)?'après : '+OUTILS[o.apres].nom.toLowerCase():'au savoir-faire '+o.niveau):o.prix+' 🪙'}</small>
+      ${a||ferme?'':`<span class="acheter"><button data-outil="${k}" ${S.stock.pieces>=o.prix?'':'disabled'}>Acheter</button></span>`}</div>`}).join('')}</div>`}
+function acheterOutil(k){const o=OUTILS[k];if(!o||aOutil(k)||S.stock.pieces<o.prix)return;S.stock.pieces-=o.prix;S.v4.outils=S.v4.outils||{};S.v4.outils[k]=1;
+  message=`${o.e} ${o.nom} : ${o.il?'il':'elle'} est à vous ! ${o.aide}`;SON.piece();try{confettis()}catch{}sauve();rendu()}
+function savoirHTML(){if(!qualOuverte())return '';const n=niveauSF(),x=S.v4.xp||0,bas=n?NIVEAUX[n-1]:0,haut=NIVEAUX[n];
+  return `<p class="sous">🌾 Votre savoir-faire : <b>niveau ${n}</b>${haut?` · ${Math.floor(x)} / ${haut}`:''}. Belle récolte : ${Math.round((.01+.019*n)*100)} % de chances si c'est arrosé.</p>${haut?`<div class="jauge-sf"><i style="width:${Math.round(100*(x-bas)/(haut-bas))}%"></i></div>`:''}`}
 
 /* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
 function encaisser(){
@@ -1379,6 +1518,8 @@ if(S){natureVivante();encaisser();if(!S.fil){reprendreFil();S.fil.v2=1;sauve()}
   if(!S.fil.v2){if(S.fil.n>=13)S.fil.n++;S.fil.v2=1;sauve()}
   // V4 étape 2 : « nettoyer la friche » s'insère après l'agrandissement ; une partie plus avancée garde sa place
   if(!S.fil.v3){if(S.fil.n>=11)S.fil.n++;S.fil.v3=1;sauve()}
+  // V4 étape 3 : « une belle récolte » avant les 15 étoiles, « la hache de cuivre » après le Village ; une partie plus avancée garde sa place
+  if(!S.fil.v4){const n=S.fil.n;S.fil.n+=(n>=14)+(n>=16);S.fil.v4=1;sauve()}
   if(S.fil.n>FIL.findIndex(q=>q.id==='deco')&&!aBouton('arranger')){S.boutons=S.boutons||[];S.boutons.push('arranger');sauve()}}
 rendu();
 if(S&&lien())lancerLien();
@@ -1550,6 +1691,13 @@ html body .choix.graine .e svg{width:44px;height:58px}
 html body .acheter{display:flex;gap:8px;margin-top:4px}
 html body .acheter button{font-size:17px;font-weight:700;min-height:48px;padding:0 12px;border-radius:10px;border:3px solid #4A2A12;background:var(--bois);color:#FFF4D6}
 html body .acheter button[disabled]{opacity:.45}
+html body .choix.graine .e.outil svg{width:52px;height:52px}
+html body .lettre p{margin:0 0 10px;font-style:italic}html body .lettre p:first-child{font-style:normal}html body .lettre p:last-child{margin:0;text-align:right}
+html body .sous-titre{font-family:var(--f-titre);font-size:24px;margin:18px 0 8px}
+html body .jauge-sf{height:12px;border-radius:6px;background:#EADFC6;border:2px solid #8A5A2E;overflow:hidden;margin:-4px 0 12px}
+html body .jauge-sf i{display:block;height:100%;background:#7BB661}
+.gicle{animation:gicle 1.4s ease-in-out infinite}
+@keyframes gicle{50%{opacity:.35}}
 /* le fil : la pancarte de la tâche, les scènes du guide, le halo qui montre où agir, le bouton neuf qui brille */
 html body .pancarte{position:absolute;z-index:3;left:8px;top:calc(62px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;max-width:min(46vw,380px);
   background:var(--bois);border:3px solid #4A2A12;border-radius:10px;padding:6px 14px 6px 6px;color:#FFF4D6;font-family:var(--f-titre);font-size:19px;font-weight:600;text-align:left;
