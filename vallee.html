@@ -183,7 +183,7 @@ function neuf(nom){
   // rien encore que la place et la forêt : Pierre guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
   return {v:3,monde:40,nom,blocs:DEPART(),ext:0,b,
-    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1},boutons:[],terre:[],graines:{},v4:{marche:0,boutique:false,labour:false}};
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1,v3:1},boutons:[],terre:[],graines:{},v4:{marche:0,boutique:false,labour:false}};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
@@ -271,13 +271,14 @@ function pousserArbres(){const j=jourN();if(!S.natureJour){S.natureJour=j;return
   for(let k=0;k<jours*2&&arbres<max&&libres.length;k++){const [i,jj]=libres.splice(Math.floor(Math.random()*libres.length),1)[0];
     const t=Date.now();S.nature.push({id:uid(),i,j:jj,t:'arbre',depuis:t,maj:t});arbres++}}
 function purgerSouches(){const t=Date.now();S.nature=S.nature.filter(n=>!(n.t==='souche'&&t-n.depuis>SOUCHE_H*3600000))}
-function natureVivante(){if(!S)return;semerNature();pousserArbres();purgerSouches()}
+function natureVivante(){if(!S)return;semerNature();nuitV4();purgerSouches()}   // V4 : repousse, ressemis, cueillette
 // une image de la session Images posée sur la case (i,j) : largeur = le losange, pointe avant de l'image sur celle de la case
 function imageCase(nom,i,j){const H=HAUT_NATURE[nom],L=P(i,j+1),R=P(i+1,j),B=P(i+1,j+1),k=(R[0]-L[0])/400;
   return `<image href="img/v3/${nom}.webp" x="${L[0]}" y="${B[1]-H*k}" width="${400*k}" height="${H*k}"/>`}
 function dessinNature(n,sa){const [cx,cy]=P(n.i+.5,n.j+.5),st=stade(n);let h='';
   const img=sa!=='hiver';   // l'hiver garde les dessins enneigés
-  if(st==='arbre')h=(sa==='printemps'||sa==='ete')?imageCase(hasard(n.i,n.j,9)<.5?'decor-arbre-1':'decor-arbre-2',n.i,n.j):arbre(cx,cy+6,sa,1.05);
+  if(ESTV4(st))h=`<g transform="translate(${cx} ${cy+4}) scale(${DURS[st]?1.45:1.6})"><g class="${CUEILLIR[st]?'mur':''}">${DESSIN_V4[st](sa)}</g></g>`;   // une trouvaille luit doucement : elle se ramasse
+  else if(st==='arbre')h=(sa==='printemps'||sa==='ete')?imageCase(hasard(n.i,n.j,9)<.5?'decor-arbre-1':'decor-arbre-2',n.i,n.j):arbre(cx,cy+6,sa,1.05);
   else if(img&&st==='pousse')h=imageCase('decor-pousse',n.i,n.j);
   else if(img&&st==='souche')h=imageCase('decor-souche',n.i,n.j);
   else if(img&&st==='rocher')h=imageCase((n.n||1)>=2?'decor-rocher-gros':'decor-rocher-petit',n.i,n.j);
@@ -292,8 +293,9 @@ function toucherNature(id,ev){if(VISITE)return;const n=(S.nature||[]).find(x=>x.
   const st=stade(n),sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2,t=Date.now();let gains=[];
   const enleve=()=>{S.nature=S.nature.filter(x=>x!==n)};
   if(st==='pousse'){message=`🌱 Cette jeune pousse sera un arbre vers ${heure(n.depuis+POUSSE_H*3600000)}.`;rendu();return}
+  if(ESTV4(st)){toucherV4(n,ev);return}
   filSignal(st==='arbre'?'couper':st==='rocher'||st==='butte'?'miner':'');
-  if(st==='arbre'){n.t='souche';n.depuis=t;n.maj=t;gains=[['bois',5],['etoiles',1]];SON.coupe();message='🪓 Arbre coupé : +5 🪵. La souche partira toute seule.'}
+  if(st==='arbre'){n.t='souche';n.depuis=t;n.maj=t;gains=[['bois',12],['etoiles',1]];SON.coupe();message='🪓 Arbre coupé : +12 🪵. La souche partira toute seule.'}
   else if(st==='souche'){enleve();message='La souche est enlevée : la case est libre.'}
   else if(st==='rocher'){n.n=(n.n||1)-1;n.maj=t;gains=[['pierre',2]];SON.tac();
     if(n.n<=0){enleve();message='⛏️ Rocher cassé : +2 🪨. La case est libre.'}else message=`⛏️ +2 🪨. Encore ${n.n} coup${n.n>1?'s':''} pour le casser.`}
@@ -650,7 +652,7 @@ function dessineVillage(){
   // la place du village, pavée
   h+=poly(los(PLACE.i,PLACE.j,2),EPOQUES[epIdx()].place,'#A79F8A','style="fill:url(#paves)"');
   const [px,py]=P(PLACE.i+1,PLACE.j+1);h+=`<rect x="${px-2}" y="${py-48}" width="4" height="48" fill="#6D4C41"/><polygon points="${px+2},${py-48} ${px+28},${py-40} ${px+2},${py-32}" fill="#E53935"/>`;
-  h+=`<text x="${px}" y="${py+30}" font-size="15" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="4" paint-order="stroke">La place</text>`;
+  h+=`<text x="${px}" y="${py+50}" font-size="15" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="4" paint-order="stroke">La place</text>`;
   S.b.filter(o=>o.type==='chemin').forEach(o=>h+=dessinObjet(o,ok));
   const TT=dessinTerre(vu,ok);h+=TT.sol;   // les cases labourées, sous tout le reste
   const tout=nature.filter(x=>x.o<999).concat(TT.plantes);
@@ -837,8 +839,8 @@ function action(a){
   else if(a==='tourner'){if(typeVise()){mode.r=!mode.r;SON.tac();majFantome()}return}
   else if(a==='annuler'){mode=mode&&mode.arranger?{arranger:true}:null;message='';rendu();return}
   else if(a==='arranger'){mode={arranger:true};feuille=null;message='';rendu();return}
-  else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);S.ext++;feuille=null;
-    message='🌳 Le village s\'agrandit !';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
+  else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);mettreEnFriche(feuille.bloc);S.ext++;feuille=null;
+    message='🌳 Le terrain s\'agrandit ! Le nouveau coin est en friche : touchez les herbes, les cailloux et les branches pour le nettoyer.';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
   sauve();rendu();
 }
 function toucherCase(i,j){
@@ -982,6 +984,8 @@ const FIL=[
   fait:()=>compte('poulailler')>=1,cible:'bat:poulailler',ouvre:['poulailler'],gain:{pieces:60,etoiles:2},bravo:'Écoutez-les caqueter !'},
  {id:'terrain',qui:'pierre',court:'Agrandir le terrain',dit:'Le hameau est à l\'étroit. Touchez un « + » au bord du terrain pour l\'agrandir.',
   fait:()=>(S.ext||0)>=1,cible:'plus',gain:{pieces:60,etoiles:2},bravo:'Que de place ! Le hameau respire.'},
+ {id:'friche',qui:'pierre',court:'Nettoyer la friche',dit:'Le nouveau coin est en friche. Touchez les herbes, les cailloux et les branches pour le nettoyer : ça rapporte de la fibre, de la pierre et du bois.',
+  fait:()=>(S.v4&&S.v4.nettoye||0)>=5,cible:'nat:friche',gain:{pieces:40,etoiles:2},bravo:'Un coin nettoyé reste propre : l\'herbe ne repousse qu\'à côté de celle qui reste.'},
  {id:'deco',qui:'pierre',court:'Poser un puits ou des fleurs',dit:'Une décoration fait produire plus les bâtiments tout autour. Posez un puits ou un massif de fleurs, près de vos bâtiments.',
   fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',bouton:'arranger',ouvre:['puits','massif','banc','lanterne','haie','cloture','pot','massif-rose','massif-jaune','massif-bleu','ornement','nichoir','epouvantail','mare','arche','bassin','cloture-blanche'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
  {id:'autour',qui:'pierre',court:'Trois décos autour de la maison',dit:'Posez trois décorations tout autour de votre maison, sur les cases qui la bordent. C\'est joli, et ça la fait produire plus. Avec « Arranger », vous pouvez tout déplacer à votre goût.',
@@ -1096,7 +1100,7 @@ function cibleEl(q){const c=q.cible||'',[t,k]=c.split(':');
 function cibleCarte(q){const c=q.cible||'',[t,k]=c.split(':');
   if(t==='terre-vide'||t==='terre-pousse'){const x=(S.terre||[]).find(z=>t==='terre-vide'?!z.c:z.c);return x&&{i:x.i+.5,j:x.j+.5,sel:`[data-t="${x.i},${x.j}"]`}}
   if(t==='obj'){const o=S.b.find(x=>x.type===k);return o&&{i:o.i+BAT[k].t/2,j:o.j+BAT[k].t/2,sel:`g[data-o="${o.id}"]`}}
-  if(t==='nat'){const n=(S.nature||[]).find(x=>possede(x.i,x.j)&&(k==='arbre'?stade(x)==='arbre':['rocher','butte'].includes(x.t)));return n&&{i:n.i+.5,j:n.j+.5,sel:`g[data-n="${n.id}"]`}}
+  if(t==='nat'){const n=(S.nature||[]).find(x=>possede(x.i,x.j)&&(k==='friche'?!!FRICHE[x.t]:k==='arbre'?stade(x)==='arbre':['rocher','butte'].includes(x.t)));return n&&{i:n.i+.5,j:n.j+.5,sel:`g[data-n="${n.id}"]`}}
   if(t==='plus'){const g=$('g[data-x]');if(!g)return null;const [a,c2]=g.dataset.x.split(',').map(Number);return {i:a*BLOC+2,j:c2*BLOC+2,sel:`g[data-x="${g.dataset.x}"]`}}
   if(t==='bat'&&k==='chemin'&&compte('chemin')===0&&!mode)return null;
   return null}
@@ -1205,9 +1209,9 @@ function arrosoir(sx,sy){const fx=$('#fx');if(!fx)return;for(let n=0;n<8;n++){co
   e.style.cssText=`position:fixed;left:${sx-8+(n%4-1.5)*10}px;top:${sy-40}px;font-size:16px;z-index:9;transition:top .7s ease-in,opacity .7s;pointer-events:none`;
   fx.appendChild(e);setTimeout(()=>{e.style.top=(sy-6)+'px';e.style.opacity='0'},30+n*40);setTimeout(()=>e.remove(),900)}}
 /* La caisse de vente : tout ce qui a été récolté part, payé aussitôt */
-function vendre(ev){const l=Object.keys(CULTURES).filter(k=>(S.stock[k]||0)>0);
+function vendre(ev){const l=Object.keys(CULTURES).concat(Object.keys(CUEILLIR)).filter(k=>(S.stock[k]||0)>0);
   if(!l.length){message='📦 La caisse attend vos récoltes : ramassez, puis touchez-la pour vendre.';rendu();return}
-  let tot=0;l.forEach(k=>{tot+=S.stock[k]*CULTURES[k].val;S.stock[k]=0});S.stock.pieces+=tot;
+  let tot=0;l.forEach(k=>{tot+=S.stock[k]*(CULTURES[k]||CUEILLIR[k]).val;S.stock[k]=0});S.stock.pieces+=tot;
   message=`📦 Vendu : +${tot} 🪙.`;SON.piece();etapeV4('vendre');sauve();rendu();
   const sx=ev&&ev.clientX||innerWidth/2,sy=ev&&ev.clientY||innerHeight/2;etincelles(sx,sy);voler(sx,sy,'pieces',tot)}
 /* Labourer : en mode « Labourer », le doigt qui glisse prépare les cases ; touchée, une case vide redevient de l'herbe */
@@ -1240,10 +1244,10 @@ function poserFixe(type,i0,j0){if(S.b.some(o=>o.type===type))return;
   for(let r=0;r<8;r++)for(let a=-r;a<=r;a++)for(let c=-r;c<=r;c++){if(Math.max(Math.abs(a),Math.abs(c))!==r)continue;
     const i=i0+a,j=j0+c;if(libre(type,i,j)){S.b.push({id:uid(),type,i,j,ep:0,maj:Date.now(),par:S.nom});return}}}
 // une partie neuve : le carré de terre, la graine, la caisse ; Pierre accueille
-function debutV4(){const t=Date.now(),cases=[[PLACE.i+2,PLACE.j],[PLACE.i+3,PLACE.j],[PLACE.i+2,PLACE.j+1],[PLACE.i+3,PLACE.j+1]];   // à l'est de la place ; la caisse à côté, sans cacher le champ
-  S.nature=(S.nature||[]).filter(n=>!cases.some(([i,j])=>n.i===i&&n.j===j));
+function debutV4(){const t=Date.now(),cases=[[PLACE.i+3,PLACE.j+1],[PLACE.i+4,PLACE.j+1],[PLACE.i+3,PLACE.j+2],[PLACE.i+4,PLACE.j+2]];   // un peu à l'écart de la place, pour ne pas cacher son nom
+  S.nature=(S.nature||[]).filter(n=>!cases.concat([[PLACE.i+3,PLACE.j]]).some(([i,j])=>n.i===i&&n.j===j));   // le champ et la place de la caisse
   S.terre=cases.map(([i,j])=>({i,j,c:null,p:0,t,ar:0,maj:t}));S.graines={radis:1};
-  poserFixe('caisse',PLACE.i+1,PLACE.j+2);S.fil.vu.intro=1;
+  poserFixe('caisse',PLACE.i+3,PLACE.j);S.fil.vu.intro=1;   // derrière le champ : elle ne cache ni les plantes ni le nom de la place
   scene('pierre',[`Bienvenue, ${esc(S.nom)} ! Je suis Pierre, le mécano. Je vais vous aider à faire grandir votre coin de vallée.`,
     'Pour commencer, je vous ai labouré un petit carré de terre, et voici une graine de radis.',MARCHES[0].dit]);sauve()}
 // une partie d'avant : elle garde tout, et reçoit les champs par un mot de Pierre
@@ -1282,8 +1286,86 @@ function dessinTerre(vu,ok){let sol='';const plantes=[],now=Date.now();
   (S.terre||[]).forEach(t=>{if(!vu(t.i,t.j))return;pousser(t,now);const humide=(t.ar||0)>now;
     sol+=tuile('sol-terre',t.i,t.j)+poly(los(t.i,t.j),'#7A4A2A','#5A341E',`data-t="${t.i},${t.j}" style="fill:${humide?'rgba(28,30,48,.38)':'transparent'};cursor:pointer${mode?';pointer-events:none':''}"`);
     if(!t.c)return;const [x,y]=P(t.i+.5,t.j+.5),e=etapeDe(t),m=mur(t);
-    plantes.push({o:t.i+t.j+1,svg:`<g data-t="${t.i},${t.j}" style="cursor:pointer${mode?';pointer-events:none':''}" transform="translate(${x} ${y+5}) scale(${[1.7,2.1,2.3,2.4][e]})"><g class="${m?'mur':''}">${plante(t.c,e)}</g></g>`})});
+    plantes.push({o:t.i+t.j+1,svg:`<g data-t="${t.i},${t.j}" style="cursor:pointer${mode?';pointer-events:none':''}" transform="translate(${x} ${y+5}) scale(${[1.5,1.8,1.9,1.55][e]})"><g class="${m?'mur':''}">${plante(t.c,e)}</g></g>`})});
   return {sol,plantes}}
+
+/* ===================== V4, étape 2 : les ressources, « ni vide ni trop plein » (CONCEPTION-V4, section 3) =====
+   Une extension neuve arrive en friche : herbes, cailloux, branches, quelques vieilles souches et un gros rocher. Nettoyer rapporte
+   (herbe → fibre une fois sur deux, caillou → pierre, branche → bois). Vieilles souches et gros rochers attendent un meilleur outil
+   (étape 3) : Pierre le dit, rien d'autre. Chaque nuit, herbes et cailloux repoussent, seulement à côté de ceux qui restent
+   (20 essais, cinq fois plus au début d'une saison) ; un chemin, un champ ou un bâtiment protège sa case. Les arbres se ressèment
+   (15 % par grand arbre et par nuit, à 3 cases au plus, jamais collés à un grand arbre). La cueillette : 1 à 4 trouvailles par
+   jour au bord du terrain, 6 au plus. Les cases déjà occupées d'une partie ne deviennent jamais des friches. */
+const FRICHE={herbe:{gain:()=>Math.random()<.5?[['fibre',1]]:[],fait:'Herbe arrachée'},caillou:{gain:()=>[['pierre',1]],fait:'Caillou ramassé'},branche:{gain:()=>[['bois',1]],fait:'Branche ramassée'}};
+const DURS={vsouche:{nom:'vieille souche',outil:'une meilleure hache'},roc:{nom:'gros rocher',outil:'une meilleure pioche'}};
+const CUEILLIR={champignon:{nom:'Champignons',val:25},mures:{nom:'Mûres',val:20},fleurschamps:{nom:'Fleurs des champs',val:30}};
+/* Les dessins, au pied de la case (0,0), dans le trait du village */
+const DESSIN_V4={
+ herbe:(sa)=>{const c=sa==='hiver'?['#A9B48A','#C8CFAE']:sa==='automne'?['#9DA84A','#C2B65A']:['#5E9E3A','#86C24E'];
+   return `<ellipse cx="0" cy="1" rx="11" ry="3" fill="#00000022"/>`+[[-8,-.4,12],[-4,-.15,16],[0,.05,18],[4,.25,15],[8,.45,12],[-2,-.3,11],[3,.35,11]].map(([x,a,l],k)=>
+     `<path d="M${x} 0q${(a*l*.6).toFixed(1)} ${(-l*.55).toFixed(1)} ${(a*l*1.4).toFixed(1)} ${-l}" stroke="${c[k%2]}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`).join('')},
+ caillou:()=>`<ellipse cx="0" cy="1" rx="11" ry="3.2" fill="#00000026"/>`+[[-5,-1,5.5,3.8],[4,0,4.5,3.2],[0,-3,3.6,2.6]].map(([x,y,rx,ry])=>
+   `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#A8A49A" stroke="#6E6A60" stroke-width=".9"/><ellipse cx="${x-rx*.3}" cy="${y-ry*.35}" rx="${rx*.4}" ry="${ry*.3}" fill="#D2CEC4"/>`).join(''),
+ branche:()=>`<ellipse cx="0" cy="1" rx="12" ry="3" fill="#00000022"/><path d="M-11 0L10 -4M-2 -1.6L3 -8M4 -2.8l5 -4" stroke="#7A4E2D" stroke-width="2.6" stroke-linecap="round" fill="none"/><path d="M-11 0L10 -4" stroke="#A0703F" stroke-width="1" stroke-linecap="round"/>
+   <ellipse cx="4.5" cy="-9.5" rx="3" ry="1.6" fill="#7DBE4A" transform="rotate(-30 4.5 -9.5)"/>`,
+ vsouche:()=>`<ellipse cx="0" cy="2" rx="17" ry="5.5" fill="#00000030"/><path d="M-13 -3q-5 4-9 4M12 -3q5 4 9 3M-3 1q-1 4-4 5M5 1q2 3 5 4" stroke="#5E3A1E" stroke-width="3" stroke-linecap="round" fill="none"/>
+   <path d="M-13 -14v11a13 5 0 0 0 26 0v-11z" fill="#6E4426" stroke="#4A2A12" stroke-width="1"/><path d="M-8 -12v10M0 -13v12M7 -12v10" stroke="#4A2A12" stroke-width=".7" opacity=".55"/>
+   <ellipse cx="0" cy="-14" rx="13" ry="5" fill="#C99A62" stroke="#4A2A12" stroke-width="1"/><ellipse cx="0" cy="-14" rx="8.5" ry="3.2" fill="none" stroke="#9E7040" stroke-width=".8"/><ellipse cx="0" cy="-14" rx="4.2" ry="1.6" fill="none" stroke="#9E7040" stroke-width=".8"/>
+   <path d="M-13 -9q4-3 8-1q3 2 0 4q-5 1-8-1z" fill="#6E9E3A" opacity=".9"/>`,
+ roc:()=>`<ellipse cx="0" cy="3" rx="22" ry="7" fill="#00000030"/><path d="M-19 0q-3-13 6-21q9-7 19-3q11 5 13 15q1 9-6 11q-14 4-27 0q-4-1-5-2z" fill="#8E8A82" stroke="#55524C" stroke-width="1.4"/>
+   <path d="M-12 -18q8-6 18-2q-6 1-12 6q-4-2-6-4z" fill="#B8B4AA"/><path d="M-2 -6l5 -6l-1 7l6 5M-12 -4l4 -3" stroke="#5E5A52" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+   <path d="M-6 -22q9-5 17 1q-3 3-8 2q-5 1-9-3z" fill="#6E9E3A" opacity=".9"/>`,
+ champignon:()=>`<ellipse cx="0" cy="1" rx="9" ry="2.6" fill="#00000026"/>`+[[-4,0,1],[4,1,.8]].map(([x,y,s])=>`<g transform="translate(${x} ${y}) scale(${s})"><rect x="-2" y="-8" width="4" height="8" rx="1.5" fill="#F4EAD2" stroke="#B8A880" stroke-width=".6"/>
+   <path d="M-7 -7q0-7 7-7q7 0 7 7z" fill="#A0582E" stroke="#6E3A1A" stroke-width=".8"/><circle cx="-2.5" cy="-10" r="1.1" fill="#F4EAD2"/><circle cx="2.5" cy="-11" r=".9" fill="#F4EAD2"/></g>`).join(''),
+ mures:()=>`<ellipse cx="0" cy="1" rx="11" ry="3" fill="#00000026"/><path d="M-9 0q-2-9 4-12q4-4 9-1q6 2 5 9q0 4-3 5z" fill="#4E8E32" stroke="#2F5A1E" stroke-width=".8"/>
+   <path d="M-5 -9q3-2 6 0M0 -4q4-2 7 1" stroke="#6EAE4A" stroke-width="1" fill="none"/>`+[[-4,-6],[2,-9],[5,-4],[-1,-2],[1,-6]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.9" fill="#3A1A4A" stroke="#1E0A2A" stroke-width=".5"/><circle cx="${x-.6}" cy="${y-.6}" r=".5" fill="#9A7AB8"/>`).join(''),
+ fleurschamps:()=>`<ellipse cx="0" cy="1" rx="10" ry="2.6" fill="#00000022"/>`+[[-5,-10,'#FFFFFF'],[1,-13,'#F5D23A'],[6,-9,'#B98BD9'],[-1,-7,'#FFFFFF']].map(([x,y,c])=>
+   `<path d="M${x*.4} 0Q${x*.7} ${y*.5} ${x} ${y}" stroke="#5E9E3A" stroke-width="1.2" fill="none"/>`+[0,72,144,216,288].map(a=>`<ellipse cx="${x}" cy="${y-2}" rx="1.3" ry="2.2" fill="${c}" stroke="#C8B890" stroke-width=".3" transform="rotate(${a} ${x} ${y})"/>`).join('')+`<circle cx="${x}" cy="${y}" r="1.1" fill="#E8A030"/>`).join('')};
+const ESTV4=t=>!!DESSIN_V4[t];
+// les trouvailles et la fibre rejoignent les réserves, avec leur petite image ; la caisse rachète les trouvailles
+const iconeV4=t=>`<svg viewBox="-14 -24 28 30" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em">${DESSIN_V4[t]('ete')}</svg>`;
+Object.entries(CUEILLIR).forEach(([k,c])=>{RES[k]={e:iconeV4(k),nom:c.nom.toLowerCase(),vend:c.val}});
+RES.fibre={e:iconeV4('herbe'),nom:'fibre'};
+const libreFriche=(i,j)=>possede(i,j)&&!surPlace(i,j)&&!occupe(i,j)&&!terreA(i,j)&&!natureA(i,j);
+const ajouterNature=(i,j,t)=>{const now=Date.now();S.nature.push({id:uid(),i,j,t,n:1,depuis:now,maj:now})};
+// une extension neuve : la friche, sur les seules cases libres du morceau acheté
+function mettreEnFriche(bloc){const [a,c]=bloc.split(',').map(Number),libres=[];
+  for(let i=a*BLOC;i<a*BLOC+BLOC;i++)for(let j=c*BLOC;j<c*BLOC+BLOC;j++)if(libreFriche(i,j))libres.push([i,j]);
+  libres.sort(()=>Math.random()-.5);
+  const durs=[['roc'],['vsouche'],Math.random()<.6?['vsouche']:null].filter(Boolean);
+  durs.forEach(([t])=>{const p=libres.pop();if(p)ajouterNature(p[0],p[1],t)});
+  libres.forEach(([i,j])=>{const r=Math.random();if(r<.38)ajouterNature(i,j,'herbe');else if(r<.5)ajouterNature(i,j,'caillou');else if(r<.6)ajouterNature(i,j,'branche')})}
+// la nuit : la repousse par propagation, les arbres qui se ressèment, la cueillette (trois nuits rattrapées au plus)
+function nuitV4(){if(!S.v4||!S.nature)return;const j=jourN();
+  if(S.v4.jour==null){S.v4.jour=j;S.v4.semR=S.saison?S.saison.semaine:null;return}
+  const nuits=Math.min(3,j-S.v4.jour);if(nuits<=0)return;S.v4.jour=j;
+  for(let n=0;n<nuits;n++){const renouveau=S.saison&&S.v4.semR!==S.saison.semaine;if(renouveau)S.v4.semR=S.saison.semaine;
+    repousse(renouveau?100:20);ressemer();cueillette()}}
+function repousse(essais){const src=S.nature.filter(n=>(n.t==='herbe'||n.t==='caillou')&&possede(n.i,n.j));if(!src.length)return;
+  for(let k=0;k<essais;k++){const s=src[Math.floor(Math.random()*src.length)],[di,dj]=[[1,0],[-1,0],[0,1],[0,-1]][Math.floor(Math.random()*4)];
+    if(libreFriche(s.i+di,s.j+dj))ajouterNature(s.i+di,s.j+dj,Math.random()<.7?'herbe':'caillou')}}
+function ressemer(){const grands=S.nature.filter(n=>stade(n)==='arbre');
+  const colle=(i,j)=>grands.some(g=>Math.abs(g.i-i)<=1&&Math.abs(g.j-j)<=1);
+  grands.forEach(g=>{if(!possede(g.i,g.j)||Math.random()>=.15)return;
+    const i=g.i+Math.round(Math.random()*6-3),j=g.j+Math.round(Math.random()*6-3);
+    if(libreFriche(i,j)&&!colle(i,j))ajouterNature(i,j,'pousse')})}
+function cueillette(){const deja=S.nature.filter(n=>CUEILLIR[n.t]).length;let n=Math.min(6-deja,1+Math.floor(Math.random()*4));if(n<=0)return;
+  // le bord du terrain : une case à soi qui touche une case qui ne l'est pas encore
+  const bord=[];S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);
+    for(let i=a*BLOC;i<a*BLOC+BLOC;i++)for(let j=c*BLOC;j<c*BLOC+BLOC;j++)
+      if(libreFriche(i,j)&&[[1,0],[-1,0],[0,1],[0,-1]].some(([x,y])=>!possede(i+x,j+y)))bord.push([i,j])});
+  const types=Object.keys(CUEILLIR);
+  while(n-->0&&bord.length){const [i,j]=bord.splice(Math.floor(Math.random()*bord.length),1)[0];ajouterNature(i,j,types[Math.floor(Math.random()*types.length)])}}
+// toucher la friche, une trouvaille, ou ce qui attend un meilleur outil
+function toucherV4(n,ev){const sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;
+  if(DURS[n.t]){const d=DURS[n.t];S.v4.durs=S.v4.durs||{};
+    if(!S.v4.durs[n.t]){S.v4.durs[n.t]=1;sauve();scene('pierre',[`Cette ${d.nom} est trop dure pour vos mains et vos outils d'aujourd'hui.`,`Il faudra ${d.outil}. Je vous en reparlerai : en attendant, elle ne gêne personne.`])}
+    else{message=`Cette ${d.nom} attend ${d.outil}.`;SON.non();rendu()}return}
+  S.nature=S.nature.filter(x=>x!==n);let gains=[];
+  if(FRICHE[n.t]){gains=FRICHE[n.t].gain();S.v4.nettoye=(S.v4.nettoye||0)+1;message=`🧹 ${FRICHE[n.t].fait}`+(gains.length?` : +${gains.map(([k,q])=>q+' '+RES[k].e).join(' ')}.`:'.');SON.tac()}
+  else if(CUEILLIR[n.t]){gains=[[n.t,1]];message=`🧺 ${CUEILLIR[n.t].nom} cueilli${/s$/.test(CUEILLIR[n.t].nom)?'s':''} : la caisse les rachète.`;SON.ramasse()}
+  gains.forEach(([k,q])=>S.stock[k]=(S.stock[k]||0)+q);sauve();rendu();
+  if(gains.length){etincelles(sx,sy);gains.forEach(([k,q],m)=>setTimeout(()=>voler(sx,sy,k,q),m*160))}}
 
 /* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
 function encaisser(){
@@ -1295,6 +1377,8 @@ if(S){natureVivante();encaisser();if(!S.fil){reprendreFil();S.fil.v2=1;sauve()}
   if(!S.v4){recevoirChamps();sauve()}   // V4 : une partie d'avant garde tout, et reçoit les champs
   // 25/10 : la tâche « trois décos autour de la maison » s'insère avant les 15 étoiles ; une partie plus avancée garde sa place
   if(!S.fil.v2){if(S.fil.n>=13)S.fil.n++;S.fil.v2=1;sauve()}
+  // V4 étape 2 : « nettoyer la friche » s'insère après l'agrandissement ; une partie plus avancée garde sa place
+  if(!S.fil.v3){if(S.fil.n>=11)S.fil.n++;S.fil.v3=1;sauve()}
   if(S.fil.n>FIL.findIndex(q=>q.id==='deco')&&!aBouton('arranger')){S.boutons=S.boutons||[];S.boutons.push('arranger');sauve()}}
 rendu();
 if(S&&lien())lancerLien();

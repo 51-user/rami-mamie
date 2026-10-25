@@ -119,6 +119,7 @@ function placeNoms(pos){
   l.forEach(x=>{let y=x.y;
     for(let k=0;k<8;k++){const t=y+2.5,b=y+13.5;
       const gene=mis.find(m=>Math.abs(m.x-x.x)<(m.w+x.w)/2+2&&t<m.b+1&&b>m.t-1);if(!gene)break;y=gene.b+1-2.5}
+    if(y-x.y>12)y=x.y;   // un nom trop repoussé flotterait loin de son habitant (25/10) : il reste à ses pieds
     mis.push({x:x.x,w:x.w,t:y+2.5,b:y+13.5});x.n.setAttribute('transform',`translate(${x.x.toFixed(1)},${y.toFixed(1)})`)});
 }
 function place(){
