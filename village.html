@@ -274,7 +274,8 @@ function imageCalee(nom,o){const t=BAT[o.type].t,c=CALAGE[nom]||[0,195,400,195,4
     <image href="img/${nom}.webp" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${id})"/>`,top:Math.max(y+10,my-TH*t*3.2)}}
 function dessinObjet(o,ok){
   const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
-  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin;return poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}" style="fill:url(#terre)"`)}
+  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin,terre=epIdx()<2&&TUILES();   // en terre au Hameau et au Village, pavés ensuite
+    return (terre?tuile('sol-chemin',o.i,o.j):'')+poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}" style="fill:${terre?'transparent':'url(#terre)'}"`)}
   const im=imageDe(o);
   if(im&&o.type!=='potager'){const r=imageCalee(im,o);h=r.h;top=r.top;
 }
@@ -307,6 +308,8 @@ function dessinObjet(o,ok){
   return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
 /* ===================== Le sol et la nature, en style Vallée ===================== */
+const tuile=(nom,i,j)=>{const [x,y]=P(i,j);return `<image href="img/v3/${nom}.webp" x="${x-TW}" y="${y}" width="${2*TW}" height="${2*TH}" pointer-events="none"/>`};
+const TUILES=()=>saisonVue()!=='hiver';   // l'hiver garde son motif enneigé
 const hasard=(i,j,n)=>{const x=Math.sin(i*127.1+j*311.7+n*74.7)*43758.5453;return x-Math.floor(x)};
 function saisonVue(){const b=getComputedStyle(document.body).getPropertyValue('--s-bord').trim().toUpperCase();
   return {'#F48FB1':'printemps','#F0C04A':'ete','#E0892E':'automne','#90CAF9':'hiver'}[b]||'ete'}
@@ -342,9 +345,12 @@ function dessineVillage(){
   for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){borne(i,j);
     const dans=i>=0&&j>=0&&i<MONDE&&j<MONDE,bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC),[cx,cy]=P(i+.5,j+.5),r=hasard(i,j,1);
     if(dans&&possede(i,j)){const vise=mode&&!occupe(i,j)&&!surPlace(i,j);
-      h+=poly(los(i,j),'#A3D27C','#00000014',`data-c="${i},${j}" style="fill:url(#${vise?'herbe-vise':'herbe'})"`)}
+      if(TUILES()){const v=hasard(i,j,3);h+=tuile(v<.7?'sol-herbe-1':v<.85?'sol-herbe-2':'sol-herbe-3',i,j);
+        h+=poly(los(i,j),'#A3D27C','#00000010',`data-c="${i},${j}" style="fill:${vise?'rgba(255,255,255,.35)':'transparent'}"`)}
+      else h+=poly(los(i,j),'#A3D27C','#00000014',`data-c="${i},${j}" style="fill:url(#${vise?'herbe-vise':'herbe'})"`)}
     else if(j>=MONDE||(j-oj1-2)*(j-oj1-2)/2+(i-oi0-1)*(i-oi0-1)/9<1.2&&j>oj1){h+=poly(los(i,j),'#4D9BD6','#3F86BD',`style="fill:url(#eau)"`)}   // l'étang en contrebas, la rivière au bord du monde
-    else{h+=poly(los(i,j),'#7FA35F','#00000010',(dans&&achetables.has(bk)?`data-x="${bk}" `:'')+`style="fill:url(#sauvage)"`);
+    else{if(TUILES())h+=tuile('sol-herbe-sauvage',i,j);
+      h+=poly(los(i,j),'#7FA35F','#00000010',(dans&&achetables.has(bk)?`data-x="${bk}" `:'')+`style="fill:${TUILES()?'transparent':'url(#sauvage)'}"`);
       const d=Math.max(oi0-i,i-oi1,oj0-j,j-oj1),hors=!dans, dens=d>=3?.7:d===2?.35:.08;
       if(r<dens)nature.push({o:i+j+1,svg:arbre(cx+(hasard(i,j,2)-.5)*14,cy+4,sa,hors?1.15:.95)});
       else if(r<dens+.06)nature.push({o:i+j+.5,svg:rocher(cx,cy+3)});
