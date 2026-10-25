@@ -182,7 +182,7 @@ function sauveIci(){ls.set(CLE,JSON.stringify(S))}
 /* ===================== Outils ===================== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let message='', feuille=null, mode=null, dernierPose=null, fete=false;   // mode : {pose:type} | {deplace:id} | {chemins:true}
+let message='', feuille=null, mode=null, dernierPose=null, fete=false;   // mode : {pose:type,i,j} | {deplace:id,i,j} | {chemins:true} ; i,j : où se tient le fantôme
 const assez=c=>Object.entries(c).every(([k,v])=>(S.stock[k]||0)>=v);
 const retire=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);   // retire du stock ce que coûte un geste du jeu
 const txt=c=>Object.entries(c).map(([k,v])=>`<span class="cout"><i class="case">${RES[k].e}</i>${v}</span>`).join(' ');   // les coûts, comme un inventaire
@@ -192,6 +192,41 @@ const surPlace=(i,j)=>i>=PLACE.i&&i<PLACE.i+2&&j>=PLACE.j&&j<PLACE.j+2;
 const occupe=(i,j,sauf)=>S.b.find(o=>o.id!==sauf&&i>=o.i&&i<o.i+BAT[o.type].t&&j>=o.j&&j<o.j+BAT[o.type].t);
 function libre(type,i,j,sauf){const t=BAT[type].t;for(let a=0;a<t;a++)for(let c=0;c<t;c++){
   if(!possede(i+a,j+c)||surPlace(i+a,j+c)||occupe(i+a,j+c,sauf)||natureA(i+a,j+c))return false}return true}
+/* La pose avec aperçu (25/10, Florian : « que quand je pose mon batiment je vois direct la place qu'il prend ») :
+   le bâtiment choisi apparaît en fantôme sur la carte, ses cases en vert si la place est bonne, en rouge sinon ;
+   on le glisse du doigt, et rien n'est posé avant « Poser ici ». */
+function gene(i,j,sauf){if(!possede(i,j))return 'hors';if(surPlace(i,j))return 'place';if(occupe(i,j,sauf))return 'occupe';const n=natureA(i,j);return n?stade(n):''}
+const GENE={hors:'Ce terrain n\'est pas encore à vous : le + l\'agrandit.',place:'C\'est la place du village : elle reste libre.',occupe:'Il y a déjà un bâtiment ici.',
+  arbre:'Un arbre gêne : coupez-le d\'abord (Annuler, puis touchez l\'arbre).',pousse:'Une jeune pousse gêne.',souche:'Une souche gêne : un toucher l\'enlève.',
+  rocher:'Un rocher gêne : minez-le d\'abord (Annuler, puis touchez le rocher).',butte:'Une butte gêne : creusez-la d\'abord (Annuler, puis touchez-la).'};
+const typeVise=()=>mode&&(mode.pose||(mode.deplace&&(S.b.find(o=>o.id===mode.deplace)||{}).type));
+// la première place libre près du centre de la vue, pour que le fantôme apparaisse sous les yeux
+function viserPres(type,sauf){const t=BAT[type].t,ci=Math.round(CAM.i-t/2),cj=Math.round(CAM.j-t/2);
+  for(let r=0;r<7;r++)for(let a=-r;a<=r;a++)for(let c=-r;c<=r;c++){if(Math.max(Math.abs(a),Math.abs(c))===r&&libre(type,ci+a,cj+c,sauf))return [ci+a,cj+c]}
+  return [ci,cj]}
+function premiereGene(){const k=typeVise(),t=BAT[k].t;for(let a=0;a<t;a++)for(let c=0;c<t;c++){const g=gene(mode.i+a,mode.j+c,mode.deplace);if(g)return g}return ''}
+function dessinFantome(){const k=typeVise();if(!k)return '';const t=BAT[k].t,sauf=mode.deplace;let h='';
+  if(mode.deplace){const o=S.b.find(x=>x.id===sauf);if(o&&(o.i!==mode.i||o.j!==mode.j))h+=poly(los(o.i,o.j,t),'rgba(255,248,225,.25)','#FFF8E1','stroke-width="2.5" stroke-dasharray="7 5"')}
+  // les cases colorées passent par-dessus le fantôme (l'image a son propre sol, qui les cacherait)
+  let marques='';
+  for(let a=0;a<t;a++)for(let c=0;c<t;c++){const g=gene(mode.i+a,mode.j+c,sauf);
+    marques+=poly(los(mode.i+a,mode.j+c),g?'rgba(229,57,53,.45)':'rgba(76,175,80,.42)',g?'#B71C1C':'#1B5E20','stroke-width="2.5"');
+  }
+  for(let a=0;a<t;a++)for(let c=0;c<t;c++){const g=gene(mode.i+a,mode.j+c,sauf);
+    if(g){const [x,y]=P(mode.i+a+.5,mode.j+c+.5);marques+=`<g><circle cx="${x}" cy="${y}" r="9" fill="#B71C1C" stroke="#fff" stroke-width="2"/><path d="M${x-4} ${y-4}l8 8M${x+4} ${y-4}l-8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></g>`}}
+  const o={id:'fantome',type:k,i:mode.i,j:mode.j,ep:sauf?(S.b.find(x=>x.id===sauf)||{}).ep||0:epIdx()};
+  const corps=BAT[k].sorte==='nature'?imageCase('decor-pousse',mode.i,mode.j):dessinObjet(o,null,true);
+  return h+`<g opacity=".75">${corps}</g>`+marques}
+function majFantome(){const g=document.getElementById('fantome-boite');if(!g)return;g.innerHTML=dessinFantome();
+  const gn=premiereGene(),ok=$('.valide [data-a="poser"]'),ai=$('.aide');
+  if(ok)ok.classList.toggle('gris',!!gn);
+  if(ai)ai.textContent=gn?'❌ '+GENE[gn]:'✅ La place est bonne. Glissez-le pour le changer de place, puis « Poser ici ».';
+  placerValide()}
+// les boutons ✔ et ✖ se tiennent juste sous le fantôme, sans jamais sortir de l'écran
+function placerValide(){const v=$('.valide');if(!v||!typeVise())return;const t=BAT[typeVise()].t,[x,y]=P(mode.i+t,mode.j+t),[sx,sy]=versEcran(x,y);
+  const w=v.offsetWidth||300,hh=v.offsetHeight||64;
+  v.style.left=Math.max(8,Math.min(innerWidth-w-8,sx-w/2))+'px';v.style.top=Math.max(150,Math.min(innerHeight-hh-90,sy+16))+'px'}
+function versCarte(sx,sy){const svg=$('.carte svg'),p=svg.createSVGPoint();p.x=sx;p.y=sy;const q=p.matrixTransform(svg.getScreenCTM().inverse());return [q.x,q.y]}
 
 /* ===================== La nature du terrain : arbres, rochers, buttes (25/10, Florian : « du bois […] et de la pierre
    qu'on peut miner ou creuser pour applanir ») =====
@@ -334,18 +369,20 @@ function imageCalee(nom,o){const t=BAT[o.type].t,c=CALAGE[nom]||[0,195,400,195,4
   const id='coupe-'+o.id;
   return {h:`<clipPath id="${id}"><polygon points="${L[0]},${haut} ${L[0]},${L[1]} ${B[0]},${B[1]} ${R[0]},${R[1]} ${R[0]},${haut}"/></clipPath>
     <image href="img/${nom}.webp" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${id})"/>`,top:Math.max(y+10,my-TH*t*3.2)}}
-function dessinObjet(o,ok){
+function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher (le fantôme de la pose)
   const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
   if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin,terre=epIdx()<2&&TUILES();   // en terre au Hameau et au Village, pavés ensuite
     return (terre?tuile('sol-chemin',o.i,o.j):'')+poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}" style="fill:${terre?'transparent':'url(#terre)'}"`)}
   const im=imageDe(o);
   if(im&&o.type!=='potager'){const r=imageCalee(im,o);h=r.h;top=r.top;
-}
+    if(o.type==='massif'&&!seul)h=`<g class="${anime('ondule')}">${h}</g>`}   // les fleurs se balancent au vent
   else if(o.type==='potager'){const L=los(o.i,o.j,2);h=poly(L,'#8A5A3B','#5E3A22');
     for(let r=1;r<6;r++){const a=[L[0][0]+(L[3][0]-L[0][0])*r/6,L[0][1]+(L[3][1]-L[0][1])*r/6],b=[L[1][0]+(L[2][0]-L[1][0])*r/6,L[1][1]+(L[2][1]-L[1][1])*r/6];
       h+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#6B4329" stroke-width="2" stroke-linecap="round"/>`}
-    if(o.fin!=null){const img=Date.now()>=o.fin?'citrouille':(o.fin-Date.now()>(o.duree?DUREES[o.duree].min:5)*30000?'pousse':'plante');
-      [[.6,.6],[1.4,.6],[.6,1.4],[1.4,1.4]].forEach(([a,c])=>{const [x,y]=P(o.i+a,o.j+c);h+=`<image href="img/${img}.webp" x="${x-15}" y="${y-30}" width="30" height="32"/>`})}
+    // trois stades bien lisibles : des pousses minuscules, des plants qui grandissent, des citrouilles mûres
+    const p=avancement(o);if(p>=0){const img=p>=1?'citrouille':p<.4?'pousse':'plante',k=p>=1?1.15:p<.4?.45+.4*p/.4:.7+.3*(p-.4)/.6;
+      [[.45,.45],[1,.45],[1.55,.45],[.45,1],[1,1],[1.55,1],[.45,1.55],[1,1.55],[1.55,1.55]].forEach(([a,c])=>{const [x,y]=P(o.i+a,o.j+c),w=26*k,hh=28*k;
+        h+=`<image href="img/${img}.webp" x="${x-w/2}" y="${y-hh+3}" width="${w}" height="${hh}"/>`})}
     top=cy-30}
   else if(o.type==='puits'){h=`<ellipse cx="${cx}" cy="${cy+2}" rx="20" ry="10" fill="#9E9E9E" stroke="#616161"/><rect x="${cx-20}" y="${cy-14}" width="40" height="16" fill="#BDBDBD" stroke="#616161"/><ellipse cx="${cx}" cy="${cy-14}" rx="20" ry="10" fill="#4FA3D9" stroke="#616161"/>
       <rect x="${cx-18}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><rect x="${cx+14}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><polygon points="${cx-26},${cy-42} ${cx},${cy-58} ${cx+26},${cy-42}" fill="#8D5524" stroke="#5D4037"/>`;top=cy-60}
@@ -357,6 +394,8 @@ function dessinObjet(o,ok){
       h+=`<rect x="${x-3}" y="${y-22}" width="6" height="22" fill="#7A4E2D"/><circle cx="${x}" cy="${y-30}" r="15" fill="#3F8F33"/><circle cx="${x-5}" cy="${y-33}" r="3" fill="#E53935"/><circle cx="${x+6}" cy="${y-26}" r="3" fill="#E53935"/>`});top=cy-50}
   else{const r=boite(o,B.mur||'#E9DCC0',B.toit||'#8D6E4F');h=r.h;top=r.top;
     if(o.type==='moulin'){const [ax,ay]=[r.top?cx:cx,r.top+18];h+=`<g stroke="#5D4037" stroke-width="5">${[0,90].map(a=>`<line x1="${ax-34}" y1="${ay}" x2="${ax+34}" y2="${ay}" transform="rotate(${a+20} ${ax} ${ay})"/>`).join('')}</g>`}}
+  h+=vie(o,cx,cy,seul,ok);   // ce qui vit autour : poules, bûches, fumée, seau, papillons
+  if(seul)return h;
   if((o.ep||0)<epIdx()&&B.sorte!=='chemin')h+=`<g><circle cx="${cx+30}" cy="${top+6}" r="13" fill="#7BB661" stroke="#fff" stroke-width="2"/><text x="${cx+30}" y="${top+12}" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">⬆</text></g>`;
   // bulles : prêt (brille), à lancer (pâle), pas relié (panneau)
   let bulle='';const relie=B.sorte==='deco'||estRelie(o,ok);
@@ -369,8 +408,84 @@ function dessinObjet(o,ok){
   const st=mode?'pointer-events:none;opacity:.5':'cursor:pointer';
   return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
+/* ===================== Ce qui vit autour des bâtiments (25/10, Florian : « tu as mis un poulailler mais le batiment
+   ressemble à n'importe quel autre et ne contient pas de poules ») =====
+   Des dessins, remplacés par les images de la session Images à mesure qu'elles arrivent (ajouter leur nom à BETES_IMG).
+   Quelques dizaines d'éléments animés au plus (ANIME), et tout s'arrête quand la page est cachée. */
+const BETES_IMG=[];   // ex. 'bete-poule' quand img/v3/bete-poule.webp existe
+let ANIME=0;const anime=c=>ANIME++<40?c:'';
+const Q=(o,a,c)=>P(o.i+a,o.j+c);
+const gros=(x,y,k,s)=>`<g transform="translate(${x} ${y}) scale(${k}) translate(${-x} ${-y})">${s}</g>`;
+const avancement=o=>{if(o.fin==null)return -1;const tot=(o.duree!=null&&DUREES[o.duree]?DUREES[o.duree].min:5)*60000;return Math.max(0,Math.min(1,1-(o.fin-Date.now())/tot))};
+function bete(nom,x,y,w,dessin){return BETES_IMG.includes(nom)?`<image href="img/v3/${nom}.webp" x="${x-w/2}" y="${y-w}" width="${w}" height="${w}"/>`:dessin}
+function poule(x,y,coul,flip,d){
+  return `<g transform="translate(${x} ${y}) scale(${flip?-1.8:1.8} 1.8)"><g class="${anime('trotte')}" style="animation-delay:-${d*3.1}s"><g class="${anime('picore')}" style="animation-delay:-${d*1.7}s">${bete('bete-poule',0,0,14,
+    `<ellipse cx="0" cy=".6" rx="4.6" ry="1.4" fill="#00000030"/><path d="M-4 -5l-3 -3l.6 4z" fill="${coul}" stroke="#6B4A2C" stroke-width=".5"/>
+     <ellipse cx="0" cy="-4" rx="4.8" ry="3.7" fill="${coul}" stroke="#6B4A2C" stroke-width=".6"/><path d="M-1.6 -4.2q1.6 1.8 3.4 0" stroke="#6B4A2C" stroke-width=".5" fill="none"/>
+     <circle cx="3.7" cy="-7.6" r="2.4" fill="${coul}" stroke="#6B4A2C" stroke-width=".5"/><path d="M2.6 -9.6q.7 -1.6 1.5 -.2q.9 -1.4 1.4 .4z" fill="#E53935"/>
+     <path d="M5.9 -7.9l2 .7l-2 .5z" fill="#F2A33A"/><circle cx="4.3" cy="-8" r=".5" fill="#222"/><path d="M-1 -.6v1.5M1.2 -.6v1.5" stroke="#E0902A" stroke-width=".8"/>`)}</g></g></g>`}
+function nid(x,y){return `<g transform="translate(${x} ${y}) scale(1.6)"><ellipse cx="0" cy="0" rx="8" ry="3.4" fill="#D9B85A" stroke="#A8862E" stroke-width=".8"/><path d="M-7 -1l3 1M-2 -2l2 2M3 -2l3 1.6" stroke="#B8962E" stroke-width=".7"/>
+  ${[[-3,-2.4],[2.4,-2.6],[-.2,-3.6]].map(([a,b])=>`<ellipse cx="${a}" cy="${b}" rx="2" ry="2.6" fill="#FFF7E6" stroke="#C9B48A" stroke-width=".5"/>`).join('')}</g>`}
+function cloture(A,B){const n=Math.max(2,Math.round(Math.hypot(B[0]-A[0],B[1]-A[1])/10));let h='';
+  for(let k=0;k<=n;k++){const x=A[0]+(B[0]-A[0])*k/n,y=A[1]+(B[1]-A[1])*k/n;h+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y-8}"/>`}
+  return `<g stroke="#8D6E4F" stroke-width="1.8" stroke-linecap="round">${h}<line x1="${A[0]}" y1="${A[1]-6}" x2="${B[0]}" y2="${B[1]-6}"/><line x1="${A[0]}" y1="${A[1]-2.5}" x2="${B[0]}" y2="${B[1]-2.5}"/></g>`}
+function buches(x,y,n){const pos=[[-7,0],[0,0],[7,0],[-3.5,-5.6],[3.5,-5.6],[0,-11.2]];let h=`<ellipse cx="${x+3}" cy="${y+3}" rx="13" ry="4" fill="#00000026"/>`;
+  pos.slice(0,n).forEach(([a,b])=>{h+=`<path d="M${x+a} ${y+b-3.4}l9 -4.5v6.8l-9 4.5z" fill="#8A5A34"/><circle cx="${x+a}" cy="${y+b}" r="3.6" fill="#D9A866" stroke="#7A4E2D" stroke-width=".9"/><circle cx="${x+a}" cy="${y+b}" r="1.6" fill="none" stroke="#B5844A" stroke-width=".6"/>`});return h}
+function billot(x,y){return `<ellipse cx="${x}" cy="${y+2}" rx="9" ry="3.5" fill="#00000026"/><path d="M${x-7} ${y-8}v8a7 3 0 0 0 14 0v-8z" fill="#7A4E2D"/><ellipse cx="${x}" cy="${y-8}" rx="7" ry="3" fill="#D9B27C" stroke="#7A4E2D" stroke-width=".8"/>
+  <path d="M${x+1} ${y-9}l9 -12" stroke="#8D6E4F" stroke-width="2.2" stroke-linecap="round"/><path d="M${x-1} ${y-12}l5 -2l-1 7z" fill="#B0BEC5" stroke="#546E7A" stroke-width=".7"/>`}
+function fumee(x,y){return `<path d="M${x-4} ${y+14}v-13h8v11z" fill="#8D5A3C" stroke="#4E342E" stroke-width=".8"/><rect x="${x-5}" y="${y-1}" width="10" height="3" fill="#6D4C41" stroke="#4E342E" stroke-width=".6"/>`
+  +[0,1,2].map(k=>`<circle class="${anime('fume')}" cx="${x}" cy="${y-4}" r="${4+k}" fill="#E4DFD6" stroke="#B9B1A3" stroke-width=".6" opacity="0" style="animation-delay:${k*1.3}s"/>`).join('')}
+function choux(x,y){return [[-6,0],[0,-3],[6,0],[0,3]].map(([a,b],k)=>`<circle cx="${x+a}" cy="${y+b}" r="3.2" fill="${k%2?'#7CB342':'#9CCC65'}" stroke="#558B2F" stroke-width=".7"/>`).join('')}
+function seau(x,y){return `<g class="${anime('balance')}"><ellipse cx="${x}" cy="${y+1}" rx="5" ry="1.8" fill="#00000026"/><path d="M${x-4.5} ${y-8}l1 8h7l1 -8z" fill="#A8743F" stroke="#5D4037" stroke-width=".8"/>
+  <path d="M${x-4.7} ${y-5}h9.4M${x-4.2} ${y-2}h8.4" stroke="#5D4037" stroke-width=".7"/><ellipse cx="${x}" cy="${y-8}" rx="4.6" ry="1.6" fill="#4FA3D9" stroke="#5D4037" stroke-width=".8"/><path d="M${x-4.4} ${y-8}q4.4 -7 8.8 0" stroke="#5D4037" stroke-width=".8" fill="none"/></g>`}
+function papillon(x,y,coul,d){return `<g transform="translate(${x} ${y}) scale(1.5)"><g class="${anime('vole')}" style="animation-delay:-${d}s"><g class="${anime('bat')}">
+  <ellipse cx="-2.4" cy="0" rx="2.6" ry="3.4" fill="${coul}" stroke="#5D4037" stroke-width=".4"/><ellipse cx="2.4" cy="0" rx="2.6" ry="3.4" fill="${coul}" stroke="#5D4037" stroke-width=".4"/><rect x="-.5" y="-2.6" width="1" height="5.4" fill="#4E342E"/></g></g></g>`}
+function chat(x,y){return `<g transform="translate(${x} ${y}) scale(1.6)">${bete('bete-chat',0,0,18,`<ellipse cx="0" cy="1" rx="9" ry="2.4" fill="#00000030"/><g class="${anime('respire')}">
+  <ellipse cx="0" cy="-3" rx="8" ry="4.6" fill="#F0A35E" stroke="#8A5A2E" stroke-width=".7"/><path d="M-3 -6.5q2 -1.2 4 0M-1 -7.4q2 -1 4 .2" stroke="#C97A3A" stroke-width=".9" fill="none"/>
+  <circle cx="6" cy="-4" r="3.6" fill="#F0A35E" stroke="#8A5A2E" stroke-width=".7"/><path d="M4 -7l.6 -2.8l1.8 2.2M7 -7.2l1.6 -2.4l.8 2.6" fill="#F0A35E" stroke="#8A5A2E" stroke-width=".6"/>
+  <path d="M4.6 -4q.8 .6 1.6 0M7.2 -4q.8 .6 1.6 0" stroke="#4E342E" stroke-width=".6" fill="none"/><path d="M-8 -2q-3 3 2 4.4q4 .6 7 -.6" stroke="#E08A44" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>
+  <text class="${anime('dort')}" x="9" y="-10" font-size="6" font-weight="700" fill="#5D4E8C" opacity="0">z</text>`)}</g>`}
+function canard(x,y,flip,d){return `<g transform="translate(${x} ${y}) scale(${flip?-1.7:1.7} 1.7)"><g class="${anime('nage')}" style="animation-delay:-${d}s">${bete('bete-canard',0,0,16,
+  `<ellipse cx="0" cy="0" rx="8" ry="2" fill="#FFFFFF" opacity=".35"/><path d="M-6 -3q0 4 6 4q6 0 6 -4q-2 -3 -6 -2.6q-4 0 -6 -2z" fill="#FFFFFF" stroke="#9E9E9E" stroke-width=".6"/>
+   <circle cx="4.4" cy="-6.2" r="2.6" fill="#2E7D32" stroke="#1B5E20" stroke-width=".5"/><path d="M6.6 -6.2l2.6 .6l-2.6 .8z" fill="#F2A33A"/><circle cx="5" cy="-6.8" r=".5" fill="#111"/><path d="M2.4 -4.2h3.6" stroke="#FFFFFF" stroke-width=".8"/>`)}</g></g>`}
+function oiseau(x,y,d){return `<g transform="translate(${x} ${y}) scale(1.6)"><g class="${anime('pose-oiseau')}" style="animation-delay:-${d}s">
+  <ellipse cx="0" cy=".4" rx="3" ry="1" fill="#00000026"/><ellipse cx="0" cy="-2.6" rx="3.2" ry="2.3" fill="#9C7A54" stroke="#5D4037" stroke-width=".5"/><circle cx="2.6" cy="-4.2" r="1.7" fill="#8A6A48"/>
+  <path d="M4.1 -4.3l1.5 .4l-1.5 .4z" fill="#F2A33A"/><path d="M-3 -2.6l-2.2 -1l.6 2z" fill="#7A5A3A"/><circle cx="2.9" cy="-4.6" r=".4" fill="#111"/></g></g>`}
+function vie(o,cx,cy,seul,ok){if(seul)return '';const ep=o.ep||0,p=avancement(o),pr=pret(o,ok);
+  if(o.type==='poulailler'){const coul=['#FFFFFF','#C9874A','#FFFFFF','#8A5A34'];let h=cloture(Q(o,2,.45),Q(o,2,2))+cloture(Q(o,.45,2),Q(o,2,2));
+    if(pr)h+=nid(...Q(o,1.55,1.3));
+    [[1.75,.85],[1.72,1.55],[1.3,1.78],[.85,1.75]].forEach(([a,c],k)=>{const [x,y]=Q(o,a,c);h+=poule(x,y,coul[k],k%2,k)});return h}
+  if(o.type==='bucheron'){const n=pr?6:p<0?1:1+Math.floor(p*4.9);const [bx,by]=Q(o,1.8,.7),[ax,ay]=Q(o,.75,1.82);return gros(bx,by,1.5,buches(bx,by,n))+gros(ax,ay,1.5,billot(ax,ay))}
+  if(o.type==='maison'&&ep===0){const [gx,gy]=Q(o,1.82,.8);return gros(gx,gy,1.5,choux(gx,gy))+fumee(cx+18,cy-62)}
+  if(o.type==='maison')return fumee(cx+18,cy-66);
+  if(o.type==='puits'){const [x,y]=Q(o,.5,.97);return gros(x,y,1.6,seau(x,y))}
+  if(o.type==='massif'&&saisonVue()==='printemps')return papillon(cx-10,cy-24,'#FFD54F',0)+papillon(cx+12,cy-30,'#F8BBD0',2.3);
+  return ''}
+/* Les bêtes du village : un chat qui dort près de la première maison, des canards sur l'étang, des oiseaux qui se posent
+   près de la place ; le chien suit un habitant (voir chienSuit). */
+function betes(vu,oi0,oj1){const l=[];
+  const m=S.b.find(o=>o.type==='maison');if(m&&vu(m.i,m.j+1)){const [x,y]=Q(m,.3,1.95);l.push({o:m.i+m.j+2.1,svg:chat(x,y)})}
+  [[-.8,.2,0],[.6,.75,1],[1.9,.1,0]].forEach(([a,b,f],k)=>{const i=oi0+1+a,j=oj1+2+b;if(vu(Math.floor(i),Math.floor(j))){const [x,y]=P(i,j);l.push({o:i+j+.5,svg:canard(x,y,f,k*2.7)})}});
+  [[-1.2,2.6],[-.6,3.3],[2.8,-.7]].forEach(([a,b],k)=>{const i=PLACE.i+a,j=PLACE.j+b;if(!occupe(Math.floor(i),Math.floor(j))&&!natureA(Math.floor(i),Math.floor(j))&&vu(Math.floor(i),Math.floor(j))){const [x,y]=P(i,j);l.push({o:i+j,svg:oiseau(x,y,k*7)})}});
+  return l}
+// le chien trotte derrière le premier habitant : il lit sa place dans la couche des habitants à chaque image
+let chienXY=null,chienSens=1;
+function chienSuit(){requestAnimationFrame(chienSuit);const svg=$('.carte svg');if(!svg||document.hidden)return;
+  const h=svg.querySelector('[data-h-qui]'),m=h&&/translate\(([-\d.]+),\s*([-\d.]+)\)/.exec(h.getAttribute('transform')||'');
+  let c=svg.querySelector('#chien');if(!m){if(c)c.remove();return}
+  if(!c){const voile=svg.querySelector('rect[fill="#1A2A55"]'),s=`<g id="chien" pointer-events="none"><g class="cg">${bete('bete-chien',0,0,16,`<ellipse cx="0" cy=".8" rx="7" ry="1.8" fill="#00000030"/>
+    <g class="pattes"><path d="M-4 -3v4M-2 -3v4M3 -3v4M5 -3v4" stroke="#6B4A2C" stroke-width="1.4" stroke-linecap="round"/></g><ellipse cx="0" cy="-4.6" rx="6.4" ry="3.4" fill="#C98B4E" stroke="#6B4A2C" stroke-width=".6"/>
+    <path d="M-6 -6q-3 -3 -2 -6" stroke="#C98B4E" stroke-width="1.8" fill="none" stroke-linecap="round" class="queue"/><circle cx="6" cy="-8" r="3.2" fill="#C98B4E" stroke="#6B4A2C" stroke-width=".6"/>
+    <path d="M4.4 -10.4q-1.6 2.6 .4 4" fill="#8A5A34"/><ellipse cx="9" cy="-7.4" rx="1.6" ry="1.2" fill="#E8C9A0"/><circle cx="9.9" cy="-7.8" r=".7" fill="#222"/><circle cx="6.8" cy="-8.8" r=".5" fill="#222"/>`)}</g></g>`;
+    if(voile)voile.insertAdjacentHTML('beforebegin',s);else svg.insertAdjacentHTML('beforeend',s);c=svg.querySelector('#chien')}
+  const cible=[+m[1]-16,+m[2]+5];if(!chienXY||Math.hypot(chienXY[0]-cible[0],chienXY[1]-cible[1])>200)chienXY=cible.slice();
+  const dx=(cible[0]-chienXY[0])*.05,dy=(cible[1]-chienXY[1])*.05;chienXY[0]+=dx;chienXY[1]+=dy;const court=Math.hypot(dx,dy)>.08;
+  if(dx<-.06)chienSens=-1;else if(dx>.06)chienSens=1;
+  c.setAttribute('transform',`translate(${chienXY[0].toFixed(1)},${chienXY[1].toFixed(1)}) scale(${1.6*chienSens} 1.6)`);
+  c.firstElementChild.classList.toggle('court',court)}
+requestAnimationFrame(chienSuit);
 /* ===================== La caméra ===================== */
-const CAM={i:PLACE.i+1,j:PLACE.j+1,z:2};let aspect=.62, glisse=null, avaleClic=false;
+const CAM={i:PLACE.i+1,j:PLACE.j+1,z:2};let aspect=.62, glisse=null, avaleClic=false, porte=null;   // porte : le fantôme tenu sous le doigt
 // en portrait, une largeur vue plus étroite garde les bâtiments aussi grands
 function vueBox(){const w=(aspect>1?720:1100)/CAM.z,h=w*aspect,[cx,cy]=P(CAM.i,CAM.j);return [cx-w/2,cy-h/2,w,h]}
 function versCase(x,y){const u=(x-OX)/TW,v=(y-OY)/TH;return [(u+v)/2,(v-u)/2]}
@@ -399,7 +514,7 @@ function arbre(x,y,sa,taille){const k=taille||1,f={printemps:'#4F9A3A',ete:'#3E8
 const rocher=(x,y)=>`<ellipse cx="${x}" cy="${y-3}" rx="9" ry="6" fill="#A1A1A1" stroke="#6E6E6E"/><ellipse cx="${x-2}" cy="${y-5}" rx="4" ry="2" fill="#C8C8C8"/>`;
 const fleurs=(x,y,sa)=>sa==='hiver'?'':[['#F06292',-6,0],['#FFD54F',0,-3],['#BA68C8',6,0],['#FFFFFF',2,3]].map(([c,a,b])=>`<circle cx="${x+a}" cy="${y+b-2}" r="2.6" fill="${c}"/>`).join('');
 function dessineVillage(){
-  const ok=relies();let h='';const n=nuit(),sa=saisonVue();
+  const ok=relies();let h='';const n=nuit(),sa=saisonVue();ANIME=0;
   const achetables=new Set();
   S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,y])=>{const bk=(a+x)+','+(c+y);
     if(a+x>=0&&c+y>=0&&a+x<MONDE/BLOC&&c+y<MONDE/BLOC&&!S.blocs.includes(bk))achetables.add(bk)})});
@@ -414,9 +529,9 @@ function dessineVillage(){
   const nature=[];   // arbres, rochers, fleurs : triés avec les bâtiments pour passer devant ou derrière
   for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){if(!vu(i,j))continue;
     const dans=i>=0&&j>=0&&i<MONDE&&j<MONDE,bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC),[cx,cy]=P(i+.5,j+.5),r=hasard(i,j,1);
-    if(dans&&possede(i,j)){const vise=mode&&!occupe(i,j)&&!surPlace(i,j);
+    if(dans&&possede(i,j)){const vise=mode&&mode.chemins&&!occupe(i,j)&&!surPlace(i,j),trait=mode?'#FFFFFF8C':'#00000010';   // pendant une pose, une fine grille montre les cases
       if(TUILES()){const v=hasard(i,j,3);h+=tuile(v<.7?'sol-herbe-1':v<.85?'sol-herbe-2':'sol-herbe-3',i,j);
-        h+=poly(los(i,j),'#A3D27C','#00000010',`data-c="${i},${j}" style="fill:${vise?'rgba(255,255,255,.35)':'transparent'}"`)}
+        h+=poly(los(i,j),'#A3D27C',trait,`data-c="${i},${j}" style="fill:${vise?'rgba(255,255,255,.35)':'transparent'}"`)}
       else h+=poly(los(i,j),'#A3D27C','#00000014',`data-c="${i},${j}" style="fill:url(#${vise?'herbe-vise':'herbe'})"`)}
     else if(j>=MONDE||(j-oj1-2)*(j-oj1-2)/2+(i-oi0-1)*(i-oi0-1)/9<1.2&&j>oj1){h+=poly(los(i,j),'#4D9BD6','#3F86BD',`style="fill:url(#eau)"`)}   // l'étang en contrebas, la rivière au bord du monde
     else{
@@ -442,10 +557,12 @@ function dessineVillage(){
   const tout=nature.filter(x=>x.o<999);
   S.b.filter(o=>o.type!=='chemin').forEach(o=>tout.push({o:o.i+o.j+BAT[o.type].t,svg:dessinObjet(o,ok)}));
   (S.nature||[]).forEach(n=>{if(vu(n.i,n.j))tout.push({o:n.i+n.j+1,svg:dessinNature(n,sa)})});
+  if(sa!=='hiver')betes(vu,oi0,oj1).forEach(x=>tout.push(x));
   tout.sort((a,b)=>a.o-b.o).forEach(x=>h+=x.svg);
   nature.filter(x=>x.o===999).forEach(x=>h+=x.svg);
   const fond=`<rect x="${vb[0]-500}" y="${vb[1]-500}" width="${vb[2]+1000}" height="${vb[3]+1000}" fill="url(#${TUILES()?'sauvage-tuile':'sauvage'})"/>`;
   if(n)h+=`<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#1A2A55" opacity=".28" pointer-events="none"/>`;
+  if(typeVise())h+=`<g id="fantome-boite" style="cursor:grab">${dessinFantome()}</g>`;   // au-dessus de tout, même la nuit
   return `<svg viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Le village vu de biais"><title>Le village</title>${motifs(sa)}${fond}${h}</svg>`;
 }
 
@@ -466,12 +583,11 @@ function rendu(){
      La carte prend tout l'écran ; compteurs, menus et messages flottent par-dessus. */
   const mb=(a,e,mot)=>`<button class="mb" data-a="${a}"><span>${e}</span><small>${mot}</small></button>`;
   const soeurMot=SOEUR.etat==='ensemble'?(S.soeur||'Ma sœur')+' ✓':'Ma sœur';
-  const bas=mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>${mode.chemins?'Terminé':'Annuler'}</button>`
+  const bas=typeVise()?'':mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>Terminé</button>`
     :mb('construire','🔨','Construire')+mb('frise','⭐','Progrès')+mb('marche','⚖️','Marché')+mb('commandes','📋','Commandes')
      +mb('monument','🏛️','Monument')+mb('fete-saison','🎉','Fête')+mb('soeur','👭',esc(soeurMot))+mb('accueil','🏠','Accueil');
   const SAIS={printemps:['🌸','Printemps'],ete:['🌻','Été'],automne:['🍂','Automne'],hiver:['❄️','Hiver']}[saisonVue()];
-  const aide=mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':
-      mode.deplace?'Touchez la case où le poser.':`Touchez une case claire pour poser : ${BAT[mode.pose].nom}.`)
+  const aide=mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':'')
     :'Touchez ce qui brille pour ramasser. Touchez ▶ pour lancer un travail. Un appui long sur un bâtiment le déplace.';
   $('#app').innerHTML=`
    <div class="carte">${dessineVillage()}</div>
@@ -480,10 +596,12 @@ function rendu(){
    ${mode?`<div class="aide">${aide}</div>`:''}
    <div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div>
    <div class="bas">${bas}</div>
+   ${typeVise()?`<div class="valide"><button class="big vert" data-a="poser">✔&nbsp; Poser ici</button><button class="big alt" data-a="annuler">✖&nbsp; Annuler</button></div>`:''}
    <div class="cote" aria-hidden="true"></div>${feuille?feuilleHTML():''}${fete?feteHTML():''}`;
   // le message s'efface tout seul au bout de quelques secondes ; il reste à lire tant qu'on ne touche rien d'autre
   clearTimeout(window.__msgT);if(message){const m=message;window.__msgT=setTimeout(()=>{if(message===m){message='';const e=$('.msg');if(e)e.textContent=''}},6000)}
   dernierPose=null;lier();
+  if(typeVise())majFantome();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
 function feuilleHTML(){
@@ -539,21 +657,28 @@ let appui=null;
 function lier(){
   document.querySelectorAll('[data-stop]').forEach(e=>e.onclick=ev=>ev.stopPropagation());
   document.querySelectorAll('[data-a]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();action(e.dataset.a)}));
-  document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;mode=k==='chemin'?{chemins:true}:{pose:k};message='';rendu()});
+  document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;message='';
+    if(k==='chemin')mode={chemins:true};else{const [i,j]=viserPres(k);mode={pose:k,i,j}}rendu()});
   document.querySelectorAll('[data-vend]').forEach(e=>e.onclick=()=>{const k=e.dataset.vend,n=Math.min(+e.dataset.n,S.stock[k]);S.stock[k]-=n;S.stock.pieces+=n*RES[k].vend;
     message=`Vendu ${n} ${RES[k].e} pour ${n*RES[k].vend} pièces.`;SON.piece();sauve();rendu()});
   document.querySelectorAll('[data-case]').forEach(e=>e.onclick=()=>caseFrise(e.dataset.case));
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
   document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
-  document.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))});
-  document.querySelectorAll('g[data-n]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();if(!mode)toucherNature(e.dataset.n,ev)}));
+  document.querySelectorAll('[data-c]').forEach(e=>{e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))};
+    // pour les chemins, la case visée s'allume sous le doigt avant d'être posée
+    if(mode&&mode.chemins)e.addEventListener('pointerdown',()=>{e.style.fill='rgba(255,216,107,.75)'})});
+  document.querySelectorAll('g[data-n]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();
+    if(!mode)toucherNature(e.dataset.n,ev);else{const n=(S.nature||[]).find(x=>x.id===e.dataset.n);if(n)toucherCase(n.i,n.j)}}));
   const carte=$('.carte'),svg=$('.carte svg');
   if(carte&&svg){const r=svg.getBoundingClientRect();if(r.width>50)aspect=r.height/r.width;
     carte.addEventListener('click',e=>{if(avaleClic){avaleClic=false;e.stopPropagation();e.preventDefault()}},true);
-    svg.addEventListener('pointerdown',e=>{const v=svg.viewBox.baseVal;glisse={x:e.clientX,y:e.clientY,vb:[v.x,v.y,v.width,v.height],bouge:false}});}
+    svg.addEventListener('pointerdown',e=>{
+      // le doigt sur le fantôme le prend ; ailleurs, il fait glisser la carte
+      if(typeVise()&&e.target.closest('#fantome-boite')){const [fi,fj]=versCase(...versCarte(e.clientX,e.clientY));porte={di:fi-mode.i,dj:fj-mode.j,bouge:false};return}
+      const v=svg.viewBox.baseVal;glisse={x:e.clientX,y:e.clientY,vb:[v.x,v.y,v.width,v.height],bouge:false}});}
   document.querySelectorAll('g[data-o],polygon[data-o]').forEach(e=>{
     e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{appui.long=true;
-      if(BAT[S.b.find(o=>o.id===id).type].sorte!=='chemin'){mode={deplace:id};feuille=null;message='Touchez la case où le poser.';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
+      const o=S.b.find(x=>x.id===id);if(BAT[o.type].sorte!=='chemin'){mode={deplace:id,i:o.i,j:o.j};feuille=null;message='';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
     e.addEventListener('pointerup',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('pointerleave',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('click',ev=>{ev.stopPropagation();const fin=appui&&appui.long&&appui.id===e.dataset.o;appui=null;if(fin)return;toucherObjet(e.dataset.o,ev)});
@@ -583,7 +708,9 @@ function action(a){
   else if(a==='zoom-plus'){CAM.z=Math.min(2.2,CAM.z*1.3);rendu();return}
   else if(a==='zoom-moins'){CAM.z=Math.max(.45,CAM.z/1.3);rendu();return}
   else if(a==='centre'){CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=2;rendu();return}
-  else if(a==='deplacer'){mode={deplace:feuille.id};feuille=null;message='Touchez la case où le poser.'}
+  else if(a==='deplacer'){const o=S.b.find(x=>x.id===feuille.id);mode={deplace:o.id,i:o.i,j:o.j};feuille=null;message=''}
+  else if(a==='poser'){poser();return}
+  else if(a==='annuler'){mode=null;message='';rendu();return}
   else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);S.ext++;feuille=null;
     message='🌳 Le village s\'agrandit !';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
   sauve();rendu();
@@ -595,7 +722,12 @@ function toucherCase(i,j){
     if(o&&o.type==='chemin'){S.b=S.b.filter(x=>x!==o);S.stock.pieces+=BAT.chemin.cout.pieces;sauve();rendu();return}
     if(o)return;if(!assez(BAT.chemin.cout)){message='Il manque des pièces pour le chemin.';SON.non();rendu();return}
     retire(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j,maj:Date.now(),par:S.nom});SON.pose();sauve();rendu();return}
-  if(mode.pose){const k=mode.pose;if(!libre(k,i,j)){message='Pas la place ici : il faut des cases claires libres. Un arbre, un rocher ou une butte se retire d\'un toucher.';SON.non();rendu();return}
+  // pose ou déplacement : toucher une case y amène le fantôme (la case touchée sous son milieu) ; rien n'est posé
+  const k=typeVise();if(!k)return;const t=BAT[k].t;mode.i=i-Math.floor(t/2);mode.j=j-Math.floor(t/2);majFantome();
+}
+function poser(){const k=typeVise();if(!k)return;const i=mode.i,j=mode.j;
+  const gn=premiereGene();if(gn){message='';SON.non();const ai=$('.aide');if(ai){ai.textContent='❌ '+GENE[gn];ai.classList.remove('gonfle');void ai.offsetWidth;ai.classList.add('gonfle')}return}
+  if(mode.pose){
     if(BAT[k].sorte==='nature'){if(!assez(BAT[k].cout)){message='Il manque de quoi le planter.';mode=null;rendu();return}
       retire(BAT[k].cout);const t=Date.now();S.nature=S.nature||[];S.nature.push({id:uid(),i,j,t:'pousse',depuis:t,maj:t,par:S.nom});mode=null;
       message=`🌱 Planté ! Ce sera un arbre vers ${heure(t+POUSSE_H*3600000)}.`;SON.pose();sauve();rendu();return}
@@ -604,7 +736,6 @@ function toucherCase(i,j){
     dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.');
     sauve();rendu();apresPose(o);return}
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
-    if(!libre(o.type,i,j,o.id)){message='Pas la place ici.';SON.non();rendu();return}
     o.i=i;o.j=j;o.maj=Date.now();dernierPose=o.id;mode=null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`;sauve();rendu();apresPose(o)}
 }
 function apresPose(o){SON.pose();const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t);const [sx,sy]=versEcran(x,y);setTimeout(()=>poussiere(sx,sy-6),320)}
@@ -713,19 +844,24 @@ if(S){natureVivante();encaisser()}
 rendu();
 if(S&&lien())lancerLien();
 document.addEventListener('pointerdown',premierGeste,{once:true});
-addEventListener('pointermove',e=>{if(!glisse)return;const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;
+addEventListener('pointermove',e=>{
+  if(porte){const [fi,fj]=versCase(...versCarte(e.clientX,e.clientY)),ni=Math.round(fi-porte.di),nj=Math.round(fj-porte.dj);
+    if(ni!==mode.i||nj!==mode.j){mode.i=Math.max(-2,Math.min(MONDE,ni));mode.j=Math.max(-2,Math.min(MONDE,nj));porte.bouge=true;majFantome()}return}
+  if(!glisse)return;const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;
   if(!glisse.bouge&&Math.hypot(dx,dy)<10)return;
   if(!glisse.bouge){glisse.bouge=true;if(appui){clearTimeout(appui.t);appui=null}}
   const svg=$('.carte svg');if(!svg)return;const r=svg.getBoundingClientRect(),k=Math.min(glisse.vb[2]/r.width,glisse.vb[3]/r.height);
-  svg.setAttribute('viewBox',[glisse.vb[0]-dx*k,glisse.vb[1]-dy*k,glisse.vb[2],glisse.vb[3]].join(' '))});
-addEventListener('pointerup',()=>{if(!glisse)return;const g=glisse;glisse=null;if(!g.bouge)return;
+  svg.setAttribute('viewBox',[glisse.vb[0]-dx*k,glisse.vb[1]-dy*k,glisse.vb[2],glisse.vb[3]].join(' '));placerValide()});
+addEventListener('pointerup',()=>{if(porte){const b=porte.bouge;porte=null;if(b){avaleClic=true;setTimeout(()=>{avaleClic=false},400)}return}
+  if(!glisse)return;const g=glisse;glisse=null;if(!g.bouge)return;
   avaleClic=true;setTimeout(()=>{avaleClic=false},400);
   const v=$('.carte svg').viewBox.baseVal,[ci,cj]=versCase(v.x+v.width/2,v.y+v.height/2);
   CAM.i=Math.max(-4,Math.min(MONDE+4,ci));CAM.j=Math.max(-4,Math.min(MONDE+4,cj));rendu()});
 // les bulles apparaissent toutes seules quand c'est prêt, et le soir tombe à l'heure de la tablette
+// (et les potagers poussent, les bûches s'empilent)
 let signe='';
-setInterval(()=>{if(!S||feuille||mode||fete||glisse)return;const ok=relies(),s=S.b.map(o=>pret(o,ok)?1:0).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){natureVivante();encaisser();rendu()}});
+setInterval(()=>{if(!S||feuille||mode||fete||glisse)return;const ok=relies(),s=S.b.map(o=>(pret(o,ok)?1:0)+''+Math.floor(avancement(o)*4)).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
+document.addEventListener('visibilitychange',()=>{document.body.classList.toggle('cache',document.hidden);if(!document.hidden&&S){natureVivante();encaisser();rendu()}});
 </script>
 <script src="habitants.js"></script><script src="saisons.js"></script>
 <style id="vallee">
@@ -816,6 +952,39 @@ html body .mb:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255
 html body .bas .fini{flex:none;min-width:0;min-height:56px;font-size:20px;padding:0 18px}
 @media (max-width:900px){html body .bas{left:66px;right:8px;justify-content:center;max-width:none}}
 html body .champ{background:#FBF0D2;border:4px solid #5A3418;color:var(--ink);border-radius:10px}
+/* la pose avec aperçu : ✔ et ✖ sous le fantôme */
+html body .valide{position:absolute;z-index:4;display:flex;gap:10px;left:50%;top:60%}
+html body .valide .big{flex:none;min-width:0;min-height:62px;font-size:22px;padding:0 20px;white-space:nowrap}
+html body .valide .big.gris{filter:grayscale(.9) brightness(.9);opacity:.75}
+html body .aide.gonfle{animation:gonfle .45s}
+/* ce qui vit : légers mouvements, en pause quand la page est cachée */
+.picore,.ondule,.balance,.respire,.cg{transform-box:fill-box;transform-origin:50% 100%}
+.picore{animation:picore 2.8s ease-in-out infinite}
+@keyframes picore{0%,50%,100%{transform:none}60%,78%{transform:rotate(24deg)}69%{transform:rotate(15deg)}}
+.trotte{animation:trotte 9s ease-in-out infinite alternate}
+@keyframes trotte{0%,20%{transform:none}80%,100%{transform:translate(8px,3px)}}
+.ondule{animation:ondule 4.5s ease-in-out infinite alternate}
+@keyframes ondule{from{transform:skewX(-1.6deg)}to{transform:skewX(1.6deg)}}
+.balance{animation:ondule 3.2s ease-in-out infinite alternate}
+.fume{animation:fume 4s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+@keyframes fume{0%{transform:none;opacity:0}15%{opacity:.75}100%{transform:translate(6px,-30px) scale(2.2);opacity:0}}
+.vole{animation:vole 7s ease-in-out infinite}
+@keyframes vole{0%,100%{transform:none}25%{transform:translate(14px,-8px)}50%{transform:translate(4px,-16px)}75%{transform:translate(-10px,-6px)}}
+.bat{transform-box:fill-box;transform-origin:50% 50%;animation:bat .25s ease-in-out infinite alternate}
+@keyframes bat{to{transform:scaleX(.25)}}
+.respire{animation:respire 3.4s ease-in-out infinite}
+@keyframes respire{50%{transform:scaleY(1.07)}}
+.dort{animation:dort 3.4s ease-out infinite}
+@keyframes dort{0%{opacity:0;transform:none}30%{opacity:.9}100%{opacity:0;transform:translate(5px,-10px)}}
+.nage{animation:nage 11s ease-in-out infinite alternate}
+@keyframes nage{0%{transform:none}50%{transform:translate(-10px,3px)}100%{transform:translate(9px,-2px)}}
+.pose-oiseau{animation:oiseau 22s linear infinite}
+@keyframes oiseau{0%{transform:translate(-40px,-70px);opacity:0}6%{opacity:1}10%{transform:none}30%{transform:translate(3px,0)}32%{transform:translate(3px,-3px)}34%,60%{transform:translate(6px,0)}
+  62%{transform:translate(6px,-3px)}64%,84%{transform:translate(9px,0)}94%{transform:translate(50px,-80px);opacity:1}95%,100%{transform:translate(50px,-80px);opacity:0}}
+#chien .cg.court .pattes{animation:pattes .22s steps(2) infinite}
+@keyframes pattes{to{transform:translateX(1px)}}
+body.cache .carte *{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.picore,.trotte,.ondule,.balance,.vole,.bat,.nage,.pose-oiseau,.respire{animation:none}}
 </style>
 </body>
 </html>
