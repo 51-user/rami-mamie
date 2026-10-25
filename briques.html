@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Les briques de la Vallée</title>
+<meta name="theme-color" content="#1A4A33">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<style>
+/* ===== Les briques de la Vallée (25/10, cahier des charges de Mamie transmis par Florian : « 1. Tetris en version Vallée »).
+   Les règles du jeu classique de briques qui tombent : 7 pièces de 4 carrés, les lignes pleines s'en vont, la vitesse monte doucement.
+   Même habit que le village, les cartes et les mots mêlés : bois chaud, parchemin, Fredoka, fond de la Vallée.
+   LE JEU D'ABORD : le puits prend toute la hauteur ; les infos sont des plaques fines ; les gros boutons de bois sont dessous
+   (portrait) ou de part et d'autre, sous les pouces (paysage). ===== */
+/* Fredoka (licence OFL, fonts/Fredoka-OFL.txt), servie avec le jeu */
+@font-face{font-family:"Fredoka";src:url('fonts/Fredoka.ttf') format('truetype');font-weight:300 700;font-display:swap}
+:root{--bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
+  --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
+  --plaque:repeating-linear-gradient(90deg,rgba(60,30,10,.08) 0 2px,transparent 2px 13px),linear-gradient(#B97B45,#8A5428);
+  --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);--brun:#3E2410;--brun-doux:#6B4A2C;--cadre:#5A3418;--bord:#4A2A12;--lueur:#FFD86B;
+  --f:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;color-scheme:light;--bs:96px;--gap:12px}
+html,body{height:100%;margin:0}
+body{background:#2A2018;font-family:var(--f);color:var(--brun);overflow:hidden;touch-action:none;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+button{font-family:var(--f);cursor:pointer;color:inherit}
+button:focus{outline:none}button:focus-visible{box-shadow:0 0 0 4px var(--lueur)}
+/* la scène Vallée : le fond du village, teinté selon la saison du niveau, et un voile doux pour que le puits passe devant */
+#fond{position:fixed;inset:-24px;background:#5B4A2A url('cartes/fond-vallee.webp') center/cover;transition:filter 2.5s ease}
+#teinte{position:fixed;inset:0;transition:background-color 2.5s ease;pointer-events:none}
+#ombre{position:fixed;inset:0;background:radial-gradient(ellipse 70% 70% at 50% 50%,rgba(30,18,6,.12),rgba(30,18,6,.42));pointer-events:none}
+#ciel{position:fixed;inset:0;pointer-events:none}
+#jeu{position:fixed;inset:0;z-index:1}
+/* le puits : un cadre de bois, l'intérieur sombre et doux */
+.puits{position:absolute;box-sizing:border-box;border:4px solid var(--bord);border-radius:12px;padding:5px;background:var(--bois);touch-action:none;
+  box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 4px 0 #3A2010,0 10px 24px rgba(0,0,0,.4)}
+.puits canvas{display:block;border:2px solid #3A2010;border-radius:4px}
+/* les plaques fines : prochaine pièce, lignes, saison, points */
+.cote{position:absolute;display:flex;flex-direction:column;gap:8px;box-sizing:border-box}
+.plaque{display:flex;align-items:center;justify-content:center;gap:6px;min-height:38px;box-sizing:border-box;padding:3px 10px;text-align:center;
+  background:var(--plaque);color:#FFF4D6;font-size:19px;font-weight:700;line-height:1.15;border:3px solid var(--bord);border-radius:8px;
+  text-shadow:0 1px 0 #3A2010;box-shadow:inset 0 1px 0 rgba(255,230,180,.45),0 2px 0 #3A2010}
+.plaque.petit{font-size:16px;font-weight:600;min-height:32px}
+.plaque b{font-size:24px}
+.prochaine{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px 8px;background:var(--parchemin);border:3px solid var(--cadre);border-radius:10px;
+  box-shadow:inset 0 0 0 2px #C9A36A,0 3px 0 #3A2010}
+.prochaine span{font-size:15px;font-weight:600;color:var(--brun-doux)}
+/* les petits boutons du haut : pause bien visible, musique, maison */
+.haut{position:absolute;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:flex-start}
+.rond,.gros,.pause{background:var(--bois);border:4px solid var(--bord);color:#FFF4D6;padding:0;display:inline-flex;align-items:center;justify-content:center;touch-action:none;
+  text-shadow:0 2px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -4px 0 rgba(0,0,0,.25),0 5px 0 #3A2010;transition:filter .12s,transform .08s}
+.rond{width:56px;height:56px;border-radius:50%;background:var(--bois-clair)}
+.pause{flex:1 1 100%;min-height:60px;border-radius:14px;gap:8px;font-size:23px;font-weight:700}
+.rond svg{width:30px;height:30px}.pause svg{width:30px;height:30px}
+.gros{width:var(--bs);height:var(--bs);border-radius:18px}
+.gros svg{width:58%;height:58%}
+.rond svg,.pause svg,.gros svg{filter:drop-shadow(0 2px 0 #3A2010);overflow:visible}
+.rond:active,.gros:active,.pause:active,.gros.appuye{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),inset 0 -2px 0 rgba(0,0,0,.25),0 1px 0 #3A2010;filter:brightness(1.18) sepia(.2)}
+/* les gros boutons de bois sous le puits */
+.cmd{position:absolute;display:flex;gap:var(--gap);align-items:flex-end;justify-content:center}
+body[data-o="paysage"] #cmdD{display:grid;grid-template-columns:var(--bs) var(--bs);gap:var(--gap)}
+body[data-o="paysage"] #cmdD [data-a="tourner"]{grid-column:1 / 3;width:auto}
+/* les fenêtres : fines (même habit que les mots mêlés) */
+.voile{position:fixed;inset:0;background:rgba(40,22,8,.45);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px;box-sizing:border-box}
+.fen{background:var(--parchemin);border:3px solid var(--cadre);border-radius:14px;box-shadow:0 4px 0 #3A2010;padding:18px 22px;max-width:560px;width:100%;
+  max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;text-align:center}
+.fen h2{margin:0;font-size:28px;color:#FFF1CC;-webkit-text-stroke:4px #4A2A12;paint-order:stroke fill;text-shadow:0 2px 0 #4A2A12}
+.fen p{margin:0;font-size:20px}
+.btn{background:var(--bois);color:#FFF4D6;border:3px solid var(--bord);border-radius:10px;font-size:20px;font-weight:700;min-height:56px;padding:4px 16px;
+  text-shadow:0 1px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 #3A2010;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.btn small{font-size:15px;font-weight:500}
+.btn.clair{background:var(--bois-clair)}
+.btn.grand{min-height:72px;font-size:24px}
+.btn.confirme{box-shadow:0 0 0 4px var(--lueur),0 0 12px var(--lueur),0 3px 0 #3A2010}
+.btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),0 0 0 #3A2010;filter:brightness(1.15)}
+.choix{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.rangee{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.rangee .btn{flex:1 1 180px}
+/* l'annonce d'une nouvelle saison : un parchemin qui passe, sans rien arrêter */
+.annonce{position:fixed;z-index:8;transform:translate(-50%,0);padding:8px 18px;background:var(--parchemin);border:3px solid var(--cadre);border-radius:12px;
+  box-shadow:inset 0 0 0 2px #C9A36A,0 4px 0 #3A2010;font-size:22px;font-weight:700;white-space:nowrap;pointer-events:none;animation:annonce 2.8s ease forwards}
+@keyframes annonce{0%{opacity:0;margin-top:10px}12%{opacity:1;margin-top:0}80%{opacity:1}100%{opacity:0}}
+.etincelle{position:fixed;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle,#FFF6C8,#FFD86B 60%,transparent 70%);pointer-events:none;z-index:9;
+  animation:etincelle .9s ease-out forwards}
+@keyframes etincelle{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+@media (prefers-reduced-motion: reduce){.etincelle{display:none}.annonce{animation:none}}
+</style>
+</head>
+<body data-o="paysage">
+<div id="fond"></div><div id="teinte"></div><div id="ombre"></div><canvas id="ciel"></canvas>
+<div id="jeu">
+  <div class="puits" id="puits"><canvas id="toile" aria-label="Le puits de briques"></canvas></div>
+  <div class="haut" id="haut">
+    <button class="pause" data-a="pause" aria-label="Mettre en pause"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3.4" stroke-linecap="round"><path d="M8.5 5v14M15.5 5v14"/></svg>Pause</button>
+    <button class="rond" data-a="son" id="bSon"></button>
+    <button class="rond" data-a="accueil" aria-label="Retour à l'accueil"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></button>
+  </div>
+  <div class="cote" id="infos">
+    <div class="prochaine"><span>Ensuite</span><canvas id="suite"></canvas></div>
+    <div class="plaque" id="plLignes"></div>
+    <div class="plaque petit" id="plSaison"></div>
+    <div class="plaque petit" id="plPoints"></div>
+  </div>
+  <div class="cmd" id="cmdG">
+    <button class="gros" data-c="gauche" aria-label="Vers la gauche"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5L7.5 12l7.5 7.5"/></svg></button>
+    <button class="gros" data-c="droite" aria-label="Vers la droite"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5l7.5 7.5L9 19.5"/></svg></button>
+  </div>
+  <div class="cmd" id="cmdD">
+    <button class="gros" data-c="tourner" data-a="tourner" aria-label="Tourner"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 3.5v5h-5"/></svg></button>
+    <button class="gros" data-c="bas" aria-label="Descendre plus vite"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M5.5 12.5L12 19l6.5-6.5"/></svg></button>
+    <button class="gros" data-c="lacher" aria-label="Lâcher la brique"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5v12"/><path d="M6.5 9.5L12 15l5.5-5.5"/><path d="M4.5 20.5h15"/></svg></button>
+  </div>
+</div>
+<div id="fenetre"></div>
+<script>
+'use strict';
+/* ---------- Les sept pièces, chacune dans une matière du village ---------- */
+const TYPES='IOTSZJL';
+const FORMES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,1,0],[1,1,1],[0,0,0]],
+  S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]]};
+const MATIERE={I:'tuiles',O:'paille',T:'fleurs',S:'haie',Z:'brique',J:'pierre',L:'bois'};
+const tourne=m=>m.map((r,y)=>r.map((_,x)=>m[m.length-1-x][y]));
+/* ROT[t][r] = les cases pleines [x,y] de la pièce t tournée r fois */
+const ROT={};
+for(const t of TYPES){let m=FORMES[t];ROT[t]=[];for(let r=0;r<4;r++){const c=[];m.forEach((l,y)=>l.forEach((v,x)=>{if(v)c.push([x,y])}));ROT[t].push(c);m=tourne(m)}}
+const LARG=10, HAUT=20;
+
+/* ---------- Les saisons : une par niveau, comme au village (couleurs de saisons.js) ---------- */
+const SAISONS=[
+  {nom:'Printemps',e:'🌸',dit:'Le printemps revient !',filtre:'hue-rotate(28deg) saturate(1.05) brightness(1.05)',teinte:'rgba(247,198,217,.16)'},
+  {nom:'Été',e:'🌻',dit:"L'été arrive !",filtre:'hue-rotate(14deg) saturate(1.25) brightness(1.08)',teinte:'rgba(255,226,122,.12)'},
+  {nom:'Automne',e:'🍂',dit:"Voici l'automne !",filtre:'none',teinte:'rgba(224,137,46,.08)'},
+  {nom:'Hiver',e:'❄️',dit:"L'hiver est là !",filtre:'saturate(.3) brightness(1.18) contrast(.92)',teinte:'rgba(205,225,245,.32)'}];
+const saisonDe=n=>SAISONS[(n-1)%4];
+
+/* ---------- La vitesse : lente au départ ; en « Tranquille » elle ne monte jamais ---------- */
+const LENT=1100;
+const gravite=()=>P.mode==='tranquille'?LENT:Math.max(260,Math.round(LENT*Math.pow(.86,P.niveau-1)));
+const LIGNES_PAR_NIVEAU=10;
+
+/* ---------- Mémoire de la tablette : même profil que les cartes (?profil=b pour les essais à deux onglets) ---------- */
+const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
+const K='briques'+(PROFIL?'-'+PROFIL:'')+':';
+const lis=(k,d)=>{try{const v=localStorage.getItem(K+k);return v===null?d:JSON.parse(v)}catch{return d}};
+const ecris=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch{}};
+/* Comme le rami, la belote et les mots mêlés : la partie finie verse dans la caisse du village (le village en tire aussi des étoiles) ;
+   la clé évite de payer deux fois. */
+function versVillage(n,cle){
+  try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
+    localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
+}
+const gainDe=l=>l>0?Math.min(300,Math.max(10,l*5)):0;
+
+/* ---------- Le son : quelques notes synthétisées, comme au village (aucun fichier) ---------- */
+let AC=null, musiqueMinuteur=null, musiqueOn=lis('musique',true);
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch{AC=null}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function note(f,t0,dur,type,vol){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,a.currentTime+t0);g.gain.linearRampToValueAtTime(vol||.12,a.currentTime+t0+.01);
+  g.gain.exponentialRampToValueAtTime(.0005,a.currentTime+t0+dur);o.connect(g).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+dur+.05)}
+const SON={
+  tac(){note(880,0,.05,'triangle',.025)},
+  tourne(){note(660,0,.07,'triangle',.03);note(990,.04,.08,'sine',.02)},
+  pose(){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(170,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(70,a.currentTime+.16);g.gain.setValueAtTime(.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.2);
+    o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+.25)},
+  ligne(n){[784,988,1175,1319,1568].slice(0,n+1).forEach((f,k)=>note(f,k*.08,.35,'sine',.09));note(1760,n*.08+.08,.4,'triangle',.04)},
+  saison(){[523,659,784,1047].forEach((f,k)=>note(f,k*.12,.4,'triangle',.08))},
+  fin(){[784,659,523,659,784].forEach((f,k)=>note(f,k*.16,.45,'triangle',.07))}};
+const GAMME=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
+function musique(on){
+  clearInterval(musiqueMinuteur);musiqueMinuteur=null;if(!on||!audio())return;
+  let k=3,pas=0;
+  musiqueMinuteur=setInterval(()=>{if(document.hidden)return;
+    if(pas%8===0){note(GAMME[[0,3,4,2][(pas/8)%4]]/2,0,2.6,'sine',.035)}
+    if(Math.random()<.7){k=Math.max(0,Math.min(GAMME.length-1,k+[-2,-1,1,2][Math.floor(Math.random()*4)]));note(GAMME[k],0,.9,'triangle',.03)}
+    pas++},420);
+}
+const ICONE_SON=on=>`<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5h4l5-4v13l-5-4h-4z"/>${on?'<path d="M16 9a4.5 4.5 0 0 1 0 6"/><path d="M18.8 6.3a8.4 8.4 0 0 1 0 11.4"/>':'<path d="M16 9.5l5 5M21 9.5l-5 5"/>'}</svg>`;
+function majSon(){const b=document.getElementById('bSon');b.innerHTML=ICONE_SON(musiqueOn);b.setAttribute('aria-label',musiqueOn?'Couper la musique':'Remettre la musique')}
+
+/* ---------- Les blocs : de vrais petits blocs de matière, avec relief, dessinés une fois par taille ---------- */
+function hasard(seed){return()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function arrondi(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+const degrade=(g,s,a,b)=>{const d=g.createLinearGradient(0,0,0,s);d.addColorStop(0,a);d.addColorStop(1,b);return d};
+const MATIERES={
+  bois(g,s,R){g.fillStyle=degrade(g,s,'#D7A169','#A46635');g.fillRect(0,0,s,s);
+    g.lineWidth=Math.max(1,s*.025);g.strokeStyle='rgba(90,50,20,.28)';
+    for(let k=0;k<6;k++){const y=s*(.08+k*.16+R()*.05);g.beginPath();g.moveTo(0,y);g.bezierCurveTo(s*.3,y+s*(R()-.5)*.12,s*.7,y+s*(R()-.5)*.12,s,y);g.stroke()}
+    for(const y of [s/3,s*2/3]){g.fillStyle='rgba(74,42,18,.6)';g.fillRect(0,y-s*.025,s,s*.045);g.fillStyle='rgba(255,220,170,.28)';g.fillRect(0,y+s*.02,s,s*.025)}
+    g.strokeStyle='rgba(74,42,18,.55)';g.lineWidth=Math.max(1,s*.03);g.beginPath();g.ellipse(s*(.25+R()*.5),s*(.12+Math.floor(R()*3)/3),s*.07,s*.04,0,0,7);g.stroke()},
+  pierre(g,s,R){g.fillStyle='#6C6E69';g.fillRect(0,0,s,s);
+    for(const [cx,cy] of [[.27,.27],[.74,.25],[.25,.74],[.73,.73]]){const x=s*(cx+(R()-.5)*.06),y=s*(cy+(R()-.5)*.06),rx=s*(.21+R()*.05),ry=s*(.19+R()*.05);
+      const d=g.createLinearGradient(0,y-ry,0,y+ry);d.addColorStop(0,'#C9CBC3');d.addColorStop(1,'#8B8E87');
+      g.fillStyle=d;g.beginPath();g.ellipse(x,y,rx,ry,R()*.6,0,7);g.fill();g.strokeStyle='rgba(50,48,44,.45)';g.lineWidth=Math.max(1,s*.025);g.stroke();
+      g.fillStyle='rgba(255,255,250,.25)';g.beginPath();g.ellipse(x-rx*.3,y-ry*.4,rx*.35,ry*.2,-.3,0,7);g.fill()}},
+  paille(g,s,R){g.fillStyle=degrade(g,s,'#F2D47A','#C99A3A');g.fillRect(0,0,s,s);g.lineCap='round';g.lineWidth=Math.max(1,s*.032);
+    for(let k=0;k<26;k++){const x=R()*s,y=R()*s,l=s*(.25+R()*.35),a=-1.1+(R()-.5)*.35;g.strokeStyle=k%2?'rgba(252,236,170,.85)':'rgba(160,118,40,.6)';
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+    g.fillStyle='rgba(138,90,46,.55)';g.fillRect(0,s*.46,s,s*.08)},
+  brique(g,s,R){g.fillStyle='#D8C4A2';g.fillRect(0,0,s,s);const h=s/3,j=s*.045,C=['#B8533A','#C4603F','#A84A33','#BE5A3C'];
+    for(let r=0;r<3;r++){const dec=r%2?-s/4:0;for(let k=-1;k<3;k++){const x=dec+k*s/2+j/2,y=r*h+j/2,w=s/2-j,hh=h-j;
+      g.fillStyle=C[Math.floor(R()*C.length)];g.fillRect(x,y,w,hh);g.fillStyle='rgba(255,210,170,.3)';g.fillRect(x,y,w,hh*.18);
+      g.fillStyle='rgba(60,20,10,.2)';g.fillRect(x,y+hh*.8,w,hh*.2)}}},
+  haie(g,s,R){g.fillStyle='#355C20';g.fillRect(0,0,s,s);const C=['#4F7F2E','#5E8E34','#76A845','#8DBE5A'];
+    for(let k=0;k<18;k++){const x=R()*s,y=R()*s,r=s*(.1+R()*.1);g.fillStyle=C[Math.floor(R()*C.length)];g.beginPath();g.arc(x,y,r,0,7);g.fill();
+      g.fillStyle='rgba(220,255,170,.22)';g.beginPath();g.arc(x-r*.3,y-r*.35,r*.35,0,7);g.fill()}},
+  fleurs(g,s,R){g.fillStyle=degrade(g,s,'#F4B3CB','#D77FA2');g.fillRect(0,0,s,s);
+    for(let k=0;k<4;k++){g.fillStyle=k%2?'#6E9E3E':'#5E8E34';g.beginPath();g.ellipse(R()*s,R()*s,s*.1,s*.05,R()*3,0,7);g.fill()}
+    for(const [cx,cy] of [[.3,.3],[.72,.38],[.38,.74],[.8,.8]]){const x=s*(cx+(R()-.5)*.08),y=s*(cy+(R()-.5)*.08),r=s*.1,blanc=R()<.5;
+      g.fillStyle=blanc?'#FFF6FA':'#FFE27A';for(let p=0;p<5;p++){const a=p*1.2566;g.beginPath();g.arc(x+Math.cos(a)*r,y+Math.sin(a)*r,r*.72,0,7);g.fill()}
+      g.fillStyle='#E8A03A';g.beginPath();g.arc(x,y,r*.55,0,7);g.fill()}},
+  tuiles(g,s,R){g.fillStyle='#363E55';g.fillRect(0,0,s,s);const h=s/3.2,w=s/2.5;
+    for(let r=0;r<5;r++){const y=r*h-h*.4,dec=r%2?w/2:0;for(let k=-1;k<4;k++){const x=dec+k*w;
+      const d=g.createLinearGradient(0,y,0,y+h*1.2);d.addColorStop(0,'#7480A0');d.addColorStop(1,'#414B66');g.fillStyle=d;
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w,y+h*.55);g.arc(x+w/2,y+h*.55,w/2,0,Math.PI);g.closePath();g.fill();
+      g.strokeStyle='rgba(25,28,40,.6)';g.lineWidth=Math.max(1,s*.025);g.stroke()}}}};
+function bloc(mat,v,s){
+  const cv=document.createElement('canvas');cv.width=cv.height=s;const g=cv.getContext('2d'),R=hasard(mat.length*977+v*131+mat.charCodeAt(0));
+  const r=s*.14,L=Math.max(2,s*.1);
+  g.save();arrondi(g,0,0,s,s,r);g.clip();MATIERES[mat](g,s,R);
+  /* le relief : haut et gauche éclairés, bas et droite dans l'ombre */
+  const poly=(pts,c)=>{g.fillStyle=c;g.beginPath();pts.forEach(([x,y],k)=>k?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()};
+  poly([[0,0],[s,0],[s-L,L],[L,L]],'rgba(255,244,214,.42)');
+  poly([[0,0],[L,L],[L,s-L],[0,s]],'rgba(255,244,214,.24)');
+  poly([[0,s],[L,s-L],[s-L,s-L],[s,s]],'rgba(30,14,2,.34)');
+  poly([[s,0],[s,s],[s-L,s-L],[s-L,L]],'rgba(30,14,2,.22)');
+  g.restore();
+  const lw=Math.max(1.5,s*.05);g.lineWidth=lw;g.strokeStyle='rgba(46,24,8,.9)';arrondi(g,lw/2,lw/2,s-lw,s-lw,r);g.stroke();
+  return cv;
+}
+const CACHE={};
+function blocs(s){if(!CACHE[s]){CACHE[s]={};for(const t of TYPES)CACHE[s][t]=[0,1,2].map(v=>bloc(MATIERE[t],v,s))}return CACHE[s]}
+
+/* ---------- La partie ---------- */
+let P=null, etat='choix', sac=[];
+function nouveauSac(){const s=TYPES.split('');for(let i=s.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[s[i],s[j]]=[s[j],s[i]]}return s}
+function tirer(){if(!P.sac||!P.sac.length)P.sac=nouveauSac();return P.sac.shift()}
+function nouvellePartie(mode){
+  P={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),mode,b:Array(LARG*HAUT).fill(0),sac:[],cur:null,suite:null,score:0,lignes:0,niveau:1,paye:false,fini:false};
+  P.suite=tirer();sortir();ecris('mode',mode);sauve();
+}
+const sauve=()=>ecris('partie',P);
+function heurte(t,r,x,y){
+  for(const [cx,cy] of ROT[t][r]){const X=x+cx,Y=y+cy;if(X<0||X>=LARG||Y>=HAUT)return true;if(Y>=0&&P.b[Y*LARG+X])return true}
+  return false;
+}
+function sortir(){
+  const t=P.suite;P.suite=tirer();
+  P.cur={t,r:0,x:t==='O'?4:3,y:t==='I'?-1:0};retards=0;delai=0;acc=0;
+  if(heurte(t,0,P.cur.x,P.cur.y)){P.cur=null;finir();return}
+  dessineSuite();sale=true;
+}
+let acc=0, delai=0, retards=0, sale=true, efface=null;
+const DELAI_POSE=550, RETARDS_MAX=15;
+function bouge(dx,dy){
+  const c=P.cur;if(!c||efface)return false;
+  if(heurte(c.t,c.r,c.x+dx,c.y+dy))return false;
+  c.x+=dx;c.y+=dy;sale=true;
+  if(dx&&heurte(c.t,c.r,c.x,c.y+1)&&retards<RETARDS_MAX){delai=0;retards++}
+  return true;
+}
+function tourner(){
+  const c=P.cur;if(!c||efface||c.t==='O')return;
+  const r=(c.r+1)%4;
+  for(const [dx,dy] of [[0,0],[-1,0],[1,0],[0,-1],[-2,0],[2,0],[0,-2]]){
+    if(!heurte(c.t,r,c.x+dx,c.y+dy)){c.r=r;c.x+=dx;c.y+=dy;sale=true;SON.tourne();
+      if(heurte(c.t,c.r,c.x,c.y+1)&&retards<RETARDS_MAX){delai=0;retards++}return}
+  }
+}
+function descendre(){if(bouge(0,1)){P.score+=1;acc=0;majInfos()}}
+function lacher(){
+  const c=P.cur;if(!c||efface)return;
+  let n=0;while(!heurte(c.t,c.r,c.x,c.y+1)){c.y++;n++}
+  P.score+=2*n;poser();
+}
+function chute(){const c=P.cur;let y=c.y;while(!heurte(c.t,c.r,c.x,y+1))y++;return y}
+function poser(){
+  const c=P.cur;let dehors=false;
+  ROT[c.t][c.r].forEach(([cx,cy],k)=>{const X=c.x+cx,Y=c.y+cy;if(Y<0){dehors=true;return}P.b[Y*LARG+X]=(TYPES.indexOf(c.t)+1)*4+(k%3)});
+  P.cur=null;SON.pose();
+  if(dehors){finir();return}
+  const pleines=[];for(let y=0;y<HAUT;y++){let ok=true;for(let x=0;x<LARG;x++)if(!P.b[y*LARG+x]){ok=false;break}if(ok)pleines.push(y)}
+  if(pleines.length){efface={rangs:pleines,t0:performance.now()};SON.ligne(pleines.length);etincellesLignes(pleines)}
+  else sortir();
+  sale=true;majInfos();sauve();
+}
+function retirerLignes(){
+  const n=efface.rangs.length;
+  for(const y of efface.rangs){P.b.splice(y*LARG,LARG);P.b.unshift(...Array(LARG).fill(0))}
+  efface=null;
+  const avant=P.niveau;
+  P.lignes+=n;P.score+=[0,100,300,500,800][n]*P.niveau;P.niveau=1+Math.floor(P.lignes/LIGNES_PAR_NIVEAU);
+  if(P.niveau!==avant){mettreSaison(true)}
+  sortir();majInfos();sauve();
+}
+function finir(){
+  P.fini=true;etat='fin';arreterAppuis();
+  const g=gainDe(P.lignes);
+  if(!P.paye){if(g)versVillage(g,'briques-'+P.id);P.paye=true}
+  sauve();musique(false);setTimeout(()=>{SON.fin();fenFin()},500);sale=true;
+}
+
+/* ---------- La boucle ---------- */
+let avant=0;
+function boucle(ts){
+  requestAnimationFrame(boucle);
+  const dt=Math.min(100,ts-(avant||ts));avant=ts;
+  if(etat==='jeu'&&P&&!P.fini){
+    if(efface){sale=true;if(ts-efface.t0>=420)retirerLignes()}
+    else if(P.cur){
+      const c=P.cur;
+      if(heurte(c.t,c.r,c.x,c.y+1)){acc=0;delai+=dt;if(delai>=DELAI_POSE)poser()}
+      else{delai=0;acc+=dt;if(acc>=gravite()){acc=0;c.y++;sale=true}}
+    }
+  }
+  ciel(dt);
+  if(sale){dessine();sale=false}
+}
+
+/* ---------- Le dessin du puits ---------- */
+const toile=document.getElementById('toile'), ctx=toile.getContext('2d'), suite=document.getElementById('suite'), sctx=suite.getContext('2d');
+let C=30, DPR=1;
+function dessine(){
+  const s=Math.round(C*DPR), W=LARG*s, H=HAUT*s;
+  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(30,18,8,.62)';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,236,200,.07)';ctx.lineWidth=1;ctx.beginPath();
+  for(let x=1;x<LARG;x++){ctx.moveTo(x*s+.5,0);ctx.lineTo(x*s+.5,H)}for(let y=1;y<HAUT;y++){ctx.moveTo(0,y*s+.5);ctx.lineTo(W,y*s+.5)}ctx.stroke();
+  if(!P)return;
+  const B=blocs(s);
+  for(let y=0;y<HAUT;y++)for(let x=0;x<LARG;x++){const v=P.b[y*LARG+x];if(v)ctx.drawImage(B[TYPES[(v>>2)-1]][v&3],x*s,y*s)}
+  if(efface){const p=Math.min(1,(performance.now()-efface.t0)/420);
+    ctx.fillStyle=`rgba(255,240,190,${(.85*(1-p)).toFixed(3)})`;for(const y of efface.rangs)ctx.fillRect(0,y*s,W,s)}
+  const c=P.cur;
+  if(c&&!P.fini){
+    const yf=chute();ctx.globalAlpha=.22;
+    ROT[c.t][c.r].forEach(([cx,cy],k)=>{if(yf+cy>=0)ctx.drawImage(B[c.t][k%3],(c.x+cx)*s,(yf+cy)*s)});
+    ctx.globalAlpha=1;
+    ROT[c.t][c.r].forEach(([cx,cy],k)=>{if(c.y+cy>=0)ctx.drawImage(B[c.t][k%3],(c.x+cx)*s,(c.y+cy)*s)});
+  }
+}
+function dessineSuite(){
+  const cw=suite.width,ch=suite.height;sctx.clearRect(0,0,cw,ch);if(!P||!P.suite)return;
+  const t=P.suite,cs=ROT[t][0],s=Math.floor(Math.min(cw/4.4,ch/2.6)),B=blocs(s);
+  const xs=cs.map(c=>c[0]),ys=cs.map(c=>c[1]),w=(Math.max(...xs)-Math.min(...xs)+1)*s,h=(Math.max(...ys)-Math.min(...ys)+1)*s;
+  const ox=(cw-w)/2-Math.min(...xs)*s,oy=(ch-h)/2-Math.min(...ys)*s;
+  cs.forEach(([x,y],k)=>sctx.drawImage(B[t][k%3],Math.round(ox+x*s),Math.round(oy+y*s)));
+}
+function majInfos(){
+  if(!P)return;const S=saisonDe(P.niveau);
+  document.getElementById('plLignes').innerHTML=`Lignes <b>${P.lignes}</b>`;
+  document.getElementById('plSaison').textContent=`${S.e} ${S.nom} · niveau ${P.niveau}${P.mode==='tranquille'?' · tranquille':''}`;
+  document.getElementById('plPoints').textContent=`${P.score.toLocaleString('fr-FR')} points`;
+}
+function etincellesLignes(rangs){
+  const r=toile.getBoundingClientRect(),c=r.height/HAUT;
+  for(const y of rangs)for(let k=0;k<12;k++){const s=document.createElement('span');s.className='etincelle';
+    const ang=Math.random()*Math.PI*2,d=30+Math.random()*60;
+    s.style.left=(r.left+(k+.5)/12*r.width)+'px';s.style.top=(r.top+(y+.5)*c)+'px';
+    s.style.setProperty('--dx',Math.cos(ang)*d+'px');s.style.setProperty('--dy',Math.sin(ang)*d-20+'px');
+    document.body.appendChild(s);setTimeout(()=>s.remove(),1000)}
+}
+
+/* ---------- La scène : la saison du niveau et ce qui vole dans l'air ---------- */
+const fond=document.getElementById('fond'),teinte=document.getElementById('teinte'),cielC=document.getElementById('ciel'),cg=cielC.getContext('2d');
+let flocons=[], saisonVue=-1;
+const calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function mettreSaison(annoncer){
+  const i=P?(P.niveau-1)%4:2;if(i===saisonVue)return;saisonVue=i;const S=SAISONS[i];
+  fond.style.filter=S.filtre;teinte.style.backgroundColor=S.teinte;flocons=[];
+  if(annoncer){SON.saison();const r=document.getElementById('puits').getBoundingClientRect(),a=document.createElement('div');a.className='annonce';
+    a.textContent=`${S.e} ${S.dit} Niveau ${P.niveau}`;a.style.left=(r.left+r.width/2)+'px';a.style.top=(r.top+r.height*.3)+'px';
+    document.body.appendChild(a);setTimeout(()=>a.remove(),2900)}
+}
+function ciel(dt){
+  if(calme||document.hidden)return;
+  const w=cielC.width,h=cielC.height,i=saisonVue<0?2:saisonVue;
+  while(flocons.length<26){const f={x:Math.random()*w,y:Math.random()*h,v:.3+Math.random()*.7,a:Math.random()*6,r:3+Math.random()*4};
+    if(i===1)f.r=1.5+Math.random()*2;flocons.push(f)}
+  cg.clearRect(0,0,w,h);const k=dt/16;
+  for(const f of flocons){f.a+=.02*k;
+    if(i===1){f.y-=.15*f.v*k;f.x+=Math.sin(f.a)*.3*k}else{f.y+=(i===3?.45:.6)*f.v*k;f.x+=(Math.sin(f.a)*.5+(i===0?.3:0))*k}
+    if(f.y>h+10){f.y=-10;f.x=Math.random()*w}if(f.y<-10){f.y=h+10;f.x=Math.random()*w}if(f.x>w+10)f.x=-10;if(f.x<-10)f.x=w+10;
+    cg.save();cg.translate(f.x,f.y);cg.rotate(f.a);
+    if(i===0){cg.fillStyle='rgba(250,200,220,.8)';cg.beginPath();cg.ellipse(0,0,f.r,f.r*.55,0,0,7);cg.fill()}
+    else if(i===1){cg.fillStyle=`rgba(255,236,150,${(.4+.4*Math.sin(f.a*3)).toFixed(2)})`;cg.beginPath();cg.arc(0,0,f.r,0,7);cg.fill()}
+    else if(i===2){cg.fillStyle=f.v>.65?'rgba(214,110,40,.85)':'rgba(232,160,50,.85)';cg.beginPath();cg.ellipse(0,0,f.r*1.2,f.r*.6,0,0,7);cg.fill()}
+    else{cg.fillStyle='rgba(255,255,255,.85)';cg.beginPath();cg.arc(0,0,f.r*.7,0,7);cg.fill()}
+    cg.restore()}
+}
+
+/* ---------- La place : tout est mesuré sur l'écran réel ---------- */
+const $=id=>document.getElementById(id);
+function poseBoite(el,x,y,w,h){el.style.left=x+'px';el.style.top=y+'px';if(w!=null)el.style.width=w+'px';if(h!=null)el.style.height=h+'px'}
+function placer(){
+  const vw=innerWidth,vh=innerHeight,m=10,f=13,portrait=vh>vw*1.05;
+  document.body.dataset.o=portrait?'portrait':'paysage';
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  cielC.width=vw;cielC.height=vh;
+  let bs,gap;
+  if(portrait){
+    const colW=Math.round(Math.min(240,Math.max(150,vw*.25)));
+    gap=Math.round(Math.min(14,vw*.015));
+    bs=Math.round(Math.min(120,Math.max(72,(vw-2*m-4*gap-gap*2)/5),vh*.11));
+    C=Math.floor(Math.min((vh-bs-4*m-2*f-8)/HAUT,(vw-colW-3*m-2*f)/LARG));
+    const pw=C*LARG+2*f,ph=C*HAUT+2*f,gx=Math.round((vw-(pw+m+colW))/2);
+    poseBoite($('puits'),gx,m,pw,ph);
+    poseBoite($('haut'),gx+pw+m,m,colW,null);
+    poseBoite($('infos'),gx+pw+m,m+$('haut').offsetHeight+14,colW,null);
+    const ligneY=m+ph+m*2+4, total=5*bs+4*gap+2*gap, x0=Math.round((vw-total)/2);
+    poseBoite($('cmdG'),x0,ligneY,2*bs+gap,bs);
+    poseBoite($('cmdD'),x0+2*bs+3*gap,ligneY,3*bs+2*gap,bs);
+  }else{
+    C=Math.floor((vh-2*m-2*f)/HAUT);
+    const pw=C*LARG+2*f,ph=C*HAUT+2*f,px=Math.round((vw-pw)/2),cote=(vw-pw)/2-2*m;
+    gap=Math.round(Math.min(14,cote*.05));
+    bs=Math.round(Math.min(130,Math.max(64,(cote-gap)/2.1),vh*.2));
+    poseBoite($('puits'),px,m,pw,ph);
+    const colW=Math.round(Math.min(260,cote));
+    poseBoite($('infos'),Math.round(px-m-colW),m,colW,null);
+    poseBoite($('haut'),px+pw+m+Math.round((cote-colW)/2),m,colW,null);
+    poseBoite($('cmdG'),Math.round(px-m-(cote+2*bs+gap)/2),vh-m-bs-4,2*bs+gap,bs);
+    poseBoite($('cmdD'),Math.round(px+pw+m+(cote-(2*bs+gap))/2),vh-m-2*bs-gap-4,2*bs+gap,2*bs+gap);
+  }
+  document.documentElement.style.setProperty('--bs',bs+'px');document.documentElement.style.setProperty('--gap',gap+'px');
+  const s=Math.round(C*DPR);
+  toile.width=LARG*s;toile.height=HAUT*s;toile.style.width=LARG*C+'px';toile.style.height=HAUT*C+'px';
+  const sw=Math.round(Math.min(150,parseFloat($('infos').style.width)-30));
+  suite.width=Math.round(sw*DPR);suite.height=Math.round(sw*.55*DPR);suite.style.width=sw+'px';suite.style.height=Math.round(sw*.55)+'px';
+  for(const k in CACHE)if(+k!==s)delete CACHE[k];
+  dessineSuite();sale=true;
+}
+
+/* ---------- Les commandes : gros boutons qui ne restent jamais coincés ---------- */
+const REPETE={gauche:[230,85],droite:[230,85],bas:[150,55]};
+const appuis=new Map();   // pointerId -> {c, el, minuteur}
+function action(c){
+  if(etat!=='jeu'||!P||P.fini)return;
+  audio();
+  if(c==='gauche'){if(bouge(-1,0))SON.tac()}
+  else if(c==='droite'){if(bouge(1,0))SON.tac()}
+  else if(c==='bas')descendre();
+  else if(c==='tourner')tourner();
+  else if(c==='lacher')lacher();
+}
+function relache(id){
+  const a=appuis.get(id);if(!a)return;clearTimeout(a.minuteur);clearInterval(a.minuteur);a.el.classList.remove('appuye');appuis.delete(id);
+}
+function arreterAppuis(){for(const id of [...appuis.keys()])relache(id)}
+document.querySelectorAll('.gros').forEach(el=>{
+  const c=el.dataset.c;
+  el.addEventListener('pointerdown',e=>{
+    e.preventDefault();relache(e.pointerId);
+    try{el.setPointerCapture(e.pointerId)}catch{}
+    const a={c,el,minuteur:null};appuis.set(e.pointerId,a);el.classList.add('appuye');
+    action(c);
+    const r=REPETE[c];
+    if(r)a.minuteur=setTimeout(()=>{if(!appuis.has(e.pointerId))return;a.minuteur=setInterval(()=>{if(etat!=='jeu'){relache(e.pointerId);return}action(c)},r[1])},r[0]);
+  });
+  for(const ev of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(ev,e=>relache(e.pointerId));
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+});
+/* filets : un doigt levé n'importe où, la page qui perd la main, tout se relâche */
+for(const ev of ['pointerup','pointercancel'])window.addEventListener(ev,e=>relache(e.pointerId));
+window.addEventListener('blur',()=>{arreterAppuis();mettrePause()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){arreterAppuis();mettrePause()}});
+window.addEventListener('pagehide',()=>{arreterAppuis();mettrePause()});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* glisser le doigt sur le puits pour déplacer, toucher pour tourner (réglable dans la pause) */
+let doigt=null, gestePuits=lis('geste',true);
+const puitsEl=$('puits');
+puitsEl.addEventListener('pointerdown',e=>{
+  if(etat!=='jeu'||!gestePuits||doigt)return;
+  e.preventDefault();audio();try{puitsEl.setPointerCapture(e.pointerId)}catch{}
+  doigt={id:e.pointerId,x0:e.clientX,y0:e.clientY,dx:0,dy:0,t0:performance.now(),bouge:false};
+});
+puitsEl.addEventListener('pointermove',e=>{
+  if(!doigt||e.pointerId!==doigt.id||etat!=='jeu')return;
+  const ddx=Math.trunc((e.clientX-doigt.x0)/C),ddy=Math.trunc((e.clientY-doigt.y0)/C);
+  while(doigt.dx<ddx){doigt.dx++;doigt.bouge=true;if(bouge(1,0))SON.tac()}
+  while(doigt.dx>ddx){doigt.dx--;doigt.bouge=true;if(bouge(-1,0))SON.tac()}
+  if(Math.abs(e.clientY-doigt.y0)>Math.abs(e.clientX-doigt.x0))while(doigt.dy<ddy){doigt.dy++;doigt.bouge=true;descendre()}
+});
+function finDoigt(e,tourneSiTouche){
+  if(!doigt||e.pointerId!==doigt.id)return;
+  const touche=!doigt.bouge&&Math.hypot(e.clientX-doigt.x0,e.clientY-doigt.y0)<C*.5&&performance.now()-doigt.t0<400;
+  doigt=null;if(tourneSiTouche&&touche&&etat==='jeu')tourner();
+}
+puitsEl.addEventListener('pointerup',e=>finDoigt(e,true));
+puitsEl.addEventListener('pointercancel',e=>finDoigt(e,false));
+puitsEl.addEventListener('lostpointercapture',e=>finDoigt(e,false));
+
+/* le clavier, pour les essais sur ordinateur */
+document.addEventListener('keydown',e=>{
+  if(etat!=='jeu')return;
+  const k={ArrowLeft:'gauche',ArrowRight:'droite',ArrowDown:'bas',ArrowUp:'tourner',' ':'lacher'}[e.key];
+  if(k){e.preventDefault();action(k)}else if(e.key==='p'||e.key==='Escape')mettrePause();
+});
+
+/* ---------- Pause, fenêtres ---------- */
+const fenetre=$('fenetre');
+function jouer(){
+  etat='jeu';fenetre.innerHTML='';avant=0;acc=0;mettreSaison(false);majInfos();dessineSuite();sale=true;
+  if(musiqueOn)musique(true);
+}
+function mettrePause(){
+  if(etat!=='jeu')return;
+  etat='pause';doigt=null;arreterAppuis();musique(false);sauve();fenPause();
+}
+function fenChoix(){
+  etat='choix';musique(false);
+  const enCours=P&&!P.fini, mode=lis('mode','tranquille');
+  fenetre.innerHTML=`<div class="voile"><div class="fen" role="dialog" aria-label="Les briques de la Vallée"><h2>Les briques de la Vallée</h2>
+    <p>Rangez les briques pour remplir des lignes : une ligne pleine s'en va.</p>
+    ${enCours?`<button class="btn grand" data-a="reprendre">▶ Reprendre ma partie<small>${P.lignes} ligne${P.lignes>1?'s':''} · niveau ${P.niveau}</small></button><p style="font-size:17px">ou une nouvelle partie :</p>`:''}
+    <div class="choix"><button class="btn ${enCours?'clair':'grand'}" data-a="nouvelle" data-m="tranquille">🌿 Tranquille<small>la vitesse ne change jamais</small></button>
+      <button class="btn ${enCours?'clair':'grand'}" data-a="nouvelle" data-m="normal">🍂 Normal<small>un peu plus vite à chaque niveau</small></button></div>
+    <div class="rangee"><button class="btn clair" data-a="accueil">Retour à l'accueil</button></div></div></div>`;
+  if(!enCours){const b=fenetre.querySelector(`[data-m="${mode}"]`);if(b)b.classList.add('confirme')}
+}
+function fenPause(){
+  fenetre.innerHTML=`<div class="voile"><div class="fen" role="dialog" aria-label="Pause"><h2>Pause</h2>
+    <button class="btn grand" data-a="reprendre">▶ Reprendre</button>
+    <div class="rangee"><button class="btn clair" data-a="geste">${gestePuits?'✓ ':''}Glisser et toucher le puits<small>${gestePuits?'oui':'non'}</small></button>
+      <button class="btn clair" data-a="recommencer">Nouvelle partie</button></div>
+    <div class="rangee"><button class="btn clair" data-a="accueil">Retour à l'accueil<small>la partie est gardée</small></button></div></div></div>`;
+}
+function fenFin(){
+  if(etat!=='fin')return;
+  const l=P.lignes,g=gainDe(l);
+  fenetre.innerHTML=`<div class="voile"><div class="fen" role="dialog" aria-label="Partie terminée">
+    <h2>${l?`Bravo, ${l} ligne${l>1?'s':''} !`:'Bravo, belle partie !'}</h2>
+    <p>${saisonDe(P.niveau).e} Niveau ${P.niveau} · ${P.score.toLocaleString('fr-FR')} points</p>
+    ${g?`<p>🏡 +${g} pièces et des étoiles pour votre village.</p>`:'<p>Les lignes pleines rapportent des pièces au village.</p>'}
+    <button class="btn grand" data-a="encore">Une nouvelle partie</button>
+    <div class="rangee"><button class="btn clair" data-a="accueil">Retour à l'accueil</button></div></div></div>`;
+}
+let confirmer=null;
+fenetre.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;audio();
+  if(a==='reprendre')jouer();
+  else if(a==='nouvelle'){nouvellePartie(b.dataset.m);saisonVue=-1;jouer()}
+  else if(a==='encore')fenChoix();
+  else if(a==='accueil'){location.href='index.html'+location.search}
+  else if(a==='geste'){gestePuits=!gestePuits;ecris('geste',gestePuits);fenPause()}
+  else if(a==='recommencer'){
+    /* toucher encore pour recommencer : les lignes déjà faites sont versées au village */
+    if(confirmer!==b){confirmer=b;b.classList.add('confirme');b.innerHTML='Toucher encore<small>pour recommencer</small>';setTimeout(()=>{if(confirmer===b){confirmer=null;if(etat==='pause')fenPause()}},4000);return}
+    confirmer=null;const g=gainDe(P.lignes);if(!P.paye){if(g)versVillage(g,'briques-'+P.id);P.paye=true}P.fini=true;sauve();fenChoix();
+  }
+});
+$('haut').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;audio();
+  if(a==='pause'){if(etat==='jeu')mettrePause();else if(etat==='pause')jouer()}
+  else if(a==='son'){musiqueOn=!musiqueOn;ecris('musique',musiqueOn);majSon();musique(musiqueOn&&etat==='jeu')}
+  else if(a==='accueil'){if(P&&!P.fini)sauve();location.href='index.html'+location.search}
+});
+
+/* ---------- Au démarrage : la partie gardée revient en pause, jamais en marche toute seule ---------- */
+P=lis('partie',null);
+if(P&&(!Array.isArray(P.b)||P.b.length!==LARG*HAUT))P=null;
+majSon();placer();addEventListener('resize',placer);
+if(P&&!P.fini){if(!P.cur&&!efface)sortir();mettreSaison(false);majInfos();fenChoix()}
+else{fenChoix()}
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>

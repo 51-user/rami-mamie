@@ -626,6 +626,7 @@ function render(force){
         <button class="big alt" data-act="solo">🂡 Solitaire<small>toute seule, sans connexion</small></button>
         <button class="big alt" data-act="belote">♣️ Belote<small>à trois ou quatre, en famille ou avec le village</small></button>
         <button class="big alt" data-act="motsmeles">🔤 Mots mêlés<small>trouver les mots cachés, sans se presser</small></button>
+        <button class="big alt" data-act="briques">🧱 Les briques<small>ranger les briques qui tombent</small></button>
       </div>
       <div class="homebtns"><button class="small" data-act="cartes">Mes cartes et mon tapis</button></div></div>${pan}`;
     return;
@@ -1026,6 +1027,7 @@ app.addEventListener('click',e=>{
     case 'village': location.href='village.html'+location.search; break;
     case 'belote': location.href='belote.html'+location.search; break;
     case 'motsmeles': location.href='motsmeles.html'+location.search; break;
+    case 'briques': location.href='briques.html'+location.search; break;
     case 'accueil': mode=null; ls.set('mode',null); ssel=null; soloMsg=''; flash=''; render(true); break;
     case 'stock': soloStock(); break;
     case 'sc': soloTap(t.dataset.w,+t.dataset.c,+t.dataset.i); break;
