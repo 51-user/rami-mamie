@@ -182,7 +182,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 let message='', feuille=null, mode=null, dernierPose=null, fete=false;   // mode : {pose:type} | {deplace:id} | {chemins:true}
 const assez=c=>Object.entries(c).every(([k,v])=>(S.stock[k]||0)>=v);
 const paye=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);
-const txt=c=>Object.entries(c).map(([k,v])=>v+' '+RES[k].e).join(' + ');
+const txt=c=>Object.entries(c).map(([k,v])=>`<span class="cout"><i class="case">${RES[k].e}</i>${v}</span>`).join(' ');   // les coûts, comme un inventaire
 const heure=ms=>{const d=new Date(ms);return d.getHours()+' h '+String(d.getMinutes()).padStart(2,'0')};
 const possede=(i,j)=>i>=0&&j>=0&&i<MONDE&&j<MONDE&&S.blocs.includes(Math.floor(i/BLOC)+','+Math.floor(j/BLOC));
 const surPlace=(i,j)=>i>=PLACE.i&&i<PLACE.i+2&&j>=PLACE.j&&j<PLACE.j+2;
@@ -387,7 +387,7 @@ function rendu(){
   }
   document.body.classList.toggle('nuit',nuit());
   const vus=['pieces','etoiles',...Object.keys(RES).filter(k=>k!=='pieces'&&k!=='etoiles'&&((S.stock[k]||0)>0||S.b.some(o=>BAT[o.type].produit===k)))];
-  const pills=vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}">${RES[k].e} ${S.stock[k]||0}</span>`).join('');
+  const pills=vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}"><i class="case">${RES[k].e}</i><b>${S.stock[k]||0}</b></span>`).join('');
   const bas=mode?`<button class="big vert" data-a="fini"><span class="e">✅</span>${mode.chemins?'Terminé':'Annuler'}</button>`
     :`<button class="big" data-a="construire"><span class="e">🔨</span>Construire</button>
      <button class="big alt" data-a="frise"><span class="e">⭐</span>Progrès</button>
@@ -531,5 +531,67 @@ setInterval(()=>{if(!S||feuille||mode||fete)return;const ok=relies(),s=S.b.map(o
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){encaisser();rendu()}});
 </script>
 <script src="habitants.js"></script><script src="saisons.js"></script>
+<style id="vallee">
+/* ===== Habit Vallée (25/10, Florian : « un style graphique d'écriture et de visualisation des menus et ressources qui
+   corresponde à Vallée ») : bois chaud, parchemin, titres crème cernés de brun, aucune bordure bleue.
+   Placé en fin de page pour passer aussi devant les styles que posent habitants.js et saisons.js. ===== */
+@font-face{font-family:"Vallee Titre";src:local("Arial Rounded MT Bold"),local("ArialRoundedMTBold");font-display:swap}
+:root{--gold:#B98048;--gold-deep:#4A2A12;--gold-ink:#FFF4D6;--paper:#F6E5BC;--line:#8A5A2E;--ink:#3E2410;--ink-dim:#6B4A2C;
+  --bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
+  --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
+  --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);
+  --f-titre:"Vallee Titre","Arial Rounded MT Bold","Trebuchet MS",var(--f-body)}
+html body *{-webkit-tap-highlight-color:transparent}
+html body *:focus{outline:none}
+html body *:focus-visible{outline:none;box-shadow:0 0 0 4px #FFD86B,0 0 14px #FFD86B}
+html body{color:var(--ink)}
+/* titres : crème cernés de brun */
+html body h1,html body h2,html body .s-titre,html body .feuille h2{font-family:var(--f-titre);color:#FFF1CC;letter-spacing:.3px;
+  -webkit-text-stroke:5px #4A2A12;paint-order:stroke fill;text-shadow:0 3px 0 #4A2A12}
+html body .haut h1{font-size:30px}
+/* les compteurs : petites plaques de bois, l'icône dans une case d'inventaire */
+html body .pill{background:var(--bois);border:3px solid #4A2A12;border-radius:9px;padding:3px 10px 3px 4px;gap:8px;min-height:48px;
+  box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 #3A2010}
+html body .case{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:22px;line-height:1;
+  background:#F6E5BC;border:3px solid #4A2A12;border-radius:6px;box-shadow:inset 0 0 0 2px #C9A36A}
+html body .pill b{font-family:var(--f-titre);font-size:24px;color:#FFF4D6;-webkit-text-stroke:4px #3A2010;paint-order:stroke fill}
+html body .pill.gonfle{animation:gonfle .45s}
+@keyframes gonfle{40%{transform:scale(1.25);filter:brightness(1.25) drop-shadow(0 0 8px #FFD86B)}}
+html body .cout{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--ink);margin:2px 4px;white-space:nowrap}
+html body .cout .case{width:26px;height:26px;font-size:16px;border-width:2px}
+/* les boutons : planchettes de bois, enfoncées au toucher, éclaircies d'or */
+html body .big,html body .s-bouton,html body .h-donner,html body .vente button,html body .fermer,html body .son,html body .h-autre{
+  background:var(--bois);color:#FFF4D6;border:4px solid #4A2A12;border-radius:10px;font-family:var(--f-titre);
+  -webkit-text-stroke:0;text-shadow:0 2px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -4px 0 rgba(0,0,0,.25),0 5px 0 #3A2010;transition:filter .12s,transform .08s}
+html body .big.alt,html body .alt,html body .fermer,html body .h-autre{background:var(--bois-clair);color:#FFF4D6}
+html body .big.vert{background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 2px,transparent 2px 15px),linear-gradient(#8DBE5A,#5E8E34)}
+html body .big:active,html body .s-bouton:active,html body .h-donner:active,html body .vente button:active,html body .fermer:active,html body .son:active,html body .h-autre:active{
+  transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),inset 0 -2px 0 rgba(0,0,0,.25),0 1px 0 #3A2010;filter:brightness(1.18) sepia(.2)}
+html body .big .e,html body .s-bouton .e{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;font-size:26px;
+  background:#F6E5BC;border:3px solid #4A2A12;border-radius:7px;box-shadow:inset 0 0 0 2px #C9A36A;text-shadow:none}
+html body .big[disabled],html body .vente button[disabled],html body .h-donner[disabled]{filter:grayscale(.6) brightness(.85);opacity:.6}
+/* panneaux et fenêtres : cadre de bois, intérieur parchemin */
+html body .aide,html body .msg,html body .s-bandeau,html body .h-bulle,html body .debut .boite{background:var(--parchemin);color:var(--ink);
+  border:5px solid #5A3418;border-radius:12px;box-shadow:inset 0 0 0 3px #C9A36A,0 4px 0 #3A2010}
+html body .aide{font-weight:700}
+html body .voile{background:rgba(40,22,8,.45)}
+html body .feuille{background:var(--parchemin);color:var(--ink);border:6px solid #5A3418;border-bottom:0;border-radius:16px 16px 0 0;
+  box-shadow:inset 0 0 0 4px #C9A36A,0 -4px 0 #3A2010}
+html body .feuille .sous,html body .h-note,html body .h-pq{color:var(--ink-dim)}
+html body .choix,html body .h-gens{background:linear-gradient(#FBF0D2,#EFD9A6);color:var(--ink);border:4px solid #6B4022;border-radius:10px;
+  box-shadow:inset 0 0 0 2px #D9B67E,0 4px 0 #3A2010}
+html body .choix:active,html body .h-gens:active{transform:translateY(3px);filter:brightness(1.1) sepia(.15)}
+html body .choix .e{display:inline-flex;align-items:center;justify-content:center;width:62px;height:62px;font-size:38px;
+  background:#F6E5BC;border:3px solid #4A2A12;border-radius:8px;box-shadow:inset 0 0 0 2px #C9A36A}
+html body .choix small{color:var(--ink-dim)}
+html body .vente,html body .s-ligne,html body .h-cmd{border-bottom:2px dashed #C9A36A}
+html body .h-portrait,html body .h-mini{background:#F6E5BC;border:4px solid #5A3418;box-shadow:inset 0 0 0 2px #C9A36A}
+html body .s-jauge,html body .barre{background:#E7CF9B;border:3px solid #5A3418}
+html body .s-bouton.alt{background:var(--bois-clair);border:4px solid #4A2A12}
+html body .s-bouton small{display:block;font-family:var(--f-body);font-size:16px;font-weight:700;color:#FFE9B8;text-shadow:0 1px 0 #3A2010}
+html body .s-titre{flex-wrap:wrap;white-space:normal;color:#FFF1CC}
+html body .s-titre small{font-family:var(--f-body);font-size:15px;color:var(--ink-dim);-webkit-text-stroke:0;text-shadow:none;font-weight:700}
+html body .champ{background:#FBF0D2;border:4px solid #5A3418;color:var(--ink);border-radius:10px}
+</style>
 </body>
 </html>

@@ -146,6 +146,25 @@ h1{font-family:var(--f-display);font-size:52px;line-height:1.1;margin:0;text-wra
 .sslot.starget{border:4px solid var(--gold);box-shadow:0 0 14px var(--gold)}
 @media (prefers-reduced-motion: reduce){.card{transition:none}}
 @media (max-width:700px){ h1{font-size:40px} .big{font-size:26px;padding:0 24px} .board{flex-direction:column} }
+/* ===== Habit Vallée (25/10, Florian) : boutons en planchettes de bois, fenêtres en parchemin, titres crème cernés
+   de brun, aucune bordure bleue. Les faces des cartes ne changent pas. ===== */
+@font-face{font-family:"Vallee Titre";src:local("Arial Rounded MT Bold"),local("ArialRoundedMTBold");font-display:swap}
+:root{--bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
+  --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
+  --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);--f-titre:"Vallee Titre","Arial Rounded MT Bold","Trebuchet MS",var(--f-body)}
+html body *{-webkit-tap-highlight-color:transparent}
+html body *:focus,html body button:focus-visible,html body input:focus-visible{outline:none}
+html body button:focus-visible,html body input:focus-visible{box-shadow:0 0 0 4px #FFD86B,0 0 14px #FFD86B}
+html body h1,html body .panel h2{font-family:var(--f-titre);color:#FFF1CC;-webkit-text-stroke:6px #4A2A12;paint-order:stroke fill;text-shadow:0 3px 0 #4A2A12}
+html body .big,html body .small,html body .panel .big.alt{background:var(--bois);color:#FFF4D6;border:4px solid #4A2A12;border-radius:10px;font-family:var(--f-titre);
+  text-shadow:0 2px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -4px 0 rgba(0,0,0,.25),0 5px 0 #3A2010;transition:filter .12s,transform .08s}
+html body .big.alt,html body .small,html body .choice .big.alt{background:var(--bois-clair);color:#FFF4D6}
+html body .big small{color:#FFE9B8;font-family:var(--f-body)}
+html body .big:active,html body .small:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),inset 0 -2px 0 rgba(0,0,0,.25),0 1px 0 #3A2010;filter:brightness(1.18) sepia(.2)}
+html body .boxed{background:var(--parchemin);color:#3E2410;border:5px solid #5A3418;border-radius:12px;box-shadow:inset 0 0 0 3px #C9A36A,0 4px 0 #3A2010}
+html body .panel{background:var(--parchemin);color:#3E2410;border:6px solid #5A3418;border-radius:14px;box-shadow:inset 0 0 0 4px #C9A36A,0 6px 0 #3A2010}
+html body .field{background:#FBF0D2;color:#3E2410;border:4px solid #5A3418;border-radius:10px}
+html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A2A12;paint-order:stroke fill;font-family:var(--f-titre)}
 </style>
 </head>
 <body data-tapis="vert">
