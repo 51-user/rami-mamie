@@ -180,7 +180,7 @@ function neuf(nom){
   // rien encore que la place et la forêt : Pierre guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
   return {v:3,monde:40,nom,blocs:DEPART(),ext:0,b,
-    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{}},boutons:[]};
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1},boutons:[]};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
@@ -230,7 +230,7 @@ function dessinFantome(){const k=typeVise();if(!k)return '';const t=BAT[k].t,sau
   }
   for(let a=0;a<t;a++)for(let c=0;c<t;c++){const g=gene(mode.i+a,mode.j+c,sauf);
     if(g){const [x,y]=P(mode.i+a+.5,mode.j+c+.5);marques+=`<g><circle cx="${x}" cy="${y}" r="9" fill="#B71C1C" stroke="#fff" stroke-width="2"/><path d="M${x-4} ${y-4}l8 8M${x+4} ${y-4}l-8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></g>`}}
-  const o={id:'fantome',type:k,i:mode.i,j:mode.j,ep:sauf?(S.b.find(x=>x.id===sauf)||{}).ep||0:epIdx()};
+  const o={id:'fantome',type:k,i:mode.i,j:mode.j,r:mode.r?1:0,c:sauf?(S.b.find(x=>x.id===sauf)||{}).c||0:0,ep:sauf?(S.b.find(x=>x.id===sauf)||{}).ep||0:epIdx()};
   const corps=BAT[k].sorte==='nature'?imageCase('decor-pousse',mode.i,mode.j):dessinObjet(o,null,true);
   return h+`<g opacity=".75">${corps}</g>`+marques}
 function majFantome(){const g=document.getElementById('fantome-boite');if(!g)return;g.innerHTML=dessinFantome();
@@ -310,6 +310,11 @@ function relies(){
 function estRelie(o,ok){const t=BAT[o.type].t;
   for(let a=-1;a<=t;a++)for(let c=-1;c<=t;c++){if((a<0||a>=t)===(c<0||c>=t))continue;if(ok.has((o.i+a)+','+(o.j+c)))return true}
   return false}
+// les décos sur l'anneau de cases qui borde un bâtiment
+function autour(o){const t=BAT[o.type].t;let n=0;S.b.forEach(d=>{if(BAT[d.type].sorte!=='deco'||d===o)return;
+  if(d.i>=o.i-1&&d.i<=o.i+t&&d.j>=o.j-1&&d.j<=o.j+t)n++});return n}
+function bienArrange(){let txt='';S.b.forEach(o=>{const so=BAT[o.type].sorte;if(so==='deco'||so==='chemin'||o.orne||autour(o)<3)return;
+  o.orne=1;S.stock.etoiles=(S.stock.etoiles||0)+2;txt=` ✨ ${BAT[o.type].nom} est joliment entouré : +2 ⭐.`});return txt}
 function bonus(o){let b=0;S.b.forEach(d=>{const B=BAT[d.type];if(B.sorte!=='deco')return;
   const t=BAT[o.type].t;if(d.i>=o.i-2&&d.i<=o.i+t+1&&d.j>=o.j-2&&d.j<=o.j+t+1)b+=B.bonus});return Math.min(b,.6)}
 function pret(o,ok){const B=BAT[o.type];if(!estRelie(o,ok))return false;
@@ -391,6 +396,8 @@ const fleursDe=(cx,cy,cs)=>`<ellipse cx="${cx}" cy="${cy}" rx="22" ry="10" fill=
 Object.assign(HAUT_NATURE,{"deco-arbre-ornement":362,"deco-arche":347,"deco-banc":252,"deco-epouvantail":297,"deco-fontaine":282,"deco-haie":202,"deco-lanterne":410,"deco-mare":202,"deco-nichoir":310,"deco-pot":272});
 // 25/10, Florian : « fais propre » : les clôtures et les massifs de couleur attendent leurs images corrigées (bords rognés)
 const EN_ATTENTE=['cloture','massif-rose','massif-jaune','massif-bleu'];
+const SORTES_CHEMIN=[['terre','terre','🟫'],['paves','pavés','🧱'],['dalles','dalles','⬜'],['gravier','gravier','🪨']];
+const COULEURS=[null,'hue-rotate(-38deg) saturate(1.15)','hue-rotate(150deg)','hue-rotate(255deg) saturate(.9)'];   // 2 à 4 variantes d'une déco
 const DECO_IMG={banc:'banc',lanterne:'lanterne',haie:'haie',cloture:'cloture-bois',pot:'pot','massif-rose':'massif-rose','massif-jaune':'massif-jaune','massif-bleu':'massif-bleu',
   ornement:'arbre-ornement',nichoir:'nichoir',epouvantail:'epouvantail',mare:'mare',arche:'arche',bassin:'fontaine'};
 const DECO_DESSIN={
@@ -410,8 +417,9 @@ const DECO_DESSIN={
  mare:(x,y)=>`<ellipse cx="${x}" cy="${y}" rx="24" ry="11" fill="#4D9BD6" stroke="#3F86BD"/><ellipse cx="${x-6}" cy="${y-2}" rx="7" ry="2" fill="#FFFFFF" opacity=".5"/><circle cx="${x+14}" cy="${y-6}" r="3" fill="#4E9238"/>`};
 function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher (le fantôme de la pose)
   const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
-  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin,terre=epIdx()<2&&TUILES();   // en terre au Hameau et au Village, pavés ensuite
-    return (terre?tuile('sol-chemin',o.i,o.j):'')+poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}" style="fill:${terre?'transparent':'url(#terre)'}"`)}
+  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin,so=o.s||'terre',terre=so==='terre'&&epIdx()<2&&TUILES();   // la terre suit l'époque ; les autres sortes se choisissent
+    const motif={terre:'terre',paves:'paves',dalles:'dalles',gravier:'gravier'}[so]||'terre';
+    return (terre?tuile('sol-chemin',o.i,o.j):'')+poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}" style="fill:${terre?'transparent':'url(#'+motif+')'}"`)}
   const im=imageDe(o);
   if(im&&o.type!=='potager'){const r=imageCalee(im,o);h=r.h;top=r.top;
     if(o.type==='massif'&&!seul)h=`<g class="${anime('ondule')}">${h}</g>`}   // les fleurs se balancent au vent
@@ -436,6 +444,8 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
   else{const r=boite(o,B.mur||'#E9DCC0',B.toit||'#8D6E4F');h=r.h;top=r.top;
     if(o.type==='moulin'){const [ax,ay]=[r.top?cx:cx,r.top+18];h+=`<g stroke="#5D4037" stroke-width="5">${[0,90].map(a=>`<line x1="${ax-34}" y1="${ay}" x2="${ax+34}" y2="${ay}" transform="rotate(${a+20} ${ax} ${ay})"/>`).join('')}</g>`}}
   h+=vie(o,cx,cy,seul,ok);   // ce qui vit autour : poules, bûches, fumée, seau, papillons
+  if(o.c&&COULEURS[o.c])h=`<g style="filter:${COULEURS[o.c]}">${h}</g>`;   // la couleur choisie pour une déco
+  if(o.r)h=`<g transform="translate(${2*cx} 0) scale(-1 1)">${h}</g>`;   // ↻ : retourné
   if(seul)return h;
   if((o.ep||0)<epIdx()&&B.sorte!=='chemin')h+=`<g><circle cx="${cx+30}" cy="${top+6}" r="13" fill="#7BB661" stroke="#fff" stroke-width="2"/><text x="${cx+30}" y="${top+12}" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">⬆</text></g>`;
   // la fleur de la sœur, posée sur le bâtiment jusqu'au lendemain
@@ -449,7 +459,7 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
   else if(B.sorte==='atelier'&&o.fin==null)bulle=`<g class="flotte"><circle cx="${cx}" cy="${top-26}" r="19" fill="#FFFDF6" stroke="#B8B09C" stroke-width="3"/><text x="${cx}" y="${top-18}" font-size="22" text-anchor="middle" fill="#7A6A50">▶</text></g>`;
   const cls=(o.id===dernierPose?'tombe ':'')+(mode&&mode.deplace===o.id?'porte':'');
   // pendant une pose, un déplacement ou des chemins, les bâtiments s'effacent à moitié et laissent toucher les cases cachées derrière
-  const st=mode?'pointer-events:none;opacity:.5':'cursor:pointer';
+  const st=mode&&!(mode.arranger&&!mode.deplace)?'pointer-events:none;opacity:.5':'cursor:pointer';
   return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
 /* ===================== Ce qui vit autour des bâtiments (25/10, Florian : « tu as mis un poulailler mais le batiment
@@ -566,6 +576,8 @@ function motifs(sa){const [b,t,f]=SOLS[sa],c=EPOQUES[epIdx()].chemin;
   <pattern id="sauvage" width="44" height="22" patternUnits="userSpaceOnUse"><rect width="44" height="22" fill="${t}"/>${touffes(b,6)}<circle cx="18" cy="9" r="1.6" fill="${f}"/><circle cx="40" cy="16" r="1.3" fill="#FFFFFF" opacity=".7"/></pattern>
   <pattern id="terre" width="40" height="20" patternUnits="userSpaceOnUse"><rect width="40" height="20" fill="${c[0]}"/><ellipse cx="9" cy="6" rx="3" ry="1.6" fill="${c[1]}"/><ellipse cx="28" cy="14" rx="2.4" ry="1.3" fill="${c[1]}"/><circle cx="20" cy="4" r="1" fill="#FFFFFF" opacity=".5"/><circle cx="34" cy="7" r="1.2" fill="${c[1]}"/></pattern>
   <pattern id="paves" width="24" height="12" patternUnits="userSpaceOnUse"><rect width="24" height="12" fill="${EPOQUES[epIdx()].place}"/><path d="M0 6h24M12 0v6M0 6v6M24 6v6" stroke="#A79F8A" stroke-width="1"/></pattern>
+  <pattern id="dalles" width="34" height="17" patternUnits="userSpaceOnUse"><rect width="34" height="17" fill="#D9D3C4"/><path d="M0 8.5L17 0L34 8.5L17 17Z" fill="#E6E0D2" stroke="#A79F8A" stroke-width="1"/></pattern>
+  <pattern id="gravier" width="20" height="12" patternUnits="userSpaceOnUse"><rect width="20" height="12" fill="#C9C2B4"/><circle cx="4" cy="3" r="1.4" fill="#9E978A"/><circle cx="13" cy="7" r="1.6" fill="#ADA699"/><circle cx="8" cy="10" r="1.1" fill="#8E877A"/><circle cx="17" cy="2" r="1" fill="#F2EEE6"/></pattern>
   <pattern id="eau" width="48" height="24" patternUnits="userSpaceOnUse"><rect width="48" height="24" fill="${sa==='hiver'?'#BFDCEB':'#4D9BD6'}"/><path d="M4 8q6 -4 12 0M26 18q6 -4 12 0" stroke="#FFFFFF" stroke-width="1.5" fill="none" opacity=".55"/></pattern>
   <pattern id="sauvage-tuile" width="${2*TW}" height="${2*TH}" patternUnits="userSpaceOnUse" x="${OX-TW}" y="${OY}">${[[0,0],[-TW,-TH],[TW,-TH],[-TW,TH],[TW,TH]].map(([a,b])=>`<image href="img/v3/sol-herbe-sauvage.webp" x="${a}" y="${b}" width="${2*TW}" height="${2*TH}"/>`).join('')}</pattern>
   <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C2"/><stop offset="1" stop-color="#E9D3A6"/></linearGradient></defs>`}
@@ -646,12 +658,12 @@ function rendu(){
      La carte prend tout l'écran ; compteurs, menus et messages flottent par-dessus. */
   const mb=(a,e,mot)=>`<button class="mb${brillent.has(a)?' neuf':''}" data-a="${a}"><span>${e}</span><small>${mot}</small></button>`;
   const soeurMot=SOEUR.etat==='ensemble'?(S.soeur||'Ma sœur')+' ✓':'Ma sœur';
-  const bas=MOI?`<button class="big vert fini" data-a="rentrer"><span class="e">🏠</span>Rentrer chez moi</button>`:typeVise()?'':mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>Terminé</button>`
-    :[['construire','🔨','Construire'],['frise','⭐','Progrès'],['commandes','📋','Commandes'],['monument','🏛️','Monument'],['fete-saison','🎉','Fête'],['soeur','👭',esc(soeurMot)],['accueil','🏠','Accueil']]
+  const bas=MOI?`<button class="big vert fini" data-a="rentrer"><span class="e">🏠</span>Rentrer chez moi</button>`:typeVise()?'':mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>${mode.arranger?'Fini':'Terminé'}</button>`
+    :[['construire','🔨','Construire'],['arranger','🪄','Arranger'],['frise','⭐','Progrès'],['commandes','📋','Commandes'],['monument','🏛️','Monument'],['fete-saison','🎉','Fête'],['soeur','👭',esc(soeurMot)],['accueil','🏠','Accueil']]
       .filter(([a])=>a==='fete-saison'?feteOuverte():aBouton(a)).map(x=>mb(...x)).join('');
   const SAIS={printemps:['🌸','Printemps'],ete:['🌻','Été'],automne:['🍂','Automne'],hiver:['❄️','Hiver']}[saisonVue()];
   const fj=MOI&&MOI.fleurDonnee&&MOI.fleurDonnee.jour===jourN();
-  const aide=MOI?(fj?'🌸 Vous avez fleuri un bâtiment aujourd\'hui. Promenez-vous, et revenez demain pour fleurir encore.':'🌸 Touchez un de ses bâtiments pour le fleurir : elle produira plus, et vous gagnerez 3 ⭐. Une fois par jour.')
+  const aide=mode&&mode.arranger&&!mode.deplace?'Touchez ce que vous voulez déplacer, puis posez-le. Touchez « Fini » quand tout est rangé.':MOI?(fj?'🌸 Vous avez fleuri un bâtiment aujourd\'hui. Promenez-vous, et revenez demain pour fleurir encore.':'🌸 Touchez un de ses bâtiments pour le fleurir : elle produira plus, et vous gagnerez 3 ⭐. Une fois par jour.')
     :mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':'')
     :'';
   const q=!MOI&&S.fil?ici():null;
@@ -660,10 +672,10 @@ function rendu(){
    <div class="haut"><div class="res">${pills}<span class="pill saisonp"><i class="case">${SAIS[0]}</i><b>${SAIS[1]}</b></span></div><button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div>
    ${q?`<button class="pancarte" data-a="guide" aria-label="La tâche en cours : toucher pour voir où agir"><span class="pq">📜</span><span>${q.court}</span></button>`:''}
    <div class="msg" role="status">${message}</div>
-   ${mode||MOI?`<div class="aide">${aide}</div>`:''}
+   ${(mode&&(mode.chemins||mode.arranger)&&!typeVise())||MOI?`<div class="aide">${aide}</div>`:typeVise()?'<div class="aide"></div>':''}
    <div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div>
    <div class="bas">${bas}</div>
-   ${typeVise()?`<div class="valide"><button class="big vert" data-a="poser">✔&nbsp; Poser ici</button><button class="big alt" data-a="annuler">✖&nbsp; Annuler</button></div>`:''}
+   ${typeVise()?`<div class="valide"><button class="big vert" data-a="poser">✔&nbsp; Poser ici</button><button class="big alt tourne" data-a="tourner" aria-label="Tourner">↻</button><button class="big alt" data-a="annuler">✖&nbsp; Annuler</button></div>`:''}
    <div class="cote" aria-hidden="true"></div>${feuille?feuilleHTML():''}${fete?feteHTML():''}`;
   // le message s'efface tout seul au bout de quelques secondes ; il reste à lire tant qu'on ne touche rien d'autre
   clearTimeout(window.__msgT);if(message){const m=message;window.__msgT=setTimeout(()=>{if(message===m){message='';const e=$('.msg');if(e)e.textContent=''}},6000)}
@@ -677,6 +689,7 @@ function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div clas
 function feuilleHTML(){
   const f=feuille;
   if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).filter(([k])=>debloque(k)&&montre(k)).map(([k,B])=>
+    k==='chemin'?SORTES_CHEMIN.map(([so,nom,e])=>`<button class="choix" data-pose="chemin" data-sorte="${so}" ${assez(B.cout)?'':'disabled'}><span class="e">${e}</span>Chemin : ${nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join(''):
     `<button class="choix${S.fil&&ici()&&(ici().cible==='bat:'+k||(ici().id==='deco'&&k==='puits'))?' guide':''}" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
   if(f.quoi==='extension'){const prix=PRIX_EXT(S.ext);
     return cadre('🌳 Agrandir le village',`<p class="sous">Un morceau de terrain de 4 × 4 cases de plus.</p><div class="actions"><button class="big" data-a="acheter" ${S.stock.pieces>=prix?'':'disabled'}>Agrandir pour ${prix} 🪙</button></div>`)}
@@ -689,6 +702,7 @@ function feuilleHTML(){
     if(o.par&&o.par!==S.nom)corps+=`<p>👭 Posé par <b>${esc(o.par)}</b>.</p>`;
     if(bonus(o)>0&&B.sorte!=='deco')corps+=`<p>✨ Bonus des décorations voisines : +${Math.round(bonus(o)*100)} %.</p>`;
     if((o.ep||0)<epIdx())corps+=`<p>⬆️ Il peut monter à l'époque ${EPOQUES[(o.ep||0)+1].nom} : nouvelle allure et +50 % de production.</p>`;
+    if(DECO_IMG[o.type])corps+=`<p class="sous" style="margin:10px 0 4px">Sa couleur :</p><div class="actions couleurs">${COULEURS.map((f,n)=>`<button class="choix-c${(o.c||0)===n?' choisie':''}" data-couleur="${n}" aria-label="Couleur ${n+1}"><img src="img/v3/deco-${DECO_IMG[o.type]}.webp" alt="" style="${f?'filter:'+f:''}"></button>`).join('')}</div>`;
     if(o.type!=='chemin')corps+=`<div class="actions">${(o.ep||0)<epIdx()?`<button class="big" data-a="monter" ${assez(coutMonter(o))?'':'disabled'}>⬆️ Monter d'époque : ${txt(coutMonter(o))}</button>`:''}<button class="big alt" data-a="deplacer">↔️ Déplacer</button></div>`;
     return cadre(`${B.e} ${B.nom}`,corps)}
   if(f.quoi==='soeur'){const L=lien();
@@ -735,8 +749,9 @@ function lier(){
   document.querySelectorAll('[data-stop]').forEach(e=>e.onclick=ev=>ev.stopPropagation());
   document.querySelectorAll('[data-a]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();action(e.dataset.a)}));
   document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;message='';
-    if(k==='chemin')mode={chemins:true};else{const [i,j]=viserPres(k);mode={pose:k,i,j}}rendu()});
+    if(k==='chemin')mode={chemins:true,sorte:e.dataset.sorte||'terre'};else{const [i,j]=viserPres(k);mode={pose:k,i,j}}rendu()});
   document.querySelectorAll('[data-case]').forEach(e=>e.onclick=()=>caseFrise(e.dataset.case));
+  document.querySelectorAll('[data-couleur]').forEach(e=>e.onclick=()=>{const o=feuille&&S.b.find(x=>x.id===feuille.id);if(!o)return;o.c=+e.dataset.couleur||0;o.maj=Date.now();SON.tac();sauve();rendu()});
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
   document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode||VISITE)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
   document.querySelectorAll('[data-c]').forEach(e=>{e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))};
@@ -753,7 +768,7 @@ function lier(){
       const v=svg.viewBox.baseVal;glisse={x:e.clientX,y:e.clientY,vb:[v.x,v.y,v.width,v.height],bouge:false}});}
   document.querySelectorAll('g[data-o],polygon[data-o]').forEach(e=>{
     e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{if(VISITE)return;appui.long=true;
-      const o=S.b.find(x=>x.id===id);if(BAT[o.type].sorte!=='chemin'){mode={deplace:id,i:o.i,j:o.j};feuille=null;message='';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
+      const o=S.b.find(x=>x.id===id);if(BAT[o.type].sorte!=='chemin'){mode={deplace:id,i:o.i,j:o.j,r:!!o.r};feuille=null;message='';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
     e.addEventListener('pointerup',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('pointerleave',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('click',ev=>{ev.stopPropagation();const fin=appui&&appui.long&&appui.id===e.dataset.o;appui=null;if(fin)return;toucherObjet(e.dataset.o,ev)});
@@ -785,9 +800,11 @@ function action(a){
   else if(a==='zoom-plus'){CAM.z=Math.min(2.2,CAM.z*1.3);rendu();return}
   else if(a==='zoom-moins'){CAM.z=Math.max(.45,CAM.z/1.3);rendu();return}
   else if(a==='centre'){CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=2;rendu();return}
-  else if(a==='deplacer'){const o=S.b.find(x=>x.id===feuille.id);mode={deplace:o.id,i:o.i,j:o.j};feuille=null;message=''}
+  else if(a==='deplacer'){const o=S.b.find(x=>x.id===feuille.id);mode={deplace:o.id,i:o.i,j:o.j,r:!!o.r};feuille=null;message=''}
   else if(a==='poser'){poser();return}
-  else if(a==='annuler'){mode=null;message='';rendu();return}
+  else if(a==='tourner'){if(typeVise()){mode.r=!mode.r;SON.tac();majFantome()}return}
+  else if(a==='annuler'){mode=mode&&mode.arranger?{arranger:true}:null;message='';rendu();return}
+  else if(a==='arranger'){mode={arranger:true};feuille=null;message='';rendu();return}
   else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);S.ext++;feuille=null;
     message='🌳 Le village s\'agrandit !';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
   sauve();rendu();
@@ -798,7 +815,7 @@ function toucherCase(i,j){
     if(natureA(i,j)){message='Il y a un arbre ou une pierre ici : touchez-le d\'abord pour le retirer.';SON.non();rendu();return}
     if(o&&o.type==='chemin'){S.b=S.b.filter(x=>x!==o);S.stock.pieces+=BAT.chemin.cout.pieces;sauve();rendu();return}
     if(o)return;if(!assez(BAT.chemin.cout)){message='Il manque des pièces pour le chemin.';SON.non();rendu();return}
-    retire(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j,maj:Date.now(),par:S.nom});SON.pose();sauve();rendu();return}
+    retire(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j,s:mode.sorte||'terre',maj:Date.now(),par:S.nom});SON.pose();sauve();rendu();return}
   // pose ou déplacement : toucher une case y amène le fantôme (la case touchée sous son milieu) ; rien n'est posé
   const k=typeVise();if(!k)return;const t=BAT[k].t;mode.i=i-Math.floor(t/2);mode.j=j-Math.floor(t/2);majFantome();
 }
@@ -809,16 +826,17 @@ function poser(){const k=typeVise();if(!k)return;const i=mode.i,j=mode.j;
       retire(BAT[k].cout);const t=Date.now();S.nature=S.nature||[];S.nature.push({id:uid(),i,j,t:'pousse',depuis:t,maj:t,par:S.nom});mode=null;
       message=`🌱 Planté ! Ce sera un arbre vers ${heure(t+POUSSE_H*3600000)}.`;SON.pose();sauve();rendu();return}
     if(!assez(BAT[k].cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}
-    retire(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx(),maj:Date.now(),par:S.nom};if(BAT[k].sorte==='maison')o.depuis=Date.now()-(ici()&&ici().id==='maison'?3600000:0);S.b.push(o);
-    dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.');
+    retire(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx(),maj:Date.now(),par:S.nom};if(mode.r)o.r=1;if(BAT[k].sorte==='maison')o.depuis=Date.now()-(ici()&&ici().id==='maison'?3600000:0);S.b.push(o);
+    dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.')+bienArrange();
     sauve();rendu();apresPose(o);return}
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
-    o.i=i;o.j=j;o.maj=Date.now();dernierPose=o.id;mode=null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`;sauve();rendu();apresPose(o)}
+    o.i=i;o.j=j;o.r=mode.r?1:0;o.maj=Date.now();dernierPose=o.id;mode=mode.arranger?{arranger:true}:null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`+bienArrange();sauve();rendu();apresPose(o)}
 }
 function apresPose(o){SON.pose();const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t);const [sx,sy]=versEcran(x,y);setTimeout(()=>poussiere(sx,sy-6),320)}
 function toucherObjet(id,ev){
   if(VISITE){fleurir(id,ev);return}
   const o=S.b.find(x=>x.id===id);if(!o)return;
+  if(mode&&mode.arranger&&!mode.deplace){if(o.type!=='chemin'){mode={deplace:o.id,i:o.i,j:o.j,r:!!o.r,arranger:true};SON.tac();rendu()}return}
   if(mode){if(mode.chemins&&o.type==='chemin'){toucherCase(o.i,o.j);return}if(mode.deplace||mode.pose)toucherCase(o.i,o.j);return}
   const ok=relies();
   if(pret(o,ok)){ramasser(o,ev);return}
@@ -930,7 +948,9 @@ const FIL=[
  {id:'terrain',qui:'pierre',court:'Agrandir le terrain',dit:'Le hameau est à l\'étroit. Touchez un « + » au bord du terrain pour l\'agrandir.',
   fait:()=>(S.ext||0)>=1,cible:'plus',gain:{pieces:60,etoiles:2},bravo:'Que de place ! Le hameau respire.'},
  {id:'deco',qui:'pierre',court:'Poser un puits ou des fleurs',dit:'Une décoration fait produire plus les bâtiments tout autour. Posez un puits ou un massif de fleurs, près de vos bâtiments.',
-  fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',ouvre:['puits','massif','banc','lanterne','haie','cloture','pot','massif-rose','massif-jaune','massif-bleu','ornement','nichoir','epouvantail','mare','arche','bassin'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
+  fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',bouton:'arranger',ouvre:['puits','massif','banc','lanterne','haie','cloture','pot','massif-rose','massif-jaune','massif-bleu','ornement','nichoir','epouvantail','mare','arche','bassin'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
+ {id:'autour',qui:'pierre',court:'Trois décos autour de la maison',dit:'Posez trois décorations tout autour de votre maison, sur les cases qui la bordent. C\'est joli, et ça la fait produire plus. Avec « Arranger », vous pouvez tout déplacer à votre goût.',
+  fait:()=>S.b.some(o=>o.type==='maison'&&autour(o)>=3),cible:'bat:banc',gain:{pieces:30,etoiles:2},bravo:'Quelle jolie maison ! On voit que vous aimez arranger.'},
  {id:'etoiles',qui:'pierre',court:'Réunir 15 ⭐',dit:'Le hameau grandit ! Réunissez 15 étoiles : chaque récolte et chaque tâche en donne. Avec 15 étoiles, il pourra devenir un village.',
   fait:()=>(S.stock.etoiles||0)>=15||epIdx()>=1,cible:'pill:etoiles',gain:{pieces:120},bravo:'15 étoiles ! Le hameau est prêt à devenir un village.',bouton:'frise'},
  {id:'ep-village',qui:'pierre',court:'Devenir un village',dit:'Touchez « Progrès », puis « Époque Village ». Hugo et Chloé pourront ouvrir leurs boutiques !',
@@ -1010,6 +1030,7 @@ function avancerFil(){if(!S||!S.fil||MOI||VISITE||SCENE)return;const q=ici();if(
 // une montée d'époque ou une présentation en cours : la tâche suivante attend la fin des scènes
 const enAttente=()=>SCENES.length>0;
 const PRESENTE={
+ arranger:['pierre',['Voici « Arranger » : touchez une chose, posez-la ailleurs, puis la suivante, sans rien rouvrir.','Pendant qu\'on pose, le bouton ↻ la tourne. Et une décoration touchée change de couleur.']],
  frise:['pierre',['Voici un nouveau bouton : « Progrès ».','C\'est là qu\'on fait grandir le village : une nouvelle époque, puis de nouveaux bâtiments, en échange d\'étoiles et de pièces.','Les étoiles se gagnent en ramassant, en finissant les tâches et en jouant aux cartes.']],
  commandes:['hugo',['Maintenant que le village grandit, les voisins ont des demandes.','Des légumes, des œufs, du bois… Tout est dans le nouveau bouton « Commandes ».','Chaque commande donnée rapporte des étoiles, et un cœur de la personne qui l\'a demandée. Rien ne presse, elles attendent.']],
  monument:['pierre',['Le village mérite un beau monument, sur la place.','Avec le bouton « Monument », on y apporte des légumes, du bois, des œufs et de la pierre, petit à petit.','Une jauge montre ce qu\'il manque pour l\'étage suivant. Chaque étage fait produire tout le village 5 % de plus, pour toujours.']]};
@@ -1056,7 +1077,10 @@ function encaisser(){
   if(c>0&&S){S.stock.pieces+=c;S.stock.etoiles+=Math.ceil(c/10);try{localStorage.setItem('village:caisse','0')}catch{}
     message=`🃏 Vos parties de cartes ont rapporté ${c} pièces et ${Math.ceil(c/10)} ⭐ !`;sauve()}
 }
-if(S){natureVivante();encaisser();if(!S.fil){reprendreFil();sauve()}}
+if(S){natureVivante();encaisser();if(!S.fil){reprendreFil();S.fil.v2=1;sauve()}
+  // 25/10 : la tâche « trois décos autour de la maison » s'insère avant les 15 étoiles ; une partie plus avancée garde sa place
+  if(!S.fil.v2){if(S.fil.n>=13)S.fil.n++;S.fil.v2=1;sauve()}
+  if(S.fil.n>FIL.findIndex(q=>q.id==='deco')&&!aBouton('arranger')){S.boutons=S.boutons||[];S.boutons.push('arranger');sauve()}}
 rendu();
 if(S&&lien())lancerLien();
 document.addEventListener('pointerdown',premierGeste,{once:true});
@@ -1178,6 +1202,11 @@ html body .champ{background:#FBF0D2;border:4px solid #5A3418;color:var(--ink);bo
 /* la pose avec aperçu : ✔ et ✖ sous le fantôme */
 html body .valide{position:absolute;z-index:4;display:flex;gap:10px;left:50%;top:60%}
 html body .valide .big{flex:none;min-width:0;min-height:62px;font-size:22px;padding:0 20px;white-space:nowrap}
+html body .valide .big.tourne{padding:0;width:62px;font-size:30px}
+html body .couleurs{gap:10px}
+html body .choix-c{width:74px;height:74px;padding:4px;border-radius:12px;border:3px solid #8A5A2E;background:#FBF0D2;display:flex;align-items:center;justify-content:center}
+html body .choix-c img{max-width:100%;max-height:100%}
+html body .choix-c.choisie{box-shadow:0 0 0 4px #FFD86B,0 0 12px #FFD86B}
 html body .valide .big.gris{filter:grayscale(.9) brightness(.9);opacity:.75}
 html body .aide.gonfle{animation:gonfle .45s}
 /* ce qui vit : légers mouvements, en pause quand la page est cachée */
