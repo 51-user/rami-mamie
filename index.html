@@ -190,8 +190,9 @@ html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A
    ---------------------------------------------------------------------
    Variante choisie : la plus jouée en famille en France, le rami « à 51 ».
    - Deux jeux de 52 cartes + 4 jokers = 108 cartes.
-   - Chacune reçoit 13 cartes ; celle qui commence en reçoit 14 et commence
-     directement par poser et/ou jeter une carte (elle ne pioche pas).
+   - Chacune reçoit 14 cartes (règle de la grand-mère de Florian, 25/10 :
+     « 14 pour les deux et une pioche de début normal ») ; celle qui
+     commence joue un tour normal : elle pioche d'abord, comme ensuite.
    - À son tour : 1) prendre une carte, soit dans la pioche, soit la carte
      visible de la défausse ; 2) poser si on le peut ; 3) jeter une carte
      sur la défausse. On ne peut pas rejeter la carte qu'on vient de prendre
@@ -308,10 +309,10 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function newRound(st, starter){
   const deck=shuffle([...Array(108).keys()]);
   const hands=[[],[]];
-  for(let k=0;k<27;k++) hands[k%2===0?starter:1-starter].push(deck.pop());
+  for(let k=0;k<28;k++) hands[k%2===0?starter:1-starter].push(deck.pop());
   return {...st, hands:[sortHand(hands[0]),sortHand(hands[1])], stock:deck, discard:[], table:[],
-    opened:[false,false], openedTurn:[-1,-1], turn:starter, starter, phase:'play', took:null, turnNo:1, result:null,
-    round:(st.round||0)+1, last:'Nouvelle manche : '+st.players[starter].name+' commence avec 14 cartes.'};
+    opened:[false,false], openedTurn:[-1,-1], turn:starter, starter, phase:'draw', took:null, turnNo:1, result:null,
+    round:(st.round||0)+1, last:'Nouvelle manche, 14 cartes chacune : '+st.players[starter].name+' commence par piocher.'};
 }
 
 function take(hand, ids){
@@ -703,7 +704,6 @@ function renderGame(f, pan){
     else if(ana&&ana.ok) help=`Belle combinaison de ${ana.points} points ! Touchez « Poser ».`;
     else if(selIds.length>=3&&canAdd.size) help="Touchez la combinaison entourée d'or pour y ajouter ces cartes.";
     else if(selIds.length>=2) help=ana?ana.msg:'Choisissez au moins 3 cartes pour une combinaison, ou une seule carte à jeter.';
-    else if(S.turnNo===1&&S.turn===S.starter&&!S.took&&(S.hands[me]||[]).length===14&&!opened) help='Vous commencez avec 14 cartes : posez si vous pouvez, puis touchez une carte pour la jeter.';
     else if(!opened) help='Touchez des cartes pour faire une suite ou un brelan (51 points pour la première pose), ou une seule carte pour la jeter.';
     else help='Posez une combinaison, complétez la table, ou touchez une carte pour la jeter.';
   }
@@ -812,6 +812,7 @@ function rulesHTML(){
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Les règles">
     <h2>Le rami en bref</h2>
     <ul>
+      <li>Chacune reçoit <b>14 cartes</b>. Celle qui commence pioche d'abord, comme à chaque tour.</li>
       <li>À votre tour : prenez une carte (pioche ou défausse), posez si vous pouvez, puis jetez une carte.</li>
       <li><b>Suite</b> : au moins 3 cartes qui se suivent, de la même couleur (7, 8, 9 de cœur).</li>
       <li><b>Brelan</b> : 3 ou 4 cartes de même valeur, de couleurs différentes (trois dames).</li>
