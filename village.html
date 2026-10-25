@@ -390,7 +390,18 @@ function imageCalee(nom,o){const t=BAT[o.type].t,c=CALAGE[nom]||[0,195,400,195,4
   const k=(R[0]-L[0])/(c[2]-c[0]),w=c[4]*k,h=c[5]*k,x=mx-k*(c[0]+c[2])/2,y=my-k*(c[1]+c[3])/2,haut=y-40;
   const id='coupe-'+o.id;
   return {h:`<clipPath id="${id}"><polygon points="${L[0]},${haut} ${L[0]},${L[1]} ${B[0]},${B[1]} ${R[0]},${R[1]} ${R[0]},${haut}"/></clipPath>
-    <image href="img/${nom}.webp" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${id})"/>`,top:Math.max(y+10,my-TH*t*3.2)}}
+    <image href="img/${nom}.webp" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${id})"/>`+enseigne(nom,o,x,y,k),top:Math.max(y+10,my-TH*t*3.2)}}
+/* 25/10, Florian : « les batiments pourraient légèrement être plus clairs sur ce qu'ils sont censés représenter ».
+   L'enseigne suspendue de la session Images (img/v3/enseigne-<type>.webp), accrochée au-dessus de la porte de chaque image :
+   PORTE donne, en pixels de l'image, le milieu du haut de la porte, relevé image par image. */
+const PORTE={'v3/maison-hameau':[165,112],'v3/maison-village':[130,96],'v3/maison-bourg':[132,146],'v3/maison-ville':[176,98],
+  'v3/bucheron-hameau':[132,82],'v3/bucheron-village':[152,104],'v3/bucheron-bourg':[118,100],'v3/bucheron-ville':[150,106],
+  'v3/poulailler-hameau':[132,106],'v3/poulailler-village':[140,104],'v3/poulailler-bourg':[130,128],'v3/poulailler-ville':[140,106],
+  'v3/boulangerie-village':[120,64],'v3/fleuriste-village':[152,98],'v3/atelier-bourg':[112,100],'v3/marche-bourg':[140,106]};
+const ENSEIGNES=['maison','potager','bucheron','poulailler','boulangerie','fleuriste','atelier','marche'];
+function enseigne(nom,o,x,y,k){const pt=PORTE[nom];if(!pt||!ENSEIGNES.includes(o.type))return '';
+  const w=26,h=w*100/120,sx=x+pt[0]*k,sy=y+pt[1]*k;   // elle pend devant le haut de la porte, sous l'avancée du toit
+  return `<image href="img/v3/enseigne-${o.type}.webp" x="${sx-w/2}" y="${sy-h*.2}" width="${w}" height="${h}" pointer-events="none"/>`}
 const fleursDe=(cx,cy,cs)=>`<ellipse cx="${cx}" cy="${cy}" rx="22" ry="10" fill="#5B8C3A"/>`+[0,1,2,3,4,5].map(n=>`<circle cx="${cx-15+n*6}" cy="${cy-3+(n%2)*5}" r="4.5" fill="${cs[n%cs.length]}"/>`).join('');
 // hauteur de chaque image deco-* (largeur 400 = la case, centre de la case à h − 100), lue sur les fichiers
 Object.assign(HAUT_NATURE,{"deco-arbre-ornement":362,"deco-arche":347,"deco-banc":252,"deco-epouvantail":297,"deco-fontaine":282,"deco-haie":202,"deco-lanterne":410,"deco-mare":202,"deco-nichoir":310,"deco-pot":272});
@@ -430,6 +441,7 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
     const p=avancement(o);if(p>=0){const img=p>=1?'citrouille':p<.4?'pousse':'plante',k=p>=1?1.15:p<.4?.45+.4*p/.4:.7+.3*(p-.4)/.6;
       [[.45,.45],[1,.45],[1.55,.45],[.45,1],[1,1],[1.55,1],[.45,1.55],[1,1.55],[1.55,1.55]].forEach(([a,c])=>{const [x,y]=P(o.i+a,o.j+c),w=26*k,hh=28*k;
         h+=`<image href="img/${img}.webp" x="${x-w/2}" y="${y-hh+3}" width="${w}" height="${hh}"/>`})}
+    {const [px,py]=P(o.i+.25,o.j+1.95),w=28,hh=w*100/120;h+=`<rect x="${px-1.5}" y="${py-34}" width="3" height="34" fill="#6D4C41"/><image href="img/v3/enseigne-potager.webp" x="${px-w/2}" y="${py-34-hh*.15}" width="${w}" height="${hh}" pointer-events="none"/>`}
     top=cy-30}
   else if(o.type==='puits'){h=`<ellipse cx="${cx}" cy="${cy+2}" rx="20" ry="10" fill="#9E9E9E" stroke="#616161"/><rect x="${cx-20}" y="${cy-14}" width="40" height="16" fill="#BDBDBD" stroke="#616161"/><ellipse cx="${cx}" cy="${cy-14}" rx="20" ry="10" fill="#4FA3D9" stroke="#616161"/>
       <rect x="${cx-18}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><rect x="${cx+14}" y="${cy-44}" width="4" height="30" fill="#6D4C41"/><polygon points="${cx-26},${cy-42} ${cx},${cy-58} ${cx+26},${cy-42}" fill="#8D5524" stroke="#5D4037"/>`;top=cy-60}
