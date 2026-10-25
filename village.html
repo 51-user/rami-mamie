@@ -162,7 +162,7 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 function neuf(nom){
   const t=Date.now(), b=[];
   const pose=(type,i,j,extra)=>b.push(Object.assign({id:uid(),type,i,j},extra||{}));
-  // rien encore que la place et la forêt : Marcel guide la première maison (le fil)
+  // rien encore que la place et la forêt : Pierre guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
   return {v:3,monde:40,nom,blocs:['4,4','4,5','5,4','5,5'],ext:0,b,
     stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{}},boutons:[]};
@@ -861,38 +861,38 @@ function fleurir(id,ev){const v=S.voisine&&S.voisine.v,o=v&&(v.b||[]).find(x=>x.
    Comme au début de Forge of Empires : un guide, une seule tâche à la fois, rappelée sur une pancarte en haut à gauche.
    Une tâche finie donne sa récompense, puis la suivante arrive. Les boutons arrivent quand ils servent, chacun présenté
    par une courte scène. État : S.fil = {n, evts, vu}, S.boutons = les boutons mérités. */
-const NOMS={marcel:'Marcel',lucie:'Lucie',chloe:'Chloé',hugo:'Hugo',pierre:'Pierre'};
+const NOMS={chloe:'Chloé',hugo:'Hugo',pierre:'Pierre'};
 const compte=k=>S.b.filter(o=>o.type===k).length;
 // une tâche « construire » dont le bâtiment est d'une autre époque se débloque d'abord dans Progrès
 const batir=(k,qui,dit)=>({id:k,qui,court:BAT[k].nom,dit,fait:()=>compte(k)>=1,cible:'bat:'+k});
 const FIL=[
- {id:'maison',qui:'marcel',court:'Construire une maison',dit:'Commençons par une maison. Touchez « Construire », puis « Maison de bois », et posez-la où vous voulez.',
+ {id:'maison',qui:'pierre',court:'Construire une maison',dit:'Commençons par une maison. Touchez « Construire », puis « Maison de bois », et posez-la où vous voulez.',
   fait:()=>compte('maison')>=1,cible:'bat:maison',ouvre:['maison'],gain:{pieces:50,etoiles:1},bravo:'Une jolie maison ! Quelqu\'un va pouvoir y vivre.'},
- {id:'chemin',qui:'marcel',court:'Relier la maison à la place',dit:'Une maison doit être reliée à la place du village. Posez des chemins de la maison jusqu\'à la place.',
+ {id:'chemin',qui:'pierre',court:'Relier la maison à la place',dit:'Une maison doit être reliée à la place du village. Posez des chemins de la maison jusqu\'à la place.',
   fait:()=>{const ok=relies();return S.b.some(o=>o.type==='maison'&&estRelie(o,ok))},cible:'bat:chemin',ouvre:['chemin'],gain:{pieces:20,etoiles:1},bravo:'Voilà, on peut aller de chez vous à la place.'},
- {id:'pieces',qui:'marcel',court:'Ramasser les pièces',dit:'La maison donne des pièces chaque heure. La première fois, elles sont déjà là : touchez la pièce qui brille au-dessus.',
+ {id:'pieces',qui:'pierre',court:'Ramasser les pièces',dit:'La maison donne des pièces chaque heure. La première fois, elles sont déjà là : touchez la pièce qui brille au-dessus.',
   evt:'pieces',cible:'obj:maison',gain:{pieces:30,etoiles:1},bravo:'Les pièces servent à construire. Les maisons en redonnent toutes seules.'},
- {id:'potager',qui:'marcel',court:'Construire un potager',dit:'Plantons un potager, pour avoir des légumes.',
+ {id:'potager',qui:'pierre',court:'Construire un potager',dit:'Plantons un potager, pour avoir des légumes.',
   fait:()=>compte('potager')>=1,cible:'bat:potager',ouvre:['potager'],gain:{pieces:20,etoiles:1},bravo:'Un beau carré de terre bien noire.'},
- {id:'lancer',qui:'marcel',court:'Lancer une récolte',dit:'Touchez le potager, puis « Petit ». La toute première récolte pousse en une minute.',
+ {id:'lancer',qui:'pierre',court:'Lancer une récolte',dit:'Touchez le potager, puis « Petit ». La toute première récolte pousse en une minute.',
   evt:'lancer',cible:'obj:potager',gain:{etoiles:1},bravo:'Les graines sont semées. Regardez-les pousser !'},
- {id:'recolte',qui:'marcel',court:'Ramasser les légumes',dit:'Quand les légumes sont mûrs, une bulle brille au-dessus du potager : touchez-la.',
+ {id:'recolte',qui:'pierre',court:'Ramasser les légumes',dit:'Quand les légumes sont mûrs, une bulle brille au-dessus du potager : touchez-la.',
   evt:'recolte',cible:'obj:potager',gain:{pieces:40,etoiles:1},bravo:'De bons légumes ! Ils serviront à construire et à faire plaisir.'},
- {id:'couper',qui:'marcel',court:'Couper un arbre',dit:'Il nous faut du bois. Touchez un grand arbre pour le couper.',
+ {id:'couper',qui:'pierre',court:'Couper un arbre',dit:'Il nous faut du bois. Touchez un grand arbre pour le couper.',
   evt:'couper',cible:'nat:arbre',ouvre:['arbre'],gain:{pieces:20,etoiles:1},bravo:'Du bon bois ! La souche partira toute seule. Vous pouvez aussi planter de jeunes arbres.'},
- {id:'miner',qui:'marcel',court:'Miner un rocher',dit:'Et de la pierre ! Touchez un rocher pour le miner, ou une butte pour la creuser.',
+ {id:'miner',qui:'pierre',court:'Miner un rocher',dit:'Et de la pierre ! Touchez un rocher pour le miner, ou une butte pour la creuser.',
   evt:'miner',cible:'nat:rocher',gain:{pieces:20,etoiles:1},bravo:'La pierre servira plus tard, pour les beaux bâtiments.'},
- {id:'bucheron',qui:'marcel',court:'Construire le bûcheron',dit:'Construisez la cabane du bûcheron : elle donnera du bois sans couper toute la forêt.',
+ {id:'bucheron',qui:'pierre',court:'Construire le bûcheron',dit:'Construisez la cabane du bûcheron : elle donnera du bois sans couper toute la forêt.',
   fait:()=>compte('bucheron')>=1,cible:'bat:bucheron',ouvre:['bucheron'],gain:{pieces:40,etoiles:2},bravo:'Le bûcheron est là. N\'oubliez pas de le relier à la place, et de lancer son travail.'},
- {id:'poulailler',qui:'marcel',court:'Construire le poulailler',dit:'Un poulailler, et vous aurez des œufs !',
+ {id:'poulailler',qui:'pierre',court:'Construire le poulailler',dit:'Un poulailler, et vous aurez des œufs !',
   fait:()=>compte('poulailler')>=1,cible:'bat:poulailler',ouvre:['poulailler'],gain:{pieces:60,etoiles:2},bravo:'Écoutez-les caqueter !'},
- {id:'terrain',qui:'marcel',court:'Agrandir le terrain',dit:'Le hameau est à l\'étroit. Touchez un « + » au bord du terrain pour l\'agrandir.',
+ {id:'terrain',qui:'pierre',court:'Agrandir le terrain',dit:'Le hameau est à l\'étroit. Touchez un « + » au bord du terrain pour l\'agrandir.',
   fait:()=>(S.ext||0)>=1,cible:'plus',gain:{pieces:60,etoiles:2},bravo:'Que de place ! Le hameau respire.'},
- {id:'deco',qui:'marcel',court:'Poser un puits ou des fleurs',dit:'Une décoration fait produire plus les bâtiments tout autour. Posez un puits ou un massif de fleurs, près de vos bâtiments.',
+ {id:'deco',qui:'pierre',court:'Poser un puits ou des fleurs',dit:'Une décoration fait produire plus les bâtiments tout autour. Posez un puits ou un massif de fleurs, près de vos bâtiments.',
   fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',ouvre:['puits','massif'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
- {id:'etoiles',qui:'marcel',court:'Réunir 15 ⭐',dit:'Le hameau grandit ! Réunissez 15 étoiles : chaque récolte et chaque tâche en donne. Avec 15 étoiles, il pourra devenir un village.',
+ {id:'etoiles',qui:'pierre',court:'Réunir 15 ⭐',dit:'Le hameau grandit ! Réunissez 15 étoiles : chaque récolte et chaque tâche en donne. Avec 15 étoiles, il pourra devenir un village.',
   fait:()=>(S.stock.etoiles||0)>=15||epIdx()>=1,cible:'pill:etoiles',gain:{pieces:120},bravo:'15 étoiles ! Le hameau est prêt à devenir un village.',bouton:'frise'},
- {id:'ep-village',qui:'marcel',court:'Devenir un village',dit:'Touchez « Progrès », puis « Époque Village ». Une famille attend pour s\'installer !',
+ {id:'ep-village',qui:'pierre',court:'Devenir un village',dit:'Touchez « Progrès », puis « Époque Village ». Hugo et Chloé pourront ouvrir leurs boutiques !',
   fait:()=>epIdx()>=1,cible:'btn:frise'},
  // le Village : Chloé et Hugo
  {id:'commande',qui:'hugo',court:'Donner une commande',dit:'Ouvrez « Commandes » et donnez ce qu\'on vous demande. Chaque commande rapporte des étoiles et un cœur.',
@@ -901,7 +901,7 @@ const FIL=[
  batir('fleuriste','chloe','Et ma boutique de fleurs ? Débloquez-la dans « Progrès », puis construisez-la.'),
  batir('verger','chloe','Un verger, pour des pommes et des poires ! Débloquez-le dans « Progrès », puis construisez-le.'),
  batir('moulin','hugo','Pour le pain, il faut de la farine : un moulin ! Débloquez-le dans « Progrès », puis construisez-le.'),
- {id:'ep-bourg',qui:'hugo',court:'Devenir un bourg',dit:'Pierre, le bricoleur, voudrait ouvrir son atelier ici. Passez à l\'époque Bourg dans « Progrès » !',fait:()=>epIdx()>=2,cible:'btn:frise'},
+ {id:'ep-bourg',qui:'hugo',court:'Devenir un bourg',dit:'Pierre voudrait ouvrir son atelier de mécano. Passez à l\'époque Bourg dans « Progrès » !',fait:()=>epIdx()>=2,cible:'btn:frise'},
  // le Bourg : Pierre et le monument
  {id:'monument',qui:'pierre',court:'Le monument au niveau 1',dit:'Ouvrez « Monument » et donnez ce qu\'il faut pour le premier niveau.',fait:()=>S.monument&&S.monument.niveau>=1,cible:'btn:monument',gain:{pieces:100},bravo:'Le premier étage tient debout !'},
  batir('atelier','pierre','Mon atelier ! Débloquez-le dans « Progrès », puis construisez-le.'),
@@ -921,8 +921,8 @@ const aBouton=a=>BASE.includes(a)||(S.boutons||[]).includes(a);
 let brillent=new Set();
 function donnerBouton(a){S.boutons=S.boutons||[];if(!S.boutons.includes(a)){S.boutons.push(a);brillent.add(a)}}
 window.filSignal=function(e){if(!S||!S.fil||MOI)return;const q=ici();if(q&&q.evt===e){S.fil.evts[e]=1;setTimeout(avancerFil,700)}};
-function debutFil(){S.fil.vu.intro=1;scene('marcel',[`Bienvenue, ${esc(S.nom)} ! Je suis Marcel, le doyen du hameau.`,
-  'Ici, il n\'y a encore que la place et un peu de forêt. Ensemble, on va en faire un vrai village.',
+function debutFil(){S.fil.vu.intro=1;scene('pierre',[`Bienvenue, ${esc(S.nom)} ! Je suis Pierre, le mécano. Je vais vous aider à bâtir votre hameau.`,
+  'Ici, il n\'y a encore que la place et un peu de forêt. Hugo le boulanger et Chloé la fleuriste habitent déjà là, avec moi. Ensemble, on va en faire un vrai village.',
   'Je vous donnerai une chose à faire à la fois. Elle reste écrite sur la pancarte, en haut à gauche : touchez-la pour voir où agir.'],annoncer)}
 function nouveauFil(){return {n:0,evts:{},vu:{}}}
 // une sauvegarde d'avant le fil reprend à la bonne tâche : ce qui est déjà fait ne se redemande pas
@@ -957,7 +957,7 @@ function montrerScene(){let el=document.getElementById('guide');
 function sonParleG(){note(660,0,.08,'triangle',.05);note(880,.07,.09,'triangle',.05)}
 const txtGain=g=>Object.entries(g||{}).map(([k,v])=>v+' '+RES[k].e).join(' et ');
 // la tâche suivante : la phrase du guide, en scène
-function annoncer(){const q=ici();if(!q){scene('marcel',['Vous avez fait grandir un hameau jusqu\'à une ville fleurie. Je suis fier de vous !','Continuez à votre rythme : le village est à vous.']);return}
+function annoncer(){const q=ici();if(!q){scene('pierre',['Vous avez fait grandir un hameau jusqu\'à une ville fleurie. Je suis fier de vous !','Continuez à votre rythme : le village est à vous.']);return}
   if(q.evt?S.fil.evts[q.evt]:q.fait())return;scene(q.qui,[q.dit])}
 function avancerFil(){if(!S||!S.fil||MOI||VISITE||SCENE)return;const q=ici();if(!q)return;
   if(!(q.evt?S.fil.evts[q.evt]:q.fait()))return;
@@ -969,15 +969,15 @@ function avancerFil(){if(!S||!S.fil||MOI||VISITE||SCENE)return;const q=ici();if(
 // une montée d'époque ou une présentation en cours : la tâche suivante attend la fin des scènes
 const enAttente=()=>SCENES.length>0;
 const PRESENTE={
- frise:['marcel',['Voici un nouveau bouton : « Progrès ».','C\'est là qu\'on fait grandir le village : une nouvelle époque, puis de nouveaux bâtiments, en échange d\'étoiles et de pièces.','Les étoiles se gagnent en ramassant, en finissant les tâches et en jouant aux cartes.']],
- commandes:['hugo',['Bonjour ! Moi, c\'est Hugo, le boulanger.','Les voisins ont parfois besoin de choses : des légumes, des œufs… Tout est dans le nouveau bouton « Commandes ».','Chaque commande donnée rapporte des étoiles, et un cœur de la personne qui l\'a demandée. Rien ne presse, elles attendent.']],
+ frise:['pierre',['Voici un nouveau bouton : « Progrès ».','C\'est là qu\'on fait grandir le village : une nouvelle époque, puis de nouveaux bâtiments, en échange d\'étoiles et de pièces.','Les étoiles se gagnent en ramassant, en finissant les tâches et en jouant aux cartes.']],
+ commandes:['hugo',['Maintenant que le village grandit, les voisins ont des demandes.','Des légumes, des œufs, du bois… Tout est dans le nouveau bouton « Commandes ».','Chaque commande donnée rapporte des étoiles, et un cœur de la personne qui l\'a demandée. Rien ne presse, elles attendent.']],
  monument:['pierre',['Le village mérite un beau monument, sur la place.','Avec le bouton « Monument », on y apporte des légumes, du bois, des œufs et de la pierre, petit à petit.','Une jauge montre ce qu\'il manque pour l\'étage suivant. Chaque étage fait produire tout le village 5 % de plus, pour toujours.']]};
 function presenterBouton(a){const p=PRESENTE[a];if(!p){donnerBouton(a);annoncer();return}
   S.fil.vu[a]=1;scene(p[0],p[1],()=>{donnerBouton(a);annoncer()})}
 // chaque époque s'ouvre sur une courte scène qui dit ce qui change
 function scenesEpoque(e){
-  if(e===1){S.fil.vu.village=1;scene('chloe',['Bonjour ! Je suis Chloé, et voici Hugo, mon frère.','Toute la famille s\'installe ici : le hameau devient un village !','Les toits se font de chaume, et de nouveaux bâtiments vous attendent dans « Progrès ».'],()=>presenterBouton('commandes'))}
-  else if(e===2){S.fil.vu.bourg=1;scene('pierre',['Bonjour, moi c\'est Pierre, le bricoleur.','J\'ouvre mon atelier ici : le village devient un bourg, avec des pavés et une vraie place.'],()=>presenterBouton('monument'))}
+  if(e===1){S.fil.vu.village=1;scene('chloe',['Le hameau devient un village ! Les toits se font de chaume.','Hugo et moi, on va enfin pouvoir ouvrir nos boutiques : sa boulangerie et mes fleurs. Elles vous attendent dans « Progrès ».'],()=>presenterBouton('commandes'))}
+  else if(e===2){S.fil.vu.bourg=1;scene('pierre',['Le village devient un bourg, avec des pavés et une vraie place.','Et moi, j\'ouvre enfin mon atelier de mécano !'],()=>presenterBouton('monument'))}
   else if(e===3){S.fil.vu.ville=1;scene('chloe',['Quelle fête pour la mairie !','Le bourg est devenu une ville fleurie. On dirait une carte postale.'],annoncer)}}
 /* La fête de la saison, à partir du Village : Chloé l'annonce quelques jours avant la fin de la semaine (jeudi), avec la
    liste de ce qu'il faut réunir et la récompense. Le bouton « Fête » reste jusqu'à dimanche. */

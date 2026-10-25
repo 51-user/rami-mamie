@@ -99,12 +99,12 @@ html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A
 .pli{position:absolute;transform:translate(-50%,-50%);z-index:1}
 .pli .pc{position:absolute}
 .pli .pc>span{display:block}
-.pli .pc svg{display:block;filter:drop-shadow(-2px 3px 4px rgba(0,0,0,.4))}
+.pli .pc svg{display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.33)) drop-shadow(0 1px 2px rgba(0,0,0,.3))}
 .s-bas{left:50%;bottom:0;transform:translateX(-50%)}
 .s-haut{left:50%;top:0;transform:translateX(-50%)}
 .s-gauche{left:0;top:50%;transform:translateY(-50%)}
 .s-droite{right:0;top:50%;transform:translateY(-50%)}
-.pli .gagne svg{filter:drop-shadow(0 0 8px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
+.pli .gagne svg{filter:drop-shadow(0 6px 10px rgba(0,0,0,.3)) drop-shadow(0 0 8px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
 /* une carte glisse jusqu'au pli ; le pli glisse ensuite vers qui l'a remporté */
 .arrive{animation:arrive .4s cubic-bezier(.2,.7,.3,1)}
 @keyframes arrive{from{transform:translate(var(--dx),var(--dy)) scale(.9);opacity:.5}}
@@ -113,10 +113,13 @@ html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A
 .retournee{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .enchere{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:max-content;max-width:92vw}
 html body .enchere button{min-height:52px;font-size:20px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;border-width:3px}
-.main{position:absolute;left:50%;transform:translateX(-50%);display:flex;z-index:4}
-.carte{background:none;border:0;padding:0;position:relative;transition:transform .15s ease,filter .15s}
-.carte svg{display:block;filter:drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
+/* la main en éventail ; la carte touchée se soulève, on la joue d'un toucher ou en la glissant vers le pli */
+.main{position:absolute;left:0;right:0;bottom:0;z-index:4;pointer-events:none}
+.carte{position:absolute;background:none;border:0;padding:0;transform-origin:50% 100%;pointer-events:auto;touch-action:none;
+  transition:transform .15s ease,translate .22s ease,scale .15s ease,filter .15s}
+.carte svg{display:block;filter:drop-shadow(-4px 4px 6px rgba(0,0,0,.35))}
 .carte.ok{transform:translateY(-6%)}
+.carte.tient{translate:0 -14%;scale:1.06;z-index:50 !important;transition:transform .15s ease,scale .15s ease}
 .carte.ok svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 5px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
 .carte.non svg{filter:grayscale(.7) brightness(.6) drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
 .conseil,.aide{position:absolute;left:50%;transform:translateX(-50%);font-family:var(--f-body);font-weight:700;color:var(--brun);border:2px solid var(--cadre);text-align:center}
@@ -171,6 +174,7 @@ html body .overlay.doux{background:rgba(40,22,8,.35)}
 <div id="app"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="cartes-faces.js"></script>
 <script src="belote.js"></script>
 <script>
 /* Les règles retenues sont écrites en tête de belote.js. Ici : l'écran, la liaison et les récompenses. */
@@ -214,6 +218,7 @@ const PIPS={
 const FONT='Libre Baskerville, Georgia, serif';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function backSVG(w, name){
+  if(window.CartesFaces) return CartesFaces.dos(w, name===undefined?backName():name); // faces communes (site/cartes-faces.js)
   const h=Math.round(w*1.4), n=name===undefined?backName():name, tiny=w<50;
   const flower=`<g transform="translate(50 56)"><g fill="#C2546B">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-11" rx="7" ry="10" transform="rotate(${a})"/>`).join('')}</g><circle r="6" fill="#F3C14B"/></g>`;
   const len=n.length, fs=len>9?11:13;
@@ -227,6 +232,7 @@ function backSVG(w, name){
 function cardSVG(id,w){
   const h=Math.round(w*1.4);
   if(id==null) return backSVG(w);
+  if(window.CartesFaces) return CartesFaces.parNumero(id, w);
   const open=`<svg width="${w}" height="${h}" viewBox="0 0 100 140" role="img"`;
   const base=`<rect x="1" y="1" width="98" height="138" rx="9" fill="#FFFDF7" stroke="#A79F8A" stroke-width="1.5"/>`;
   const s=suitOf(id), r=rankOf(id), col=SUIT_RED[s]?'#B3122A':'#151515', L=label(r);
@@ -439,7 +445,7 @@ function render(){
   if(sc==='accueil'){
     app.innerHTML=`<div class="center">${fan}<h1>Belote en famille</h1>
       <div class="choice">
-        <button class="big" data-act="seul">🃏 Avec Marcel, Odette et Lucien<small>des joueurs du village, sans connexion</small></button>
+        <button class="big" data-act="seul">🃏 Avec Hugo, Chloé et Pierre<small>des joueurs du village, sans connexion</small></button>
         <button class="big alt" data-act="salle">👵 En famille<small>à distance, avec un mot de salle</small></button>
       </div>
       <div class="homebtns"><button class="small" data-act="regles">Les règles</button><button class="small" data-act="maison">Retour à l'accueil</button></div></div>${pan}`;
@@ -489,7 +495,7 @@ function renderLobby(f){
       <button class="big alt" data-act="ens" data-v="1" aria-pressed="${!!L.ensemble}" ${host?'':'disabled'}>${L.ensemble?'✓ ':''}Ensemble<small style="display:block">face à face, même équipe</small></button>
       <button class="big alt" data-act="ens" data-v="0" aria-pressed="${!L.ensemble}" ${host?'':'disabled'}>${!L.ensemble?'✓ ':''}L'une contre l'autre<small style="display:block">chacune avec un joueur du village</small></button></div>`:'';
   app.innerHTML=`<div class="center lobby"><h1>Salle « ${esc(word)} »</h1>
-    <p class="lead boxed">${host?`Donnez le mot <b>« ${esc(word)} »</b> à votre famille. Les places vides seront tenues par Marcel, Odette et Lucien. Touchez « Commencer » quand tout le monde est là.`:`Vous êtes à la table de ${esc(H[0]?.name||'')}. La partie commencera quand elle touchera « Commencer ».`}</p>
+    <p class="lead boxed">${host?`Donnez le mot <b>« ${esc(word)} »</b> à votre famille. Les places vides seront tenues par Hugo, Chloé et Pierre. Touchez « Commencer » quand tout le monde est là.`:`Vous êtes à la table de ${esc(H[0]?.name||'')}. La partie commencera quand elle touchera « Commencer ».`}</p>
     <div class="sieges">${rows}</div>
     ${choixHTML(L.n,L.target,host)}${ens}
     <div class="homebtns" style="align-items:center">${host?'<button class="big" data-act="go-salle">Commencer</button>':''}
@@ -520,19 +526,24 @@ function hudHTML(v){
 /* Toute la table se mesure sur l'écran réel : la main d'abord, aussi grande que possible ; le pli dans la place qui reste. */
 function layout(v){
   const vw=innerWidth, vh=innerHeight, portrait=vh>vw, n=Math.max(1,(v.hands[v.you]||[]).length);
-  const avail=vw-28;
-  let Hc=portrait?vh*0.25:vh*0.34, W=Hc/1.4, step=n>1?Math.min(W*0.78,(avail-W)/(n-1)):W;
-  if(step<0.38*W){ W=avail/(1+0.38*(n-1)); step=0.38*W; Hc=W*1.4; }
-  const handTop=vh-12-Hc*1.06;
+  // la main en éventail : grandes cartes chevauchées, légèrement tournées, le bas glissé sous le bord de l'écran
+  const avail=vw*(portrait?0.8:0.86);
+  let Hc=portrait?vh*0.27:vh*0.38, W=Hc/1.4, step=n>1?Math.min(W*0.62,(avail-W)/(n-1)):W;
+  if(step<0.3*W){ W=avail/(1+0.3*(n-1)); step=0.3*W; Hc=W*1.4; }
+  const ang=n>1?Math.min(4,24/(n-1)):0, sink=Hc*0.06, arc=Hc*0.012;
+  const handTop=vh+sink-Hc*1.08;
   const Wb=Math.round(portrait?vw*0.055:vh*0.065), Hb=Math.round(Wb*1.4), seatH=30+Hb, sideW=Math.round(Wb*3.1)+20;
   const topY=(portrait?66:18)+seatH/2;
   const topBottom=v.n===4?topY+seatH/2+24:(portrait?72:62);
-  let Hp=Math.min(portrait?vh*0.15:vh*0.21,(handTop-topBottom-30)/2.25), Wp=Hp/1.4, pw=Wp*3.4;
-  const pwMax=vw-2*(sideW+24); if(pw>pwMax){ pw=pwMax; Wp=pw/3.4; }
+  // le pli : de vraies grandes cartes, posées en croix et un peu chevauchées
+  // en portrait, les deux voisins remontent sur la rangée du haut : le pli prend toute la largeur
+  const sideY=portrait?topY+seatH*0.55:null;
+  let Hp=Math.min(portrait?vh*0.21:vh*0.26,(handTop-topBottom-26)/1.7), Wp=Hp/1.4, pw=Wp*2.9;
+  const pwMax=portrait?vw*0.9:vw-2*(sideW+24); if(pw>pwMax){ pw=pwMax; Wp=pw/2.9; }
   Wp=Math.round(Wp);
   const cy=Math.round((topBottom+handTop)/2);
-  return {W:Math.floor(W),step,handTop,Wb,Wp,pw:Math.round(pw),ph:Math.round(Wp*1.4*2.25),cy,
-    seat:{haut:[vw/2,topY],gauche:[14+sideW/2,cy],droite:[vw-14-sideW/2,cy]}};
+  return {W:Math.floor(W),Hc,step,ang,sink,arc,handTop,Wb,Wp,pw:Math.round(pw),ph:Math.round(Wp*1.4*1.7),cy,
+    seat:{haut:[vw/2,topY],gauche:[14+sideW/2,sideY??cy],droite:[vw-14-sideW/2,sideY??cy]}};
 }
 const arrived=new Set(), parted=new Set();
 /* Le chemin d'une carte entre le pli et une place (pour les deux glissements). */
@@ -612,9 +623,10 @@ function renderGame(pan){
   const h=helpText(v,info);
   const hb=Math.round(vh-L.handTop+8);
   const myBubble=v.say?.[me]?`<span class="bulle" style="bottom:${hb+34}px;top:auto">${esc(v.say[me])}</span>`:'';
+  const mid0=(hand.length-1)/2, x0=(innerWidth-(W+(hand.length-1)*step))/2;
   const handHTML=hand.map((c,k)=>{
-    const cls=v.phase!=='play'||!myTurn||v.trick.length===v.n?'':okSet.has(c)?' ok':' non';
-    return `<button class="carte${cls}" data-act="carte" data-id="${c}" style="margin-left:${k?Math.round(step-W):0}px;z-index:${k}" aria-label="${cardName(c)}">${cardSVG(c,W)}</button>`;
+    const cls=v.phase!=='play'||!myTurn||v.trick.length===v.n?'':okSet.has(c)?' ok':' non', d=k-mid0;
+    return `<button class="carte${cls}" data-act="carte" data-id="${c}" style="left:${Math.round(x0+k*step)}px;bottom:${Math.round(-L.sink-L.arc*d*d)}px;rotate:${(d*L.ang).toFixed(2)}deg;z-index:${k}" aria-label="${cardName(c)}">${cardSVG(c,W)}</button>`;
   }).join('');
   const quitter=mode==='seul'?'<button class="small" data-act="quitter-seul">Arrêter la partie</button>':'<button class="small" data-act="leave">Changer de salle</button>';
   app.innerHTML=`<div class="jeu">
@@ -625,7 +637,7 @@ function renderGame(pan){
     <div class="pli" style="left:50%;top:${L.cy}px;width:${L.pw}px;height:${L.ph}px">${mid}</div>
     ${(v.phase==='done'||v.phase==='over')?'':`<p class="conseil${h.wait?' attente':''}" style="bottom:${hb}px" aria-live="polite">${h.t}</p>`}
     ${myBubble}
-    <div class="main" style="bottom:12px">${handHTML}</div>
+    <div class="main">${handHTML}</div>
     ${aide?`<div class="aide" role="alert" style="bottom:${hb+48}px">${esc(aide)}</div>`:''}
     ${(v.phase==='done'||v.phase==='over')&&panel!=='regles'?resultHTML(v):''}${pan}</div>`;
 }
@@ -719,18 +731,41 @@ app.addEventListener('click',e=>{
     case 'passer': act({type:'bid',take:false}); break;
     case 'next': act({type:'next'}); break;
     case 'again': if(authority()) act({type:'again'}); break;
-    case 'carte': {
-      const c=+t.dataset.id, v=V;
-      if(v.phase==='bid'||v.phase==='nobid'){ say('On choisit d\'abord l\'atout : les cartes se jouent ensuite.'); break; }
-      if(v.phase!=='play') break;
-      if(v.trick.length===v.n){ say('Un instant : le pli se ramasse.'); break; }
-      if(v.turn!==v.you){ say(`Attendez votre tour : c'est à ${v.players[v.turn].name} de jouer.`); break; }
-      const info=legalInfo(v.hands[v.you],v.trick,v.trump,v.n,v.you);
-      if(!info.ok.includes(c)){ say(refusal(info,c,v.trump)); break; }
-      act({type:'play',card:c}); break;
-    }
+    case 'carte': if(e.detail===0) tapCard(+t.dataset.id); break; // au clavier ; au doigt, voir plus bas
   }
 });
+function tapCard(c){
+  const v=V;
+  if(v.phase==='bid'||v.phase==='nobid'){ say('On choisit d\'abord l\'atout : les cartes se jouent ensuite.'); return; }
+  if(v.phase!=='play') return;
+  if(v.trick.length===v.n){ say('Un instant : le pli se ramasse.'); return; }
+  if(v.turn!==v.you){ say(`Attendez votre tour : c'est à ${v.players[v.turn].name} de jouer.`); return; }
+  const info=legalInfo(v.hands[v.you],v.trick,v.trump,v.n,v.you);
+  if(!info.ok.includes(c)){ say(refusal(info,c,v.trump)); return; }
+  act({type:'play',card:c});
+}
+/* Au doigt : la carte touchée se soulève ; un toucher la joue, ou on la glisse vers le pli.
+   Lâchée ailleurs, elle revient dans la main. */
+let drag=null;
+app.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('.carte'); if(!t) return;
+  drag={el:t,id:+t.dataset.id,x:e.clientX,y:e.clientY,moved:false};
+  t.classList.add('tient'); try{ t.setPointerCapture(e.pointerId); }catch{}
+});
+app.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(Math.hypot(dx,dy)>12) drag.moved=true;
+  if(drag.moved) drag.el.style.translate=`${dx}px ${dy}px`;
+});
+function finDrag(e,annule){
+  if(!drag) return;
+  const d=drag; drag=null;
+  d.el.classList.remove('tient'); d.el.style.translate='';
+  if(!annule&&(!d.moved||e.clientY-d.y<-Math.min(90,innerHeight*0.1))) tapCard(d.id);
+}
+app.addEventListener('pointerup',e=>finDrag(e,false));
+app.addEventListener('pointercancel',e=>finDrag(e,true));
 let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(screen()==='game') render(); },120); });
 async function keepAwake(){ try{ await navigator.wakeLock?.request('screen'); }catch{} }
 document.addEventListener('visibilitychange',()=>{

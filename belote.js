@@ -96,7 +96,7 @@ const PTS_PLAIN={1:11,10:10,13:4,12:3,11:2,9:0,8:0,7:0};
 const PTS_TRUMP={11:20,9:14,1:11,10:10,13:4,12:3,8:0,7:0};
 const points=(c,tr)=>(suitOf(c)===tr?PTS_TRUMP:PTS_PLAIN)[rankOf(c)];
 const ord=(c,tr)=>(suitOf(c)===tr?ORD_TRUMP:ORD_PLAIN)[rankOf(c)];
-const BOTS=['Marcel','Odette','Lucien'];
+const BOTS=['Hugo','Chloé','Pierre'];   // les trois habitants du village, personne d'autre
 
 function cardName(id){
   const r=rankOf(id), s=' de '+SUIT_NAME[suitOf(id)];

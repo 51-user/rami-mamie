@@ -6,28 +6,10 @@ try{(function(){
 if(typeof rendu!=='function'||typeof BAT==='undefined')return;
 
 /* ===================== Les habitants ===================== */
+ /* 25/10, Florian : « Tu as déjà 3 prénoms et 3 métiers depuis le début » : Hugo, Chloé et Pierre, et personne d'autre.
+    Tous trois habitent le hameau dès le début ; leurs boutiques s'ouvrent au fil des époques. */
 const HAB=[
- {id:'marcel',nom:'Marcel',role:'le vieux menuisier',ep:0,aime:'bois',peau:'#F1C6A5',cheveux:'#E4E4E4',habit:'#7A8B6F',chapeau:'beret',
-  phrases:['Bonjour ! Le bois sent bon ce matin, vous ne trouvez pas ?','J\'ai réparé le banc de la place. Asseyez-vous quand vous voulez.',
-   'À mon âge, on prend son temps. Et c\'est très bien comme ça.','Une belle planche, c\'est comme une belle journée : ça se savoure.',
-   'Votre village me rappelle celui de mon enfance.','Avec un peu de bois, je vous fabrique une merveille.'],
-  scenes:{3:{l:['Vous savez, je viens souvent m\'asseoir sur la place.','Avant, j\'étais menuisier. J\'ai fait des tables, des chaises, des berceaux…',
-     'Merci de venir me voir. Ça me fait chaud au cœur.','Tenez, quelques pièces de ma tirelire. Si, si, j\'insiste !'],cadeau:{pieces:120}},
-   6:{l:['J\'ai retrouvé un vieux carnet de plans.','Dedans, il y a le village dont je rêvais quand j\'étais jeune.',
-     'Et vous savez quoi ? Il ressemble beaucoup au vôtre.','Prenez ces étoiles : elles vous aideront à le faire grandir.'],cadeau:{etoiles:12}},
-   10:{l:['Je vous ai préparé une surprise.','Mes mains tremblent un peu, mais le cœur y était.',
-     'C\'est un puits, comme celui de ma grand-mère.','Posez-le où vous voulez. Il portera bonheur à tout le village.'],cadeau:{deco:'puits'}}}},
- {id:'lucie',nom:'Lucie',role:'la petite voisine',ep:0,aime:'legumes',peau:'#F6D3B8',cheveux:'#B5651D',habit:'#F2C94C',long:true,noeud:'#E53935',taille:.86,
-  phrases:['Bonjour ! Mon lapin Pompon vous dit bonjour aussi !','J\'ai compté les fleurs du massif : il y en a des tonnes !',
-   'Quand je serai grande, j\'aurai un potager aussi grand que le vôtre.','Pompon adore les carottes. Moi, je préfère les gâteaux.',
-   'Vous savez faire des tresses ? Ma maman, elle sait.','Aujourd\'hui, j\'ai vu un papillon tout jaune !'],
-  scenes:{3:{l:['Je peux vous dire un secret ?','Pompon, c\'est le lapin le plus courageux du monde.',
-     'Hier, il a fait peur à un pigeon !','Tenez, c\'est mon argent de poche. Pour vous !'],cadeau:{pieces:120}},
-   6:{l:['J\'ai fait un dessin de vous.','Là, c\'est vous. Là, c\'est votre maison. Et là, c\'est Pompon.',
-     'Je l\'ai accroché au-dessus de mon lit.','Et voilà des étoiles que j\'ai attrapées dans le ciel !'],cadeau:{etoiles:12}},
-   10:{l:['Vous êtes ma meilleure amie du village.','Avec Pompon, on a planté des fleurs rien que pour vous.',
-     'Il y en a des rouges, des jaunes et des violettes.','Venez vite les poser où vous voulez !'],cadeau:{deco:'massif'}}}},
- {id:'chloe',nom:'Chloé',role:'la fleuriste',ep:1,aime:'fruits',peau:'#F3CBB0',cheveux:'#8B4A2B',habit:'#E98AA8',long:true,fleur:true,
+ {id:'chloe',nom:'Chloé',role:'la fleuriste',ep:0,aime:'fruits',peau:'#F3CBB0',cheveux:'#8B4A2B',habit:'#E98AA8',long:true,fleur:true,
   phrases:['Bonjour ! J\'ai mis des roses dans la vitrine, venez les voir.','Une pomme bien croquante, et la journée commence bien.',
    'Les abeilles ont l\'air contentes, aujourd\'hui.','Je prépare un bouquet pour quelqu\'un de très gentil… vous !',
    'Votre village devient de plus en plus joli.','Les fleurs, c\'est comme les gens : il leur faut du soleil et de l\'attention.'],
@@ -37,7 +19,7 @@ const HAB=[
      'Alors celui-ci est pour vous.','Et ces étoiles aussi, pour le progrès du village.'],cadeau:{etoiles:15}},
    10:{l:['Toute la place parle de vous, vous savez.','On dit que c\'est grâce à vous que le village est si joli.',
      'Alors j\'ai demandé à Pierre de m\'aider pour un cadeau…','Un kiosque à musique ! Posez-le où vous voulez.'],cadeau:{deco:'kiosque'}}}},
- {id:'hugo',nom:'Hugo',role:'le boulanger',ep:1,aime:'oeufs',peau:'#E8B994',cheveux:'#3B2A1E',habit:'#FFFFFF',chapeau:'toque',
+ {id:'hugo',nom:'Hugo',role:'le boulanger',ep:0,aime:'oeufs',peau:'#E8B994',cheveux:'#3B2A1E',habit:'#FFFFFF',chapeau:'toque',
   phrases:['Bonjour ! Le four est chaud, ça sent la brioche.','Avec trois œufs, je fais des crêpes pour tout le village.',
    'Je me lève tôt, mais je fais la sieste. Chut !','Une bonne baguette, ça ne s\'improvise pas.',
    'Vous avez une mine superbe aujourd\'hui !','Le secret d\'un bon pain ? La patience.'],
@@ -45,9 +27,9 @@ const HAB=[
      'Vous êtes la première à la goûter. Alors ?','Ha ha, j\'en étais sûr ! Tenez, pour vous remercier.'],cadeau:{pieces:150}},
    6:{l:['Quand j\'étais petit, mon grand-père était boulanger.','Il disait : « Le pain, c\'est fait pour être partagé. »',
      'Avec vous, je comprends ce qu\'il voulait dire.','Ces étoiles, c\'est ma façon de partager.'],cadeau:{etoiles:15}},
-   10:{l:['J\'ai fait une brioche géante, pour tout le village.','Tout le monde en a eu une part, même Pompon !',
+   10:{l:['J\'ai fait une brioche géante, pour tout le village.','Tout le monde en a eu une part, même le chien !',
      'Et chacun a voulu vous remercier à sa façon.','Alors voici toutes leurs étoiles, réunies pour vous.'],cadeau:{etoiles:40}}}},
- {id:'pierre',nom:'Pierre',role:'le bricoleur',ep:2,aime:'pain',peau:'#D9A27E',cheveux:'#4A3B2A',habit:'#3A6EA5',chapeau:'casquette',
+ {id:'pierre',nom:'Pierre',role:'le mécano',ep:0,aime:'pain',peau:'#D9A27E',cheveux:'#4A3B2A',habit:'#3A6EA5',chapeau:'casquette',
   phrases:['Bonjour ! Rien ne résiste à un bon tournevis.','J\'ai huilé la girouette de la place, elle ne grince plus.',
    'Un morceau de pain et du fromage : le meilleur repas du monde.','S\'il y a quelque chose de cassé, appelez-moi !',
    'J\'ai trouvé une vieille clé dans mon atelier. Mystère…','Votre village tient debout, solide comme un roc !'],
@@ -68,6 +50,9 @@ function E(){
   const h=S.habitants;
   ['coeurs','offert','parle','paliers'].forEach(k=>{if(!h[k]||typeof h[k]!=='object')h[k]={}});
   ['attente','commandes','bons','arrives'].forEach(k=>{if(!Array.isArray(h[k]))h[k]=[]});
+  const ok=id=>HAB.some(H=>H.id===id);
+  ['coeurs','offert','parle','paliers'].forEach(k=>Object.keys(h[k]).forEach(id=>{if(!ok(id))delete h[k][id]}));
+  h.attente=h.attente.filter(a=>ok(a.qui));h.commandes=h.commandes.filter(c=>c&&ok(c.qui));h.bons=h.bons.filter(b=>ok(b.de));h.arrives=h.arrives.filter(ok);
   return h;
 }
 const epoque=()=>{const n=['hameau','village','bourg','ville'].indexOf(S.epoque);return n<0?0:n};
@@ -293,7 +278,7 @@ function agir(a,el){
     if(h.offert[H.id]===jour()||(S.stock[k]||0)<1)return;
     S.stock[k]-=1;h.offert[H.id]=jour();gagnerCoeur(H.id,1);sauve();
     const [sx,sy]=depuis('#h-voile .h-portrait');sonCoeur();coeursVolent(sx,sy);
-    message=`❤️ ${H.nom} est ravi${['lucie','chloe'].includes(H.id)?'e':''} de votre cadeau !`;
+    message=`❤️ ${H.nom} est ravi${H.id==='chloe'?'e':''} de votre cadeau !`;
     ouvrir(vue);rendu();apresCoeur(H.id);return}
   if(a==='suite'&&vue&&vue.quoi==='scene'){vue.k++;sonParle();ouvrir(vue);return}
   if(a==='recevoir'&&vue&&vue.quoi==='scene'){const H=hab(vue.qui),p=vue.palier;
@@ -327,7 +312,7 @@ document.addEventListener('click',ev=>{
   }catch(e){fermer()}
 });
 
-/* Les arrivées : Chloé et Hugo au Village, Pierre au Bourg. */
+/* Les arrivées : les trois habitent le hameau dès le début (une ancienne sauvegarde les accueille sans message). */
 function arrivees(){
   if(fete||feuille)return;
   const h=E(),neufs=presents().filter(H=>!h.arrives.includes(H.id));if(!neufs.length)return;
