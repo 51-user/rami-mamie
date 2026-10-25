@@ -89,9 +89,10 @@ function renardEtat(t) {
   const amp = t < arretDebut ? 1 - entre(t, arretDebut - 0.4, arretDebut) : t < arretFin ? 0 : entre(t, arretFin, arretFin + 0.4);
   return { x, phase: (marche / R.pas) * Math.PI * 2, amp, arret: t - arretDebut, enMarche, arretFin: arretFin - arretDebut };
 }
-function renard(t) {
+function renard(t, sens) {   // sens 1 : vers la droite ; -1 : vers la gauche (la marionnette en miroir)
   const e = renardEtat(t);
   if (e.x < -260 || e.x > W + 260) return;
+  const X = sens > 0 ? e.x : W - e.x;
   const s = Math.sin(e.phase), c = Math.cos(e.phase);
   const a = e.amp;
   // gestes de l'arrêt (temps relatif à l'arrêt)
@@ -112,19 +113,24 @@ function renard(t) {
     if (k > 0 && k < 0.7) saut = k < 0.15 ? -k / 0.15 : k < 0.55 ? Math.sin((k - 0.15) / 0.4 * Math.PI) : -(1 - (k - 0.55) / 0.15);
     corpsPenche = 0;
   }
-  const rebond = -7 * Math.abs(s) * a;
-  const contact = Math.pow(1 - Math.abs(s), 6) * a;           // l'instant où le pied touche le sol
+  // (corrigé après Florian, « ton renard marche à reculon ») : en marchant, on est au plus haut jambes à la verticale
+  // (s = 0) et le pied touche le sol à l'écart maximal (|s| = 1) ; c'est là qu'on s'écrase. La jambe qui revient
+  // vers l'avant se lève.
+  const rebond = -3.5 * (1 + Math.cos(2 * e.phase)) * a;
+  const contact = Math.pow(Math.abs(s), 6) * a;               // l'instant où le pied touche le sol
+  const leveProche = Math.max(0, -c) * a, leveLoin = Math.max(0, c) * a;
   const ecrase = 0.06 * contact + (saut < 0 ? -saut * 0.1 : 0) - (saut > 0 ? saut * 0.06 : 0);
   const sautY = saut > 0 ? -saut * 46 : 0;
-  ombre(e.x, R.sol + 2, (62 - (saut > 0 ? saut * 14 : 0)) * R.echelle, 12 * R.echelle);
+  ombre(X, R.sol + 2, (62 - (saut > 0 ? saut * 14 : 0)) * R.echelle, 12 * R.echelle);
   let main = null, museau = null;
   cx.save();
-  cx.translate(e.x, R.sol + rebond + sautY);
+  cx.translate(X, R.sol + rebond + sautY);
+  cx.scale(sens, 1);
   cx.scale(R.echelle, R.echelle);
   cx.scale(1 + ecrase * 0.7, 1 - ecrase + respire);
   // jambes (le pivot de hanche est sous le corps) : alternées, la lointaine plus sombre
-  const jambe = (fx, ang, sombre) => { cx.save(); cx.translate(fx, -44); piece("renard-jambe", 36, 0.5, 0.12, ang, null, { sombre }); cx.restore(); };
-  jambe(-18, -26 * s * a + (saut > 0 ? -18 * saut : 0), true);
+  const jambe = (fx, ang, sombre, leve) => { cx.save(); cx.translate(fx, -44 - 9 * leve); piece("renard-jambe", 36, 0.5, 0.12, ang - 8 * leve, null, { sombre }); cx.restore(); };
+  jambe(-18, -26 * s * a + (saut > 0 ? -18 * saut : 0), true, leveLoin);
   // corps : pivot en bas du ventre ; tout le haut du renard s'y accroche
   cx.translate(0, -40);
   cx.rotate(rad(corpsPenche));
@@ -143,11 +149,13 @@ function renard(t) {
     }, { sombre: true }); } cx.restore();
   // tête derrière le corps (l'écharpe cache le cou) ; elle hoche un peu à chaque pas et suit les gestes de l'arrêt
   cx.save(); { const [tx, ty] = at(0.5, 0.135); cx.translate(tx, ty + teteY);
-    piece("renard-tete", 196, 0.5, 0.97,3 * Math.sin(e.phase * 2 - 0.5) * a + tete); } cx.restore();
-  piece("renard-corps", L, P.x, P.y, 0);
+    piece("renard-tete", 196, 0.5, 0.97,3 * Math.sin(e.phase * 2 - 0.5) * a + tete, null, { miroir: true }); } cx.restore();
+  // (corrigé après Florian) le renard du roster regarde vers la gauche : la marionnette va vers la droite, donc tête,
+  // corps et pan d'écharpe sont retournés en miroir, comme la queue ; sinon il avance le dos en avant
+  piece("renard-corps", L, P.x, P.y, 0, null, { miroir: true });
   // le pan de l'écharpe : pend du nœud et suit avec retard
-  cx.save(); { const [ex, ey] = at(0.57, 0.29); cx.translate(ex, ey);
-    piece("renard-echarpe", L * 107 / 355, 0.5, 0.02, -8 * Math.sin(e.phase - 1.4) * a - 4 - 10 * (saut > 0 ? saut : 0) + 4 * Math.sin(t * 2.1) * (1 - a)); } cx.restore();
+  cx.save(); { const [ex, ey] = at(0.43, 0.29); cx.translate(ex, ey);
+    piece("renard-echarpe", L * 107 / 355, 0.5, 0.02, -8 * Math.sin(e.phase - 1.4) * a - 4 - 10 * (saut > 0 ? saut : 0) + 4 * Math.sin(t * 2.1) * (1 - a), null, { miroir: true }); } cx.restore();
   // bras proche : balance à l'opposé de la jambe proche ; à l'arrêt il va au panier puis porte la pomme au museau
   cx.save(); { const [bx, by] = at(0.86, 0.42); cx.translate(bx, by);
     const ang = -18 * s * a + brasAvant;
@@ -164,8 +172,8 @@ function renard(t) {
     cx.save(); cx.translate(px, py); cx.scale(R.echelle, R.echelle); pommeCroquee(30, croque); cx.restore();
   }
   // jambe proche, devant
-  cx.save(); cx.translate(e.x, R.sol + rebond + sautY); cx.scale(R.echelle, R.echelle); cx.scale(1 + ecrase * 0.7, 1 - ecrase + respire);
-  jambe(18, 26 * s * a + (saut > 0 ? 18 * saut : 0), false); cx.restore();
+  cx.save(); cx.translate(X, R.sol + rebond + sautY); cx.scale(sens * R.echelle, R.echelle); cx.scale(1 + ecrase * 0.7, 1 - ecrase + respire);
+  jambe(18, 26 * s * a + (saut > 0 ? 18 * saut : 0), false, leveProche); cx.restore();
   // miettes à chaque croquée
   for (const t0 of [2.05, 3.65]) { const k = u - t0; if (k > 0 && k < 0.8 && museau) miettes(museau.e + 10, museau.f, k); }
 }
@@ -202,9 +210,10 @@ function escargotEtat(t) {
   const etire = t >= haltA && t < haltB ? 0.02 * Math.sin((t - haltA) * 3) : 0.13 * Math.sin(Math.PI * f);  // s'étire puis revient
   return { arriere, etire, ph, halte: t >= haltA && t < haltB ? t - haltA : -1 };
 }
-function escargot(t) {
+function escargot(t, sens) {   // sens 1 : vers la gauche (tête de l'image) ; -1 : vers la droite, en miroir
   const e = escargotEtat(t);
   if (e.arriere < -120 || e.arriere > W + 600) return;
+  const A = sens > 0 ? e.arriere : W - e.arriere;
   const L = E.larg, im = IMG["escargot-corps"]; if (!im) return;
   const h = L * im.height / im.width;
   const k = 1 + e.etire;
@@ -212,9 +221,9 @@ function escargot(t) {
   const u = e.halte;
   const regarde = u >= 0 ? (u < 1.3 ? -1 : u < 2.6 ? 1 : u < 3.4 ? -0.4 : 0) * entre(u, 0, 0.3) : 0;
   const frisson = u > 3.0 && u < 3.8 ? Math.sin((u - 3.0) * 40) * (1 - (u - 3.0) / 0.8) : 0;
-  ombre(e.arriere - L * 0.55 * k, E.sol + 1, L * 0.5 * k, 9);
+  ombre(A - sens * L * 0.55 * k, E.sol + 1, L * 0.5 * k, 9);
   cx.save();
-  cx.translate(e.arriere, E.sol);                      // l'arrière du pied, posé au sol
+  cx.translate(A, E.sol); cx.scale(sens, 1);                    // l'arrière du pied, posé au sol
   // coquille : posée sur l'arrière du pied, ne s'étire pas ; dodeline avec retard
   const dod = 3.2 * Math.sin(e.ph - 1.2) + frisson * 6;
   cx.save(); cx.translate(-L * 0.34, -h * 0.47 + 1.5 * Math.sin(e.ph - 1.0));
@@ -237,8 +246,10 @@ function escargot(t) {
 function dessiner(t) {
   cx.clearRect(0, 0, W, H);
   decor();
-  escargot(t % BOUCLE);
-  renard(t % BOUCLE);
+  // chaque boucle, les deux repartent dans l'autre sens : on voit la marche dans les deux sens de la scène
+  const sens = Math.floor(t / BOUCLE) % 2 ? -1 : 1;
+  escargot(t % BOUCLE, sens);
+  renard(t % BOUCLE, sens);
   decorDevant();
 }
 (async () => {
