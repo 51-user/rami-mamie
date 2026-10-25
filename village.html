@@ -39,7 +39,9 @@ h1{font-family:var(--f-display);font-size:28px;margin:0 8px 0 0}
 .son{min-width:56px;min-height:48px;border-radius:999px;border:2px solid var(--line);background:var(--paper);font-size:26px}
 .milieu{flex:1;display:flex;gap:14px;min-height:0;margin-top:8px}
 .carte{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
-.carte svg{width:100%;height:100%;max-height:calc(100vh - 190px);touch-action:manipulation}
+.carte svg{width:100%;height:100%;max-height:calc(100vh - 190px);touch-action:none;cursor:grab}
+.zoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:10px;z-index:2}
+.zoom .son{width:64px;height:64px;font-size:32px;font-weight:700}
 .cote{width:290px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0}
 @media (max-width:900px){.milieu{flex-direction:column}.cote{width:auto;flex:1}.carte{flex:0 0 auto;height:52vh}.carte svg{max-height:52vh}}
 .aide{background:#FFF4CC;border:3px solid var(--gold);border-radius:18px;padding:10px 14px;font-size:20px;font-weight:700;line-height:1.35}
@@ -94,7 +96,7 @@ svg text{font-family:var(--f-body)}
 <script>
 /* ===================== Données : l'époque Hameau, six bâtiments ===================== */
 const RES={pieces:{e:'🪙',nom:'pièces'},etoiles:{e:'⭐',nom:'étoiles'},legumes:{e:'🥕',nom:'légumes',vend:2},bois:{e:'🪵',nom:'bois',vend:2},oeufs:{e:'🥚',nom:'œufs',vend:3},
- fleurs:{e:'💐',nom:'bouquets',vend:4},fruits:{e:'🍎',nom:'fruits',vend:4},farine:{e:'🌾',nom:'farine',vend:5},pain:{e:'🍞',nom:'pains',vend:8},outils:{e:'🔧',nom:'outils',vend:10}};
+ fleurs:{e:'💐',nom:'bouquets',vend:4},fruits:{e:'🍎',nom:'fruits',vend:4},farine:{e:'🌾',nom:'farine',vend:5},pain:{e:'🍞',nom:'pains',vend:8},outils:{e:'🔧',nom:'outils',vend:10},pierre:{e:'🪨',nom:'pierre',vend:3}};
 /* sorte : maison (pièces chaque heure), atelier (3 durées), deco (bonus autour), chemin */
 const BAT={
  maison:{nom:'Maison de bois',e:'🏠',sorte:'maison',t:2,cout:{pieces:60},parHeure:10,aide:'Donne des pièces chaque heure ; la réserve tient 3 jours.'},
@@ -104,18 +106,19 @@ const BAT={
  puits:{nom:'Puits',e:'🪣',sorte:'deco',t:1,cout:{pieces:80,bois:15},bonus:.2,aide:'Les bâtiments tout autour produisent 20 % de plus.'},
  massif:{nom:'Massif de fleurs',e:'🌷',sorte:'deco',t:1,cout:{pieces:30,legumes:5},bonus:.1,aide:'Les bâtiments tout autour produisent 10 % de plus.'},
  chemin:{nom:'Chemin',e:'🟫',sorte:'chemin',t:1,cout:{pieces:2},aide:'Relie les bâtiments à la place du village.'},
+ arbre:{nom:'Jeune arbre',e:'🌱',sorte:'nature',t:1,cout:{pieces:5},aide:'Une jeune pousse, qui devient un arbre à couper en 3 heures.'},
  // époque Village
  boulangerie:{nom:"Boulangerie d'Hugo",e:'🥖',sorte:'atelier',t:2,ep:1,cout:{pieces:200,bois:30},produit:'pain',mur:'#F6DDB2',toit:'#B5651D',aide:'Hugo fait du pain.'},
  fleuriste:{nom:'Fleurs de Chloé',e:'💐',sorte:'atelier',t:2,ep:1,cout:{pieces:180,legumes:20},produit:'fleurs',mur:'#FADDE6',toit:'#C2457A',aide:'Chloé compose des bouquets.'},
  verger:{nom:'Verger',e:'🍎',sorte:'atelier',t:2,ep:1,cout:{pieces:150,bois:20},produit:'fruits',aide:'Des pommes et des poires.'},
  moulin:{nom:'Moulin',e:'🌾',sorte:'atelier',t:2,ep:1,cout:{pieces:250,bois:50},produit:'farine',mur:'#EFE6D2',toit:'#8D6E4F',aide:'De la farine pour le village.'},
  // époque Bourg
- marche:{nom:'Marché couvert',e:'🏪',sorte:'maison',t:2,ep:2,cout:{pieces:600,pain:15},parHeure:40,mur:'#E8D9B5',toit:'#C0392B',aide:'Des pièces chaque heure, bien plus qu\'une maison.'},
- atelier:{nom:'Atelier de Pierre',e:'🔧',sorte:'atelier',t:2,ep:2,cout:{pieces:500,bois:80,oeufs:30},produit:'outils',mur:'#DADAD2',toit:'#55534C',aide:'Pierre fabrique des outils.'},
- fontaine:{nom:'Fontaine',e:'⛲',sorte:'deco',t:1,ep:2,cout:{pieces:400,farine:20},bonus:.3,aide:'Les bâtiments tout autour produisent 30 % de plus.'},
+ marche:{nom:'Marché couvert',e:'🏪',sorte:'maison',t:2,ep:2,cout:{pieces:600,pain:15,pierre:30},parHeure:40,mur:'#E8D9B5',toit:'#C0392B',aide:'Des pièces chaque heure, bien plus qu\'une maison.'},
+ atelier:{nom:'Atelier de Pierre',e:'🔧',sorte:'atelier',t:2,ep:2,cout:{pieces:500,bois:80,oeufs:30,pierre:20},produit:'outils',mur:'#DADAD2',toit:'#55534C',aide:'Pierre fabrique des outils.'},
+ fontaine:{nom:'Fontaine',e:'⛲',sorte:'deco',t:1,ep:2,cout:{pieces:400,farine:20,pierre:20},bonus:.3,aide:'Les bâtiments tout autour produisent 30 % de plus.'},
  // époque Ville fleurie
- mairie:{nom:'Mairie',e:'🏛️',sorte:'maison',t:2,ep:3,cout:{pieces:1500,outils:20},parHeure:80,mur:'#E9EEF5',toit:'#3A6EA5',aide:'La fierté du village : beaucoup de pièces chaque heure.'},
- kiosque:{nom:'Kiosque à musique',e:'🎶',sorte:'deco',t:1,ep:3,cout:{pieces:900,fleurs:40},bonus:.4,aide:'Les bâtiments tout autour produisent 40 % de plus.'},
+ mairie:{nom:'Mairie',e:'🏛️',sorte:'maison',t:2,ep:3,cout:{pieces:1500,outils:20,pierre:60},parHeure:80,mur:'#E9EEF5',toit:'#3A6EA5',aide:'La fierté du village : beaucoup de pièces chaque heure.'},
+ kiosque:{nom:'Kiosque à musique',e:'🎶',sorte:'deco',t:1,ep:3,cout:{pieces:900,fleurs:40,pierre:20},bonus:.4,aide:'Les bâtiments tout autour produisent 40 % de plus.'},
  serre:{nom:'Serre',e:'🌿',sorte:'atelier',t:2,ep:3,cout:{pieces:1000,fruits:40},produit:'fleurs',mult:2,mur:'#CFE8EE',toit:'#9FC9D3',aide:'Deux fois plus de bouquets.'}};
 Object.values(BAT).forEach(B=>{B.ep=B.ep||0});
 /* Les époques de Forge of Empires : la frise se parcourt dans l'ordre ; une case « époque » fait monter tout le village. */
@@ -147,44 +150,92 @@ IMAGES_V3.forEach(cle=>{const im=new Image();
   im.onload=()=>{IMGS[cle]=true;clearTimeout(attenteImg);attenteImg=setTimeout(()=>{if(S&&!feuille)rendu()},300)};im.src='img/v3/'+cle+'.webp'});
 function imageDe(o){for(let e=o.ep||0;e>=0;e--){const cle=o.type+'-'+EPOQUES[e].id;if(IMGS[cle])return 'v3/'+cle}return ANCIENNES[o.type]||null}
 const DUREES=[{min:5,nom:'Petit',q:3,et:1},{min:60,nom:'Moyen',q:12,et:3},{min:480,nom:'Gros, pour la nuit',q:40,et:8}];
-const MONDE=16, BLOC=4;                         // 16 × 16 cases, découpées en blocs de 4 × 4 ; on part des 4 blocs du centre
-const PLACE={i:7,j:7};                          // la place du village, 2 × 2, fixe : c'est là que mènent les chemins
-const PRIX_EXT=n=>150*Math.pow(2,n);
+const MONDE=40, BLOC=4;                         // 40 × 40 cases (25/10, Florian : « que la carte soit assez grande »), en blocs de 4 × 4 ; on part des 4 blocs du centre
+const PLACE={i:19,j:19};                          // la place du village, 2 × 2, fixe : c'est là que mènent les chemins
+const PRIX_EXT=n=>100+40*n;                     // un prix qui reste doux, même au vingtième morceau
 
 /* ===================== Mémoire de la tablette ===================== */
-const CLE='village3:etat';
+const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
+const CLE='village3'+(PROFIL?'-'+PROFIL:'')+':etat', NOM='rami'+(PROFIL?'-'+PROFIL:'')+':nom', LIEN='village3'+(PROFIL?'-'+PROFIL:'')+':lien';
 const ls={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
 const uid=()=>Math.random().toString(36).slice(2,9);
 function neuf(nom){
   const t=Date.now(), b=[];
   const pose=(type,i,j,extra)=>b.push(Object.assign({id:uid(),type,i,j},extra||{}));
-  pose('maison',4,6,{depuis:t-75*60000});
-  pose('potager',10,6,{fin:t-1000,duree:0});           // une première récolte prête : la première visite a déjà de quoi ramasser
-  pose('massif',9,9);
-  [[6,6],[6,7],[9,6],[9,7]].forEach(([i,j])=>pose('chemin',i,j));
-  return {v:3,nom,blocs:['1,1','1,2','2,1','2,2'],ext:0,b,
+  pose('maison',16,18,{depuis:t-75*60000});
+  pose('potager',22,18,{fin:t-1000,duree:0});           // une première récolte prête : la première visite a déjà de quoi ramasser
+  pose('massif',21,21);
+  [[18,18],[18,19],[21,18],[21,19]].forEach(([i,j])=>pose('chemin',i,j));
+  b.forEach(o=>{o.maj=t;o.par=nom});
+  return {v:3,monde:40,nom,blocs:['4,4','4,5','5,4','5,5'],ext:0,b,
     stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[]};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
 if(S&&S.v!==3)S=null;
 if(S&&!S.epoque)S.epoque='hameau';
-if(S&&!S.frise)S.frise=[];   // contrat lu par habitants.js et saisons.js : 'hameau' | 'village' | 'bourg' | 'ville'
-function sauve(){ls.set(CLE,JSON.stringify(S))}
+if(S&&!S.frise)S.frise=[];
+if(S&&!S.monde){S.blocs=S.blocs.map(k=>{const [a,c]=k.split(',').map(Number);return (a+3)+','+(c+3)});S.b.forEach(o=>{o.i+=12;o.j+=12});S.monde=40}   // contrat lu par habitants.js et saisons.js : 'hameau' | 'village' | 'bourg' | 'ville'
+function sauve(){ls.set(CLE,JSON.stringify(S));if(window.envoyerSoeur)envoyerSoeur()}   // la sœur reçoit aussitôt, si elle est là
+function sauveIci(){ls.set(CLE,JSON.stringify(S))}
 
 /* ===================== Outils ===================== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let message='', feuille=null, mode=null, dernierPose=null, fete=false;   // mode : {pose:type} | {deplace:id} | {chemins:true}
 const assez=c=>Object.entries(c).every(([k,v])=>(S.stock[k]||0)>=v);
-const paye=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);
+const retire=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);   // retire du stock ce que coûte un geste du jeu
 const txt=c=>Object.entries(c).map(([k,v])=>`<span class="cout"><i class="case">${RES[k].e}</i>${v}</span>`).join(' ');   // les coûts, comme un inventaire
 const heure=ms=>{const d=new Date(ms);return d.getHours()+' h '+String(d.getMinutes()).padStart(2,'0')};
 const possede=(i,j)=>i>=0&&j>=0&&i<MONDE&&j<MONDE&&S.blocs.includes(Math.floor(i/BLOC)+','+Math.floor(j/BLOC));
 const surPlace=(i,j)=>i>=PLACE.i&&i<PLACE.i+2&&j>=PLACE.j&&j<PLACE.j+2;
 const occupe=(i,j,sauf)=>S.b.find(o=>o.id!==sauf&&i>=o.i&&i<o.i+BAT[o.type].t&&j>=o.j&&j<o.j+BAT[o.type].t);
 function libre(type,i,j,sauf){const t=BAT[type].t;for(let a=0;a<t;a++)for(let c=0;c<t;c++){
-  if(!possede(i+a,j+c)||surPlace(i+a,j+c)||occupe(i+a,j+c,sauf))return false}return true}
+  if(!possede(i+a,j+c)||surPlace(i+a,j+c)||occupe(i+a,j+c,sauf)||natureA(i+a,j+c))return false}return true}
+
+/* ===================== La nature du terrain : arbres, rochers, buttes (25/10, Florian : « du bois […] et de la pierre
+   qu'on peut miner ou creuser pour applanir ») =====
+   Un arbre pousse seul de temps en temps sur une case libre (jamais au point d'étouffer le village), ou se plante ; un
+   toucher le coupe (du bois, puis une souche qui s'en va seule). Un rocher se mine en 1 à 3 touchers, une butte se creuse
+   d'un toucher : de la pierre, et la case redevient constructible. Rien ne bloque une case pour toujours. */
+const POUSSE_H=3, SOUCHE_H=2;
+const natureA=(i,j)=>(S.nature||[]).find(n=>n.i===i&&n.j===j);
+const stade=n=>n.t==='pousse'&&Date.now()-n.depuis>=POUSSE_H*3600000?'arbre':n.t;
+const jourN=()=>{const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000)};
+function semerNature(){if(S.nature)return;S.nature=[];const t=Date.now();
+  for(let i=0;i<MONDE;i++)for(let j=0;j<MONDE;j++){if(surPlace(i,j)||occupe(i,j))continue;
+    const r=hasard(i,j,7),mien=possede(i,j),n=1+Math.floor(hasard(i,j,8)*3);
+    const t0=mien?(r<.02?'butte':r<.04?'rocher':r<.07?'arbre':null):(r<.05?'rocher':r<.07?'butte':null);
+    if(t0)S.nature.push({id:uid(),i,j,t:t0,n,depuis:t,maj:t})}
+  S.natureJour=jourN()}
+function pousserArbres(){const j=jourN();if(!S.natureJour){S.natureJour=j;return}
+  const jours=Math.min(3,j-S.natureJour);if(jours<=0)return;S.natureJour=j;
+  const libres=[];S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);
+    for(let i=a*BLOC;i<a*BLOC+BLOC;i++)for(let jj=c*BLOC;jj<c*BLOC+BLOC;jj++)if(!surPlace(i,jj)&&!occupe(i,jj)&&!natureA(i,jj))libres.push([i,jj])});
+  let arbres=S.nature.filter(n=>possede(n.i,n.j)&&(n.t==='arbre'||n.t==='pousse')).length;const max=Math.max(4,Math.floor(libres.length*.06));
+  for(let k=0;k<jours*2&&arbres<max&&libres.length;k++){const [i,jj]=libres.splice(Math.floor(Math.random()*libres.length),1)[0];
+    const t=Date.now();S.nature.push({id:uid(),i,j:jj,t:'arbre',depuis:t,maj:t});arbres++}}
+function purgerSouches(){const t=Date.now();S.nature=S.nature.filter(n=>!(n.t==='souche'&&t-n.depuis>SOUCHE_H*3600000))}
+function natureVivante(){if(!S)return;semerNature();pousserArbres();purgerSouches()}
+function dessinNature(n,sa){const [cx,cy]=P(n.i+.5,n.j+.5),st=stade(n);let h='';
+  if(st==='arbre')h=arbre(cx,cy+6,sa,1.05);
+  else if(st==='pousse')h=`<ellipse cx="${cx}" cy="${cy+3}" rx="9" ry="4" fill="#00000022"/><rect x="${cx-1.5}" y="${cy-16}" width="3" height="18" fill="#6D4C41"/><ellipse cx="${cx-6}" cy="${cy-14}" rx="7" ry="4" fill="#6FBF4A" transform="rotate(-25 ${cx-6} ${cy-14})"/><ellipse cx="${cx+6}" cy="${cy-18}" rx="7" ry="4" fill="#5AA83B" transform="rotate(25 ${cx+6} ${cy-18})"/>`;
+  else if(st==='souche')h=`<ellipse cx="${cx}" cy="${cy+3}" rx="12" ry="5" fill="#00000022"/><rect x="${cx-9}" y="${cy-8}" width="18" height="10" fill="#7A4E2D"/><ellipse cx="${cx}" cy="${cy-8}" rx="9" ry="4.5" fill="#D9B27C" stroke="#7A4E2D"/><ellipse cx="${cx}" cy="${cy-8}" rx="4" ry="2" fill="none" stroke="#A8875A"/>`;
+  else if(st==='rocher'){const k=.75+.3*(n.n||1);h=`<ellipse cx="${cx}" cy="${cy+3}" rx="${14*k}" ry="${6*k}" fill="#00000026"/><ellipse cx="${cx}" cy="${cy-4*k}" rx="${13*k}" ry="${9*k}" fill="#9E9E9E" stroke="#5F5F5F" stroke-width="1.5"/><ellipse cx="${cx-4*k}" cy="${cy-8*k}" rx="${5*k}" ry="${3*k}" fill="#C9C9C9"/><path d="M${cx+2} ${cy-10*k}l${4*k} ${6*k}" stroke="#6E6E6E"/>`}
+  else if(st==='butte')h=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#9C7650" stroke="#6B4A2C"/><ellipse cx="${cx}" cy="${cy-4}" rx="17" ry="7" fill="#B58C5C"/><ellipse cx="${cx-3}" cy="${cy-7}" rx="9" ry="3.5" fill="#7FB55A"/>`;
+  return `<g data-n="${n.id}" style="${mode?'pointer-events:none;opacity:.55':'cursor:pointer'}">${h}</g>`}
+function toucherNature(id,ev){const n=(S.nature||[]).find(x=>x.id===id);if(!n)return;
+  if(!possede(n.i,n.j)){message='Ce terrain n\'est pas encore à vous : touchez le + pour l\'acheter.';rendu();return}
+  const st=stade(n),sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2,t=Date.now();let gains=[];
+  const enleve=()=>{S.nature=S.nature.filter(x=>x!==n)};
+  if(st==='pousse'){message=`🌱 Cette jeune pousse sera un arbre vers ${heure(n.depuis+POUSSE_H*3600000)}.`;rendu();return}
+  if(st==='arbre'){n.t='souche';n.depuis=t;n.maj=t;gains=[['bois',5],['etoiles',1]];SON.coupe();message='🪓 Arbre coupé : +5 🪵. La souche partira toute seule.'}
+  else if(st==='souche'){enleve();message='La souche est enlevée : la case est libre.'}
+  else if(st==='rocher'){n.n=(n.n||1)-1;n.maj=t;gains=[['pierre',2]];SON.tac();
+    if(n.n<=0){enleve();message='⛏️ Rocher cassé : +2 🪨. La case est libre.'}else message=`⛏️ +2 🪨. Encore ${n.n} coup${n.n>1?'s':''} pour le casser.`}
+  else if(st==='butte'){enleve();gains=[['pierre',3]];SON.tac();message='⛏️ La butte est aplanie : +3 🪨. On peut y construire.'}
+  gains.forEach(([k,q])=>S.stock[k]=(S.stock[k]||0)+q);
+  sauve();rendu();if(gains.length){etincelles(sx,sy);gains.forEach(([k,q],m)=>setTimeout(()=>voler(sx,sy,k,q),m*160))}}
 
 /* Les chemins : un bâtiment est relié si une case qui le borde est la place ou un chemin relié à la place. */
 function relies(){
@@ -219,7 +270,9 @@ const SON={
     o.frequency.exponentialRampToValueAtTime(60,a.currentTime+.2);g.gain.setValueAtTime(.25,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.25);
     o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+.3);note(660,.05,.15,'triangle',.05)},
   lance(){note(523,0,.12,'triangle',.08);note(784,.1,.18,'triangle',.08)},
-  non(){note(220,0,.2,'sine',.08)}};
+  non(){note(220,0,.2,'sine',.08)},
+  coupe(){note(196,0,.09,'square',.05);note(165,.11,.1,'square',.05);note(523,.22,.2,'triangle',.06)},
+  tac(){note(988,0,.05,'square',.04);note(659,.05,.12,'triangle',.06)}};
 const GAMME=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
 function musique(on){
   clearInterval(musiqueMinuteur);musiqueMinuteur=null;if(!on||!audio())return;
@@ -307,6 +360,10 @@ function dessinObjet(o,ok){
   const st=mode?'pointer-events:none;opacity:.5':'cursor:pointer';
   return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
+/* ===================== La caméra ===================== */
+const CAM={i:PLACE.i+1,j:PLACE.j+1,z:1.25};let aspect=.62, glisse=null, avaleClic=false;
+function vueBox(){const w=1100/CAM.z,h=w*aspect,[cx,cy]=P(CAM.i,CAM.j);return [cx-w/2,cy-h/2,w,h]}
+function versCase(x,y){const u=(x-OX)/TW,v=(y-OY)/TH;return [(u+v)/2,(v-u)/2]}
 /* ===================== Le sol et la nature, en style Vallée ===================== */
 const tuile=(nom,i,j)=>{const [x,y]=P(i,j);return `<image href="img/v3/${nom}.webp" x="${x-TW}" y="${y}" width="${2*TW}" height="${2*TH}" pointer-events="none"/>`};
 const TUILES=()=>saisonVue()!=='hiver';   // l'hiver garde son motif enneigé
@@ -323,6 +380,7 @@ function motifs(sa){const [b,t,f]=SOLS[sa],c=EPOQUES[epIdx()].chemin;
   <pattern id="terre" width="40" height="20" patternUnits="userSpaceOnUse"><rect width="40" height="20" fill="${c[0]}"/><ellipse cx="9" cy="6" rx="3" ry="1.6" fill="${c[1]}"/><ellipse cx="28" cy="14" rx="2.4" ry="1.3" fill="${c[1]}"/><circle cx="20" cy="4" r="1" fill="#FFFFFF" opacity=".5"/><circle cx="34" cy="7" r="1.2" fill="${c[1]}"/></pattern>
   <pattern id="paves" width="24" height="12" patternUnits="userSpaceOnUse"><rect width="24" height="12" fill="${EPOQUES[epIdx()].place}"/><path d="M0 6h24M12 0v6M0 6v6M24 6v6" stroke="#A79F8A" stroke-width="1"/></pattern>
   <pattern id="eau" width="48" height="24" patternUnits="userSpaceOnUse"><rect width="48" height="24" fill="${sa==='hiver'?'#BFDCEB':'#4D9BD6'}"/><path d="M4 8q6 -4 12 0M26 18q6 -4 12 0" stroke="#FFFFFF" stroke-width="1.5" fill="none" opacity=".55"/></pattern>
+  <pattern id="sauvage-tuile" width="${2*TW}" height="${2*TH}" patternUnits="userSpaceOnUse" x="${OX-TW}" y="${OY}">${[[0,0],[-TW,-TH],[TW,-TH],[-TW,TH],[TW,TH]].map(([a,b])=>`<image href="img/v3/sol-herbe-sauvage.webp" x="${a}" y="${b}" width="${2*TW}" height="${2*TH}"/>`).join('')}</pattern>
   <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C2"/><stop offset="1" stop-color="#E9D3A6"/></linearGradient></defs>`}
 function arbre(x,y,sa,taille){const k=taille||1,f={printemps:'#4F9A3A',ete:'#3E8E2F',automne:['#D9772B','#C2412E','#E0A93A'][Math.floor(x*7+y)%3],hiver:'#2F6B3A'}[sa];
   const pin=sa==='hiver'||(Math.floor(x+y)%4===0);
@@ -335,31 +393,35 @@ function dessineVillage(){
   const achetables=new Set();
   S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,y])=>{const bk=(a+x)+','+(c+y);
     if(a+x>=0&&c+y>=0&&a+x<MONDE/BLOC&&c+y<MONDE/BLOC&&!S.blocs.includes(bk))achetables.add(bk)})});
-  // le cadre : le terrain, ce qu'on peut acheter, et deux rangs de nature tout autour
-  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const borne=(i,j)=>los(i,j).forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
-  let i0=99,i1=-99,j0=99,j1=-99;
-  for(let i=0;i<MONDE;i++)for(let j=0;j<MONDE;j++){const bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC);
-    if(possede(i,j)){i0=Math.min(i0,i);i1=Math.max(i1,i);j0=Math.min(j0,j);j1=Math.max(j1,j)}}
-  const [oi0,oi1,oj0,oj1]=[i0,i1,j0,j1];i0-=4;j0-=4;i1+=4;j1+=4;
+  // le terrain possédé (pour la densité de la forêt) ; on ne dessine que ce que la caméra voit, avec une marge pour glisser
+  let oi0=99,oi1=-99,oj0=99,oj1=-99;
+  S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);oi0=Math.min(oi0,a*BLOC);oi1=Math.max(oi1,a*BLOC+BLOC-1);oj0=Math.min(oj0,c*BLOC);oj1=Math.max(oj1,c*BLOC+BLOC-1)});
+  const vb=vueBox(),mx=vb[2]*.22,my=vb[3]*.22,X0=vb[0]-mx,X1=vb[0]+vb[2]+mx,Y0=vb[1]-my,Y1=vb[1]+vb[3]+my+60;
+  const coins=[[X0,Y0],[X1,Y0],[X0,Y1],[X1,Y1]].map(([x,y])=>versCase(x,y));
+  const i0=Math.max(-8,Math.floor(Math.min(...coins.map(c=>c[0])))),i1=Math.min(MONDE+8,Math.ceil(Math.max(...coins.map(c=>c[0])))),
+        j0=Math.max(-8,Math.floor(Math.min(...coins.map(c=>c[1])))),j1=Math.min(MONDE+8,Math.ceil(Math.max(...coins.map(c=>c[1]))));
+  const vu=(i,j)=>{const [x,y]=P(i+.5,j+.5);return x>=X0&&x<=X1&&y>=Y0&&y<=Y1};
   const nature=[];   // arbres, rochers, fleurs : triés avec les bâtiments pour passer devant ou derrière
-  for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){borne(i,j);
+  for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){if(!vu(i,j))continue;
     const dans=i>=0&&j>=0&&i<MONDE&&j<MONDE,bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC),[cx,cy]=P(i+.5,j+.5),r=hasard(i,j,1);
     if(dans&&possede(i,j)){const vise=mode&&!occupe(i,j)&&!surPlace(i,j);
       if(TUILES()){const v=hasard(i,j,3);h+=tuile(v<.7?'sol-herbe-1':v<.85?'sol-herbe-2':'sol-herbe-3',i,j);
         h+=poly(los(i,j),'#A3D27C','#00000010',`data-c="${i},${j}" style="fill:${vise?'rgba(255,255,255,.35)':'transparent'}"`)}
       else h+=poly(los(i,j),'#A3D27C','#00000014',`data-c="${i},${j}" style="fill:url(#${vise?'herbe-vise':'herbe'})"`)}
     else if(j>=MONDE||(j-oj1-2)*(j-oj1-2)/2+(i-oi0-1)*(i-oi0-1)/9<1.2&&j>oj1){h+=poly(los(i,j),'#4D9BD6','#3F86BD',`style="fill:url(#eau)"`)}   // l'étang en contrebas, la rivière au bord du monde
-    else{if(TUILES())h+=tuile('sol-herbe-sauvage',i,j);
-      h+=poly(los(i,j),'#7FA35F','#00000010',(dans&&achetables.has(bk)?`data-x="${bk}" `:'')+`style="fill:${TUILES()?'transparent':'url(#sauvage)'}"`);
-      const d=Math.max(oi0-i,i-oi1,oj0-j,j-oj1),hors=!dans, dens=d>=3?.7:d===2?.35:.08;
-      if(r<dens)nature.push({o:i+j+1,svg:arbre(cx+(hasard(i,j,2)-.5)*14,cy+4,sa,hors?1.15:.95)});
-      else if(r<dens+.06)nature.push({o:i+j+.5,svg:rocher(cx,cy+3)});
+    else{
+      const d=Math.max(oi0-i,i-oi1,oj0-j,j-oj1),hors=!dans, dens=hors?.55:d>=3?.2:d===2?.16:.06;
+      if(dans&&natureA(i,j)){}   // la case porte déjà un arbre, un rocher ou une butte du jeu
+      else if(r<dens)nature.push({o:i+j+1,svg:arbre(cx+(hasard(i,j,2)-.5)*14,cy+4,sa,hors?1.15:.95)});
       else if(r<dens+.16)h+=fleurs(cx,cy,sa)}}
   // une clôture de bois le long du terrain possédé
-  for(let i=0;i<MONDE;i++)for(let j=0;j<MONDE;j++){if(!possede(i,j))continue;
+  for(let i=Math.max(0,i0);i<=Math.min(MONDE-1,i1);i++)for(let j=Math.max(0,j0);j<=Math.min(MONDE-1,j1);j++){if(!possede(i,j)||!vu(i,j))continue;
     [[0,-1,[P(i,j),P(i+1,j)]],[-1,0,[P(i,j),P(i,j+1)]],[1,0,[P(i+1,j),P(i+1,j+1)]],[0,1,[P(i,j+1),P(i+1,j+1)]]].forEach(([di,dj,[A,B]])=>{
       if(possede(i+di,j+dj))return;
       nature.push({o:i+j+(di+dj>0?1.4:-.1),svg:`<g stroke="#8D6E4F" stroke-width="2.4" stroke-linecap="round"><line x1="${A[0]}" y1="${A[1]-9}" x2="${B[0]}" y2="${B[1]-9}"/><line x1="${A[0]}" y1="${A[1]-4}" x2="${B[0]}" y2="${B[1]-4}"/><line x1="${A[0]}" y1="${A[1]}" x2="${A[0]}" y2="${A[1]-12}"/></g>`})})}
+  // un morceau à acheter : une seule grande zone touchable, cerclée de pointillés
+  achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number);
+    h+=poly(los(a*BLOC,c*BLOC,BLOC),'transparent','#FFF4D6',`data-x="${bk}" stroke-dasharray="6 6" style="fill:rgba(255,244,214,.06)"`)});
   achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);
     nature.push({o:999,svg:`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+8}" font-size="24" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`})});
   // la place du village, pavée
@@ -369,22 +431,22 @@ function dessineVillage(){
   S.b.filter(o=>o.type==='chemin').forEach(o=>h+=dessinObjet(o,ok));
   const tout=nature.filter(x=>x.o<999);
   S.b.filter(o=>o.type!=='chemin').forEach(o=>tout.push({o:o.i+o.j+BAT[o.type].t,svg:dessinObjet(o,ok)}));
+  (S.nature||[]).forEach(n=>{if(vu(n.i,n.j))tout.push({o:n.i+n.j+1,svg:dessinNature(n,sa)})});
   tout.sort((a,b)=>a.o-b.o).forEach(x=>h+=x.svg);
   nature.filter(x=>x.o===999).forEach(x=>h+=x.svg);
-  const vb=[x0+90,y0+10,x1-x0-180,y1-y0-40];
-  const fond=`<rect x="${vb[0]-500}" y="${vb[1]-500}" width="${vb[2]+1000}" height="${vb[3]+1000}" fill="url(#ciel)"/>`;
+  const fond=`<rect x="${vb[0]-500}" y="${vb[1]-500}" width="${vb[2]+1000}" height="${vb[3]+1000}" fill="url(#${TUILES()?'sauvage-tuile':'sauvage'})"/>`;
   if(n)h+=`<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#1A2A55" opacity=".28" pointer-events="none"/>`;
   return `<svg viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Le village vu de biais"><title>Le village</title>${motifs(sa)}${fond}${h}</svg>`;
 }
 
 /* ===================== Écran ===================== */
 function rendu(){
-  if(!S&&ls.get('rami:nom')){S=neuf(ls.get('rami:nom'));message='Bienvenue au village ! Touchez la bulle qui brille.';sauve();encaisser()}
+  if(!S&&ls.get(NOM)){S=neuf(ls.get(NOM));natureVivante();message='Bienvenue au village ! Touchez la bulle qui brille.';sauve();encaisser()}
   if(!S){
     $('#app').innerHTML=`<div class="debut"><div class="boite"><h1>Le village</h1>
       <label for="nom">Votre prénom</label><input id="nom" class="champ" maxlength="16" autocomplete="off">
       <button class="big" id="go" style="width:100%">Entrer au village</button></div></div>`;
-    $('#go').onclick=()=>{const n=$('#nom').value.trim();if(!n){$('#nom').focus();return}ls.set('rami:nom',n);rendu()};
+    $('#go').onclick=()=>{const n=$('#nom').value.trim();if(!n){$('#nom').focus();return}ls.set(NOM,n);rendu()};
     return;
   }
   document.body.classList.toggle('nuit',nuit());
@@ -400,8 +462,8 @@ function rendu(){
     :'Touchez ce qui brille pour ramasser. Touchez ▶ pour lancer un travail. Un appui long sur un bâtiment le déplace.';
   $('#app').innerHTML=`
    <div class="haut"><h1>Le village de ${esc(S.nom)}</h1><div class="res">${pills}<button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div></div>
-   <div class="milieu"><div class="carte">${dessineVillage()}</div>
-     <div class="cote"><div class="aide">${aide}</div><div class="msg" role="status">${message||(EPOQUES[epIdx()].nom+' : '+['la première époque.','les toits de chaume.','les pavés et la place.','les fleurs partout.'][epIdx()])}</div></div></div>
+   <div class="milieu"><div class="carte">${dessineVillage()}<div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div></div>
+     <div class="cote"><button class="big alt" data-a="soeur" style="min-height:64px;font-size:21px"><span class="e">👭</span>${SOEUR.etat==='ensemble'?'Avec '+esc(S.soeur||'ma sœur')+' ✓':lien()?'Ma sœur : '+({attente:'pas encore là',hors:'hors connexion',seul:'connexion…'}[SOEUR.etat]):'Jouer avec ma sœur'}</button><div class="aide">${aide}</div><div class="msg" role="status">${message||(EPOQUES[epIdx()].nom+' : '+['la première époque.','les toits de chaume.','les pavés et la place.','les fleurs partout.'][epIdx()])}</div></div></div>
    <div class="bas">${bas}</div>${feuille?feuilleHTML():''}${fete?feteHTML():''}`;
   dernierPose=null;lier();
 }
@@ -421,10 +483,21 @@ function feuilleHTML(){
       if(o.fin==null)corps+=`<div class="grille">${DUREES.map((d,n)=>{const q=Math.ceil(d.q*mult(o)*(1+bonus(o)));return `<button class="choix" data-lance="${n}"><span class="e">${RES[B.produit].e}</span>${d.nom}<small>${d.min<60?d.min+' minutes':d.min/60+' heure'+(d.min>60?'s':'')}<br>donne ${q} ${RES[B.produit].e} et ${d.et} ⭐</small></button>`}).join('')}</div>`;
       else corps+=`<p>⏳ En cours : prêt vers <b>${heure(o.fin)}</b>. Rien ne se perd, ça attendra.</p>`}
     else if(B.sorte==='maison')corps+=`<p>🪙 ${gainMaison(o)} pièces en réserve. ${Date.now()-o.depuis<3600000?'Les prochaines vers <b>'+heure(o.depuis+3600000)+'</b>.':''}</p>`;
+    if(o.par&&o.par!==S.nom)corps+=`<p>👭 Posé par <b>${esc(o.par)}</b>.</p>`;
     if(bonus(o)>0&&B.sorte!=='deco')corps+=`<p>✨ Bonus des décorations voisines : +${Math.round(bonus(o)*100)} %.</p>`;
     if((o.ep||0)<epIdx())corps+=`<p>⬆️ Il peut monter à l'époque ${EPOQUES[(o.ep||0)+1].nom} : nouvelle allure et +50 % de production.</p>`;
     if(o.type!=='chemin')corps+=`<div class="actions">${(o.ep||0)<epIdx()?`<button class="big" data-a="monter" ${assez(coutMonter(o))?'':'disabled'}>⬆️ Monter d'époque : ${txt(coutMonter(o))}</button>`:''}<button class="big alt" data-a="deplacer">↔️ Déplacer</button></div>`;
     return cadre(`${B.e} ${B.nom}`,corps)}
+  if(f.quoi==='soeur'){const L=lien();
+    if(!L)return cadre('👭 Jouer avec ma sœur',`<p class="sous">Un seul village pour vous deux : ce que l'une construit, l'autre le voit. Chacune garde ses réserves et ses cœurs.</p>
+      <div class="actions"><button class="big" data-a="soeur-creer"><span class="e">✨</span>Créer notre code</button></div>
+      <p style="margin-top:18px"><b>Ou bien, votre sœur vous a donné un code :</b></p>
+      <div class="actions" style="align-items:center"><input id="code-soeur" class="champ" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" style="max-width:220px;margin:0;text-transform:uppercase"><button class="big alt" data-a="soeur-rejoindre">Rejoindre</button></div>`);
+    const etat={ensemble:`✅ Vous jouez ensemble${S.soeur?' avec <b>'+esc(S.soeur)+'</b>':''} : tout passe chez l'autre aussitôt.`,
+      attente:'⏳ On attend votre sœur : son jeu doit être ouvert, avec ce même code. Vous pouvez jouer en attendant, tout se rejoindra.',
+      hors:'📴 Pas de connexion pour l\'instant. On continue chacune de son côté : tout se rejoindra à la prochaine connexion.',seul:'⏳ Connexion…'}[SOEUR.etat];
+    return cadre('👭 Jouer avec ma sœur',`<p class="sous">Notre code, à dicter à votre sœur :</p><p style="font-family:var(--f-titre);font-size:64px;letter-spacing:12px;margin:6px 0;text-align:center">${L.code}</p>
+      <p>${etat}</p><div class="actions"><button class="big alt" data-a="soeur-oublier">Oublier ce lien</button></div>`)}
   if(f.quoi==='frise'){let suivant=true;
     const cases=FRISE.map(c=>{const fait=S.frise.includes(c.id),ouvert=!fait&&suivant;if(!fait)suivant=false;
       const tit=c.epoque?`🎉 Époque ${EPOQUES[c.epoque].nom}`:`${BAT[c.id].e} ${BAT[c.id].nom}`;
@@ -455,6 +528,11 @@ function lier(){
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
   document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
   document.querySelectorAll('[data-c]').forEach(e=>e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))});
+  document.querySelectorAll('g[data-n]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();if(!mode)toucherNature(e.dataset.n,ev)}));
+  const carte=$('.carte'),svg=$('.carte svg');
+  if(carte&&svg){const r=svg.getBoundingClientRect();if(r.width>50)aspect=r.height/r.width;
+    carte.addEventListener('click',e=>{if(avaleClic){avaleClic=false;e.stopPropagation();e.preventDefault()}},true);
+    svg.addEventListener('pointerdown',e=>{const v=svg.viewBox.baseVal;glisse={x:e.clientX,y:e.clientY,vb:[v.x,v.y,v.width,v.height],bouge:false}});}
   document.querySelectorAll('g[data-o],polygon[data-o]').forEach(e=>{
     e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{appui.long=true;
       if(BAT[S.b.find(o=>o.id===id).type].sorte!=='chemin'){mode={deplace:id};feuille=null;message='Touchez la case où le poser.';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
@@ -469,11 +547,20 @@ function action(a){
   else if(a==='marche')feuille={quoi:'marche'};
   else if(a==='frise')feuille={quoi:'frise'};
   else if(a==='fete-ok'){fete=false;message=EPOQUES[epIdx()].phrase}
-  else if(a==='monter'){const o=S.b.find(x=>x.id===feuille.id),c=o&&coutMonter(o);if(o&&(o.ep||0)<epIdx()&&assez(c)){paye(c);o.ep=(o.ep||0)+1;dernierPose=o.id;feuille=null;
+  else if(a==='monter'){const o=S.b.find(x=>x.id===feuille.id),c=o&&coutMonter(o);if(o&&(o.ep||0)<epIdx()&&assez(c)){retire(c);o.ep=(o.ep||0)+1;o.maj=Date.now();dernierPose=o.id;feuille=null;
       message=`⬆️ ${BAT[o.type].nom} passe à l'époque ${EPOQUES[o.ep].nom} : +50 % de production.`;sauve();rendu();apresPose(o);const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t/2);etincelles(...versEcran(x,y-30));return}}
-  else if(a==='accueil'){sauve();location.href='index.html';return}
+  else if(a==='accueil'){sauve();location.href='index.html'+location.search;return}
   else if(a==='fini'){mode=null;message=''}
   else if(a==='son'){S.musique=!S.musique;musique(S.musique)}
+  else if(a==='soeur')feuille={quoi:'soeur'};
+  else if(a==='soeur-creer'){const A='ABCDEFGHJKMNPRSTUVWXYZ';let c='';for(let k=0;k<4;k++)c+=A[Math.floor(Math.random()*A.length)];
+    ls.set(LIEN,JSON.stringify({code:c,role:'hote'}));lancerLien()}
+  else if(a==='soeur-rejoindre'){const c=(($('#code-soeur')||{}).value||'').toUpperCase().replace(/[^A-Z]/g,'');
+    if(c.length!==4){message='Le code a quatre lettres.';SON.non()}else{ls.set(LIEN,JSON.stringify({code:c,role:'invite'}));lancerLien()}}
+  else if(a==='soeur-oublier'){couperLien();try{localStorage.removeItem(LIEN)}catch{}SOEUR.etat='seul';message='Le lien est oublié. Votre village reste tel quel.'}
+  else if(a==='zoom-plus'){CAM.z=Math.min(2.2,CAM.z*1.3);rendu();return}
+  else if(a==='zoom-moins'){CAM.z=Math.max(.45,CAM.z/1.3);rendu();return}
+  else if(a==='centre'){CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=1.25;rendu();return}
   else if(a==='deplacer'){mode={deplace:feuille.id};feuille=null;message='Touchez la case où le poser.'}
   else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);S.ext++;feuille=null;
     message='🌳 Le village s\'agrandit !';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
@@ -482,17 +569,21 @@ function action(a){
 function toucherCase(i,j){
   if(!mode){return}
   if(mode.chemins){const o=occupe(i,j);if(surPlace(i,j))return;
+    if(natureA(i,j)){message='Il y a un arbre ou une pierre ici : touchez-le d\'abord pour le retirer.';SON.non();rendu();return}
     if(o&&o.type==='chemin'){S.b=S.b.filter(x=>x!==o);S.stock.pieces+=BAT.chemin.cout.pieces;sauve();rendu();return}
     if(o)return;if(!assez(BAT.chemin.cout)){message='Il manque des pièces pour le chemin.';SON.non();rendu();return}
-    paye(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j});SON.pose();sauve();rendu();return}
-  if(mode.pose){const k=mode.pose;if(!libre(k,i,j)){message='Pas la place ici : il faut des cases claires libres.';SON.non();rendu();return}
+    retire(BAT.chemin.cout);S.b.push({id:uid(),type:'chemin',i,j,maj:Date.now(),par:S.nom});SON.pose();sauve();rendu();return}
+  if(mode.pose){const k=mode.pose;if(!libre(k,i,j)){message='Pas la place ici : il faut des cases claires libres. Un arbre, un rocher ou une butte se retire d\'un toucher.';SON.non();rendu();return}
+    if(BAT[k].sorte==='nature'){if(!assez(BAT[k].cout)){message='Il manque de quoi le planter.';mode=null;rendu();return}
+      retire(BAT[k].cout);const t=Date.now();S.nature=S.nature||[];S.nature.push({id:uid(),i,j,t:'pousse',depuis:t,maj:t,par:S.nom});mode=null;
+      message=`🌱 Planté ! Ce sera un arbre vers ${heure(t+POUSSE_H*3600000)}.`;SON.pose();sauve();rendu();return}
     if(!assez(BAT[k].cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}
-    paye(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx()};if(BAT[k].sorte==='maison')o.depuis=Date.now();S.b.push(o);
+    retire(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx(),maj:Date.now(),par:S.nom};if(BAT[k].sorte==='maison')o.depuis=Date.now();S.b.push(o);
     dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.');
     sauve();rendu();apresPose(o);return}
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
     if(!libre(o.type,i,j,o.id)){message='Pas la place ici.';SON.non();rendu();return}
-    o.i=i;o.j=j;dernierPose=o.id;mode=null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`;sauve();rendu();apresPose(o)}
+    o.i=i;o.j=j;o.maj=Date.now();dernierPose=o.id;mode=null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`;sauve();rendu();apresPose(o)}
 }
 function apresPose(o){SON.pose();const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t);const [sx,sy]=versEcran(x,y);setTimeout(()=>poussiere(sx,sy-6),320)}
 function toucherObjet(id,ev){
@@ -507,16 +598,88 @@ function ramasser(o,ev){
   const B=BAT[o.type],sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;let gains=[];
   if(B.sorte==='maison'){const g=gainMaison(o);S.stock.pieces+=g;S.stock.etoiles+=1;o.depuis=Date.now();gains=[['pieces',g],['etoiles',1]]}
   else{const d=DUREES[o.duree||0],q=Math.ceil(d.q*mult(o)*(1+bonus(o)));S.stock[B.produit]=(S.stock[B.produit]||0)+q;S.stock.etoiles+=d.et;o.fin=null;o.duree=null;gains=[[B.produit,q],['etoiles',d.et]]}
+  o.maj=Date.now();
   message='Ramassé : '+gains.map(([k,n])=>n+' '+RES[k].e).join(' et ')+(B.sorte==='atelier'?'. Touchez ▶ pour relancer.':'.');
   SON.ramasse();sauve();rendu();etincelles(sx,sy);gains.forEach(([k,n],m)=>setTimeout(()=>voler(sx,sy,k,n),m*160));
 }
 function caseFrise(id){const c=FRISE.find(x=>x.id===id);if(!c||S.frise.includes(id)||!assez(c.cout))return;
   const avant=FRISE.slice(0,FRISE.indexOf(c));if(!avant.every(x=>S.frise.includes(x.id)))return;
-  paye(c.cout);S.frise.push(id);
+  retire(c.cout);S.frise.push(id);
   if(c.epoque){S.epoque=EPOQUES[c.epoque].id;feuille=null;fete=true;sauve();rendu();confettis();return}
   message=`${BAT[id].e} ${BAT[id].nom} est débloqué : il vous attend dans Construire.`;SON.lance();sauve();rendu()}
-function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.fin=Date.now()+DUREES[n].min*60000;feuille=null;
+function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.maj=Date.now();o.fin=Date.now()+DUREES[n].min*60000;feuille=null;
   message=`${RES[BAT[o.type].produit].e} C'est parti : prêt vers ${heure(o.fin)}.`;SON.lance();sauve();rendu()}
+
+/* ===================== Le village à deux (25/10, Florian : « qu'elles puissent développer leur petit village ensemble ») =====
+   La liaison est celle du rami (PeerJS, sans compte) : on se synchronise quand les deux jeux sont ouverts en même temps.
+   Commun : les bâtiments, les arbres et rochers, les morceaux de terrain, l'époque, la frise, le monument et la fête.
+   À chacune : ses réserves, ses cœurs et ses commandes. La fusion est à trois (la dernière version commune, la mienne,
+   la sienne) : ce que chacune a fait hors connexion se rejoint, rien ne se perd. */
+const SOEUR={peer:null,conn:null,etat:'seul'};
+const lien=()=>{try{return JSON.parse(ls.get(LIEN)||'null')}catch{return null}};
+const clone=x=>JSON.parse(JSON.stringify(x));
+const partage=()=>({b:S.b,nature:S.nature||[],blocs:S.blocs,ext:S.ext,epoque:S.epoque,frise:S.frise,monument:S.monument||null,saison:S.saison||null});
+const ID_SOEUR=c=>'villagemamie51-'+c;
+function majSoeur(){if(!glisse&&(!feuille||feuille.quoi==='soeur')&&!mode&&!fete)rendu()}
+function chargerPeer(suite){if(window.Peer)return suite();const sc=document.createElement('script');sc.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+  sc.onload=suite;sc.onerror=()=>{sc.remove();SOEUR.etat='hors';majSoeur();setTimeout(()=>{if(lien())chargerPeer(suite)},20000)};document.head.appendChild(sc)}
+function couperLien(){const c=SOEUR.conn,p=SOEUR.peer;SOEUR.conn=null;SOEUR.peer=null;try{c&&c.close()}catch{}try{p&&p.destroy()}catch{}}
+function lancerLien(){const L=lien();if(!L)return;couperLien();SOEUR.etat='seul';majSoeur();chargerPeer(()=>{const M=lien();if(M)(M.role==='hote'?hote:invite)(M.code)})}
+function surErreur(p,e){if(SOEUR.peer!==p)return;
+  if(['network','server-error','socket-error','socket-closed','browser-incompatible'].includes(e.type)){SOEUR.etat='hors';majSoeur();setTimeout(()=>{if(SOEUR.peer===p)lancerLien()},15000)}}
+function hote(code){const p=new Peer(ID_SOEUR(code),{debug:0});SOEUR.peer=p;
+  p.on('open',()=>{if(SOEUR.etat!=='ensemble')SOEUR.etat='attente';majSoeur()});
+  p.on('connection',c=>{if(SOEUR.conn&&SOEUR.conn!==c){try{SOEUR.conn.close()}catch{}}brancher(c)});
+  p.on('error',e=>{if(e.type==='unavailable-id'){try{p.destroy()}catch{}if(SOEUR.peer===p)SOEUR.peer=null;setTimeout(()=>{if(lien()&&!SOEUR.peer)hote(code)},5000);return}surErreur(p,e)});
+  p.on('disconnected',()=>setTimeout(()=>{if(SOEUR.peer===p&&!p.destroyed)try{p.reconnect()}catch{}},2000))}
+function invite(code){const p=new Peer({debug:0});SOEUR.peer=p;
+  p.on('open',()=>joindre(code));
+  p.on('error',e=>{if(e.type==='peer-unavailable'){SOEUR.etat='attente';majSoeur();setTimeout(()=>joindre(code),6000);return}surErreur(p,e)});
+  p.on('disconnected',()=>setTimeout(()=>{if(SOEUR.peer===p&&!p.destroyed)try{p.reconnect()}catch{}},2000))}
+function joindre(code){const p=SOEUR.peer;if(!p||p.destroyed||(SOEUR.conn&&SOEUR.conn.open))return;
+  const c=p.connect(ID_SOEUR(code),{reliable:true});brancher(c);setTimeout(()=>{if(SOEUR.conn===c&&!c.open){try{c.close()}catch{}joindre(code)}},9000)}
+function brancher(c){SOEUR.conn=c;
+  c.on('open',()=>{SOEUR.etat='ensemble';envoyerSoeur();majSoeur()});
+  c.on('data',recevoir);
+  c.on('close',()=>{if(SOEUR.conn!==c)return;SOEUR.conn=null;SOEUR.etat='attente';majSoeur();const L=lien();if(L&&L.role==='invite')setTimeout(()=>joindre(L.code),4000)})}
+window.envoyerSoeur=function(){const c=SOEUR.conn;if(S&&c&&c.open)try{c.send({t:'etat',p:partage(),nom:S.nom})}catch{}};
+function recevoir(m){if(!m||m.t!=='etat'||!S)return;
+  S.soeur=m.nom;const avant=new Set(S.b.map(o=>o.id));
+  fusion(m.p);
+  const neufs=S.b.filter(o=>!avant.has(o.id)&&o.par&&o.par!==S.nom&&o.type!=='chemin');
+  if(neufs.length)message=`👭 ${esc(m.nom)} a posé : ${neufs.map(o=>BAT[o.type].e+' '+BAT[o.type].nom).join(', ')}.`;
+  sauveIci();if(JSON.stringify(partage())!==JSON.stringify(m.p))envoyerSoeur();majSoeur()}
+// une liste partagée : la version la plus récente gagne ; ce que l'une a retiré (un chemin, un arbre coupé) ne revient pas
+function fusionListe(mienne,sienne,commune){const mien=new Map((mienne||[]).map(o=>[o.id,o])),sien=new Map((sienne||[]).map(o=>[o.id,o])),
+  avant=new Set((commune||[]).map(o=>o.id)),res=[];
+  new Set([...mien.keys(),...sien.keys()]).forEach(id=>{const m=mien.get(id),t=sien.get(id);
+    if(m&&t)res.push((t.maj||0)>(m.maj||0)?clone(t):m);else if(m){if(!avant.has(id))res.push(m)}else if(!avant.has(id))res.push(clone(t))});
+  return res.sort((a,b)=>(a.maj||0)-(b.maj||0))}
+function fusion(T){if(!T)return;const B=S.base||{};
+  // la toute première rencontre : le même bâtiment au même endroit chez les deux (le village de départ) n'en fait qu'un
+  if(!S.base&&T.b){const ici=new Set(S.b.map(o=>o.type+'@'+o.i+','+o.j));T=Object.assign({},T,{b:T.b.filter(o=>!ici.has(o.type+'@'+o.i+','+o.j))})}
+  S.blocs=[...new Set([...S.blocs,...(T.blocs||[])])];S.ext=Math.max(S.ext||0,T.ext||0,S.blocs.length-4);
+  // les bâtiments des deux ; s'ils tombent sur les mêmes cases, le plus récent va sur la case libre la plus proche
+  const bats=fusionListe(S.b,T.b,B.b);S.b=[];S.nature=fusionListe(S.nature,T.nature,B.nature);
+  bats.forEach(o=>{if(libre(o.type,o.i,o.j,o.id)){S.b.push(o);return}
+    let mieux=null;for(let r=1;r<MONDE&&!mieux;r++)for(let di=-r;di<=r&&!mieux;di++)for(let dj=-r;dj<=r&&!mieux;dj++){
+      if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;if(libre(o.type,o.i+di,o.j+dj,o.id))mieux=[o.i+di,o.j+dj]}
+    if(mieux){o.i=mieux[0];o.j=mieux[1];o.maj=Date.now()}S.b.push(o)});
+  // un arbre ou un rocher sous un bâtiment s'efface, deux sur la même case n'en font qu'un
+  const vus=new Set();S.nature=S.nature.filter(n=>{const k=n.i+','+n.j;if(vus.has(k)||occupe(n.i,n.j)||surPlace(n.i,n.j))return false;vus.add(k);return true});
+  // l'époque la plus avancée, la frise des deux
+  const idx=e=>EPOQUES.findIndex(x=>x.id===e);if(idx(T.epoque)>idx(S.epoque))S.epoque=T.epoque;
+  S.frise=[...new Set([...(S.frise||[]),...(T.frise||[])])];
+  // le monument et la fête : chacune verse sa part ; ce qu'elles ont versé chacune de son côté s'additionne
+  const somme=(m,t,b)=>{const r={};new Set([...Object.keys(m||{}),...Object.keys(t||{})]).forEach(k=>{r[k]=Math.max(0,(m&&m[k]||0)+(t&&t[k]||0)-(b&&b[k]||0))});return r};
+  if(T.monument){const m=S.monument;
+    if(!m||T.monument.niveau>m.niveau)S.monument=clone(T.monument);
+    else if(T.monument.niveau===m.niveau){const b0=B.monument&&B.monument.niveau===m.niveau?B.monument.verse:{};m.verse=somme(m.verse,T.monument.verse,b0)}}
+  if(T.saison){const m=S.saison,t=T.saison;
+    if(!m||t.semaine>m.semaine){const d=m&&m.decos;S.saison=clone(t);S.saison.decos=S.saison.decos||{};if(d)Object.keys(d).forEach(k=>S.saison.decos[k]=Math.max(S.saison.decos[k]||0,d[k]||0))}
+    else if(t.semaine===m.semaine){const b0=B.saison&&B.saison.semaine===m.semaine?B.saison.verse:{};m.verse=somme(m.verse,t.verse,b0);m.finie=!!(m.finie||t.finie);
+      m.decos=m.decos||{};Object.keys(t.decos||{}).forEach(k=>m.decos[k]=Math.max(m.decos[k]||0,t.decos[k]||0))}}
+  S.base=clone(partage())}
 
 /* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
 function encaisser(){
@@ -524,13 +687,23 @@ function encaisser(){
   if(c>0&&S){S.stock.pieces+=c;S.stock.etoiles+=Math.ceil(c/10);try{localStorage.setItem('village:caisse','0')}catch{}
     message=`🃏 Vos parties de cartes ont rapporté ${c} pièces et ${Math.ceil(c/10)} ⭐ !`;sauve()}
 }
-if(S)encaisser();
+if(S){natureVivante();encaisser()}
 rendu();
+if(S&&lien())lancerLien();
 document.addEventListener('pointerdown',premierGeste,{once:true});
+addEventListener('pointermove',e=>{if(!glisse)return;const dx=e.clientX-glisse.x,dy=e.clientY-glisse.y;
+  if(!glisse.bouge&&Math.hypot(dx,dy)<10)return;
+  if(!glisse.bouge){glisse.bouge=true;if(appui){clearTimeout(appui.t);appui=null}}
+  const svg=$('.carte svg');if(!svg)return;const r=svg.getBoundingClientRect(),k=Math.min(glisse.vb[2]/r.width,glisse.vb[3]/r.height);
+  svg.setAttribute('viewBox',[glisse.vb[0]-dx*k,glisse.vb[1]-dy*k,glisse.vb[2],glisse.vb[3]].join(' '))});
+addEventListener('pointerup',()=>{if(!glisse)return;const g=glisse;glisse=null;if(!g.bouge)return;
+  avaleClic=true;setTimeout(()=>{avaleClic=false},400);
+  const v=$('.carte svg').viewBox.baseVal,[ci,cj]=versCase(v.x+v.width/2,v.y+v.height/2);
+  CAM.i=Math.max(-4,Math.min(MONDE+4,ci));CAM.j=Math.max(-4,Math.min(MONDE+4,cj));rendu()});
 // les bulles apparaissent toutes seules quand c'est prêt, et le soir tombe à l'heure de la tablette
 let signe='';
-setInterval(()=>{if(!S||feuille||mode||fete)return;const ok=relies(),s=S.b.map(o=>pret(o,ok)?1:0).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){encaisser();rendu()}});
+setInterval(()=>{if(!S||feuille||mode||fete||glisse)return;const ok=relies(),s=S.b.map(o=>pret(o,ok)?1:0).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){natureVivante();encaisser();rendu()}});
 </script>
 <script src="habitants.js"></script><script src="saisons.js"></script>
 <style id="vallee">

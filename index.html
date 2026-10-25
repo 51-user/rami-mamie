@@ -991,7 +991,7 @@ app.addEventListener('click',e=>{
   switch(a){
     case 'rami': mode='rami'; ls.set('mode','rami'); flash=''; render(true); break;
     case 'solo': mode='solo'; ls.set('mode','solo'); soloLoad(); render(true); break;
-    case 'village': location.href='village.html'; break;
+    case 'village': location.href='village.html'+location.search; break;
     case 'accueil': mode=null; ls.set('mode',null); ssel=null; soloMsg=''; flash=''; render(true); break;
     case 'stock': soloStock(); break;
     case 'sc': soloTap(t.dataset.w,+t.dataset.c,+t.dataset.i); break;

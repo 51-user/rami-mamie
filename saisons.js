@@ -47,7 +47,7 @@ try{(function(){
 
   /* ===================== Le grand monument : 10 niveaux, +5 % de production chacun ===================== */
   const NIV_MAX=10;
-  const coutNiveau=n=>({legumes:15+10*n,bois:15+10*n,oeufs:5+5*n});   // n = niveau actuel (0 à 9)
+  const coutNiveau=n=>Object.assign({legumes:15+10*n,bois:15+10*n,oeufs:5+5*n},RES.pierre?{pierre:5+5*n}:{});   // 25/10 : la pierre sert aussi au monument   // n = niveau actuel (0 à 9)
   const majBonus=()=>{window.BONUS_MONUMENT=Math.round(5*((S&&S.monument&&S.monument.niveau)||0))/100};
 
   /* ===================== Verser : seulement quand elle le décide ===================== */
