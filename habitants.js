@@ -112,11 +112,23 @@ function avance(dt){
 }
 function ecran(H){const p=POS[H.id];if(!p)return null;const [ai,aj]=de(p.a),[bi,bj]=de(p.b),A=P(ai+.5,aj+.5),B=P(bi+.5,bj+.5),n=HAB.indexOf(H);
   return [A[0]+(B[0]-A[0])*p.t+((n%3)-1)*7,A[1]+(B[1]-A[1])*p.t+(n%2?3:-2)]}
+/* Les noms, dans leur propre couche au-dessus des habitants : sous les pieds, et écartés vers le bas quand deux plaques se touchent. */
+let OBST=[];   // les inscriptions de la carte (« La place »…), relevées à chaque dessin : les noms les évitent
+function placeNoms(pos){
+  const l=pos.filter(x=>x.n&&x.n.isConnected).sort((a,b)=>a.y-b.y||a.x-b.x), mis=OBST.slice();
+  l.forEach(x=>{let y=x.y;
+    for(let k=0;k<8;k++){const t=y+2.5,b=y+13.5;
+      const gene=mis.find(m=>Math.abs(m.x-x.x)<(m.w+x.w)/2+2&&t<m.b+1&&b>m.t-1);if(!gene)break;y=gene.b+1-2.5}
+    mis.push({x:x.x,w:x.w,t:y+2.5,b:y+13.5});x.n.setAttribute('transform',`translate(${x.x.toFixed(1)},${y.toFixed(1)})`)});
+}
 function place(){
+  const pos=[];
   presents().forEach(H=>{const g=noeuds[H.id];if(!g||!g.isConnected)return;const xy=ecran(H);if(!xy)return;
     g.setAttribute('transform',`translate(${xy[0].toFixed(1)},${xy[1].toFixed(1)})`);
+    const n=noeuds['nom:'+H.id];if(n)pos.push({n,x:xy[0],y:xy[1],w:+n.dataset.w});
     const p=POS[H.id],etat=(p.pause>0||parleA===H.id||p.a===p.b)?'h-arret':'h-marche';
     if(p.etat!==etat||!g.firstElementChild.classList.contains(etat)){p.etat=etat;const c=g.firstElementChild;c.classList.remove('h-arret','h-marche');c.classList.add(etat)}});
+  placeNoms(pos);
 }
 let avant=0,enPanne=false;
 function boucle(t){
@@ -132,7 +144,7 @@ function couche(){
   const svg=document.querySelector('.carte svg');if(!svg)return;
   MARCHE=relies();prepare();
   const h=E(),aujourd=jour(),actif=!mode;
-  let s=`<g id="h-couche" style="${actif?'':'pointer-events:none;opacity:.5'}">`;
+  let s=`<g id="h-couche" style="${actif?'':'pointer-events:none;opacity:.5'}">`, noms='';
   presents().forEach(H=>{
     const marque=h.attente.some(a=>a.qui===H.id)?'✨':(h.parle[H.id]!==aujourd?'💬':'');
     // 25/10 : habitants à la moitié de la hauteur d'une maison du hameau (échelle de la carte, donc vraie à tout zoom) ;
@@ -141,12 +153,16 @@ function couche(){
     s+=`<g data-h-qui="${H.id}" style="cursor:pointer" role="button" aria-label="Parler à ${H.nom}"><g class="h-marche"><g transform="scale(.85)">`
       +`<circle cx="0" cy="-20" r="26" fill="#fff" opacity="0"/>${perso(H)}`
       +(marque?`<g class="flotte"><circle cx="11" cy="-44" r="8.5" fill="#FFFDF6" stroke="#B8B09C" stroke-width="1.5"/><text x="11" y="-40" font-size="10" text-anchor="middle">${marque}</text></g>`:'')
-      +`</g></g><g class="h-nom"><rect x="${-lw/2}" y="2.5" width="${lw}" height="11" rx="3" fill="#FBF0D2" fill-opacity=".9" stroke="#6B4022" stroke-width=".8"/>`
-      +`<text x="0" y="10.6" font-size="8" font-weight="700" text-anchor="middle" fill="#3E2410" font-family="Fredoka, Arial, sans-serif">${H.nom}</text></g></g>`});
-  s+='</g>';
+      +`</g></g></g>`;
+    noms+=`<g class="h-nom" data-h-nom="${H.id}" data-w="${lw}" data-h-a="parler" data-h-qui-b="${H.id}" style="cursor:pointer"><rect x="${-lw/2}" y="2.5" width="${lw}" height="11" rx="3" fill="#FBF0D2" fill-opacity=".92" stroke="#6B4022" stroke-width=".8"/>`
+      +`<text x="0" y="10.6" font-size="8" font-weight="700" text-anchor="middle" fill="#3E2410" font-family="Fredoka, Arial, sans-serif">${H.nom}</text></g>`});
+  s+=`<g id="h-noms">${noms}</g></g>`;
   const voile=svg.querySelector('rect[fill="#1A2A55"]');
   if(voile)voile.insertAdjacentHTML('beforebegin',s);else svg.insertAdjacentHTML('beforeend',s);
   svg.querySelectorAll('[data-h-qui]').forEach(g=>noeuds[g.dataset.hQui]=g);
+  svg.querySelectorAll('[data-h-nom]').forEach(g=>noeuds['nom:'+g.dataset.hNom]=g);
+  OBST=[];try{svg.querySelectorAll('text').forEach(e=>{if(e.closest('#h-couche')||!e.textContent.trim())return;const b=e.getBBox();
+    if(b.width>20)OBST.push({x:b.x+b.width/2,w:b.width,t:b.y,b:b.y+b.height})})}catch(e){OBST=[]}
   place();
   // le bouton des commandes, sur le côté
   const cote=document.querySelector('.cote');
