@@ -69,58 +69,71 @@ html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A
 </style>
 <link rel="stylesheet" href="cartes-vallee.css">
 <style>
-/* ---------- Belote : bandeau, atout en grand, quatre places, le pli au milieu, la main en bas ---------- */
-.top .titre{font-family:var(--f-titre);font-size:28px;color:var(--brun);flex:0 0 auto}
-.scores{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 auto;min-width:0}
-.plaque{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 14px;min-height:58px;box-sizing:border-box;
-  background:var(--plaque);color:#FFF4D6;font-family:var(--f-titre);border:3px solid var(--bord);border-radius:9px;text-shadow:0 1px 0 var(--bord-fonce);
-  box-shadow:inset 0 1px 0 rgba(255,230,180,.45),inset 0 -2px 0 rgba(0,0,0,.25),0 2px 0 var(--bord-fonce);line-height:1.05}
-.plaque small{font-size:16px;font-weight:600;opacity:.95;white-space:nowrap}
-.plaque b{font-size:32px;font-variant-numeric:tabular-nums}
-.plaque.moi{background:linear-gradient(#5E8A3A,#3E6A24);border-color:#24400F}
-.atout{display:flex;align-items:center;gap:10px;padding:4px 16px 4px 10px;min-height:66px;box-sizing:border-box;border-radius:12px;
-  background:linear-gradient(#FFF8DE,#F3DCA4);border:4px solid var(--bord);box-shadow:inset 0 0 0 2px #E3C07E,0 3px 0 var(--bord-fonce),0 0 14px rgba(255,216,107,.7);color:var(--brun)}
-.atout .mot{display:flex;flex-direction:column;line-height:1.05;font-family:var(--f-titre)}
-.atout .mot small{font-size:17px}
-.atout .mot b{font-size:30px}
-.atout.attente{box-shadow:inset 0 0 0 2px #E3C07E,0 3px 0 var(--bord-fonce)}
-.tablejeu{flex:1;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:auto 1fr;gap:8px 12px;padding-block:10px;min-height:0;align-items:center}
-.place{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
-.place.haut{grid-column:2;grid-row:1}
-.place.gauche{grid-column:1;grid-row:2;justify-self:start}
-.place.droite{grid-column:3;grid-row:2;justify-self:end}
-.nom{font-family:var(--f-titre);font-size:24px;font-weight:700;padding:4px 14px;border-radius:10px;background:var(--parchemin);color:var(--brun);
-  border:4px solid var(--cadre);box-shadow:inset 0 0 0 2px var(--liseré),0 3px 0 var(--bord-fonce);white-space:nowrap;text-align:center}
-.nom small{display:block;font-size:16px;font-weight:600;color:var(--brun-doux)}
-.place.tour .nom{box-shadow:inset 0 0 0 3px var(--lueur),0 3px 0 var(--bord-fonce),0 0 18px rgba(255,216,107,.95)}
-.dos{display:flex;height:44px}.dos svg{margin-left:-20px}.dos svg:first-child{margin-left:0}
-.bulle{position:relative;background:#FFFDF2;color:#3E2410;border:3px solid var(--cadre);border-radius:16px;padding:4px 14px;font-size:22px;font-weight:700;
-  font-family:var(--f-titre);white-space:nowrap;box-shadow:0 3px 0 var(--bord-fonce)}
-.bulle:empty{visibility:hidden}
-.pli{grid-column:2;grid-row:2;position:relative;width:var(--pw);height:var(--ph)}
-.pli .pc{position:absolute;display:flex;flex-direction:column;align-items:center}
-.pli .pc svg{filter:drop-shadow(-2px 3px 4px rgba(0,0,0,.4))}
-.pli .s-bas{left:50%;bottom:0;transform:translateX(-50%)}
-.pli .s-haut{left:50%;top:0;transform:translateX(-50%)}
-.pli .s-gauche{left:0;top:50%;transform:translateY(-50%)}
-.pli .s-droite{right:0;top:50%;transform:translateY(-50%)}
+/* ---------- Belote : LE JEU D'ABORD (25/10, Florian : « le jeu en lui-même représente genre 20% de l'affichage »).
+   Le tapis couvre tout l'écran ; la main, le pli et les mains des autres prennent la place, mesurés sur l'écran réel.
+   Atout et score : une rangée fine de petites plaques posées par-dessus. Deux boutons ronds dans un coin. ---------- */
+.jeu{position:fixed;inset:0;overflow:hidden}
+.hud{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:max(14px,env(safe-area-inset-left,0px));display:flex;gap:6px;z-index:6}
+.pl{display:inline-flex;align-items:center;gap:6px;padding:0 10px;height:38px;box-sizing:border-box;background:var(--plaque);color:#FFF4D6;font-family:var(--f-titre);
+  border:2px solid var(--bord);border-radius:8px;text-shadow:0 1px 0 var(--bord-fonce);box-shadow:inset 0 1px 0 rgba(255,230,180,.4),0 2px 0 var(--bord-fonce);white-space:nowrap;line-height:1}
+.pl small{font-size:13px;font-weight:600;opacity:.92}
+.pl b{font-size:20px;font-variant-numeric:tabular-nums}
+.pl.moi{background:linear-gradient(#5E8A3A,#3E6A24);border-color:#24400F}
+.pl.atout{background:linear-gradient(#FFF8DE,#F0D69A);color:var(--brun);text-shadow:none;padding-left:6px}
+.pl.atout.pris{box-shadow:0 0 0 2px var(--lueur),0 0 10px rgba(255,216,107,.85),0 2px 0 var(--bord-fonce)}
+.coin{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));display:flex;gap:8px;z-index:8}
+.rond{width:46px;height:46px;border-radius:50%;padding:0;border:3px solid var(--bord);background:var(--bois);color:#FFF4D6;font-family:var(--f-titre);font-size:22px;font-weight:700;
+  text-shadow:0 1px 0 var(--bord-fonce);box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 var(--bord-fonce);display:flex;align-items:center;justify-content:center}
+.rond:active{transform:translateY(2px)}
+.menu{position:absolute;top:calc(62px + env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));z-index:8;display:flex;flex-direction:column;gap:8px;
+  background:var(--parchemin);border:2px solid var(--cadre);border-radius:12px;padding:10px;box-shadow:0 4px 0 var(--bord-fonce)}
+.siege{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;transform:translate(-50%,-50%);z-index:2}
+.nom{position:relative;font-family:var(--f-titre);font-size:17px;font-weight:700;padding:2px 10px;border-radius:8px;background:rgba(251,240,210,.93);color:var(--brun);
+  border:2px solid var(--cadre);white-space:nowrap;line-height:1.2}
+.nom small{font-size:12px;font-weight:600;color:var(--brun-doux);margin-left:4px}
+.siege.tour .nom{box-shadow:0 0 0 2px var(--lueur),0 0 12px rgba(255,216,107,.95)}
+.dos{display:flex}.dos svg{filter:drop-shadow(-1px 1px 2px rgba(0,0,0,.35))}
+.bulle{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:#FFFDF2;color:#3E2410;border:2px solid var(--cadre);border-radius:12px;
+  padding:2px 10px;font-size:17px;font-weight:700;font-family:var(--f-titre);white-space:nowrap;box-shadow:0 2px 0 var(--bord-fonce);z-index:3}
+.shaut .bulle{left:calc(100% + 8px);bottom:auto;top:50%;transform:translateY(-50%)}
+.pli{position:absolute;transform:translate(-50%,-50%);z-index:1}
+.pli .pc{position:absolute}
+.pli .pc>span{display:block}
+.pli .pc svg{display:block;filter:drop-shadow(-2px 3px 4px rgba(0,0,0,.4))}
+.s-bas{left:50%;bottom:0;transform:translateX(-50%)}
+.s-haut{left:50%;top:0;transform:translateX(-50%)}
+.s-gauche{left:0;top:50%;transform:translateY(-50%)}
+.s-droite{right:0;top:50%;transform:translateY(-50%)}
 .pli .gagne svg{filter:drop-shadow(0 0 8px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
-.retournee{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
-.retournee span{font-family:var(--f-titre);font-size:20px;background:var(--parchemin);color:var(--brun);border:3px solid var(--cadre);border-radius:9px;padding:0 10px}
-.mabulle{position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);z-index:3}
-.actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;padding-top:10px;min-height:0}
-.actions:empty{display:none}
-.actions .big{min-height:76px;font-size:28px;padding:0 26px;display:inline-flex;align-items:center;gap:10px}
-.main{display:flex;justify-content:center;padding-top:22px;position:relative}
+/* une carte glisse jusqu'au pli ; le pli glisse ensuite vers qui l'a remporté */
+.arrive{animation:arrive .4s cubic-bezier(.2,.7,.3,1)}
+@keyframes arrive{from{transform:translate(var(--dx),var(--dy)) scale(.9);opacity:.5}}
+.part{animation:part .6s ease-in .05s forwards}
+@keyframes part{to{transform:translate(var(--dx),var(--dy)) scale(.35);opacity:0}}
+.retournee{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.enchere{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:max-content;max-width:92vw}
+html body .enchere button{min-height:52px;font-size:20px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;border-width:3px}
+.main{position:absolute;left:50%;transform:translateX(-50%);display:flex;z-index:4}
 .carte{background:none;border:0;padding:0;position:relative;transition:transform .15s ease,filter .15s}
 .carte svg{display:block;filter:drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
-.carte.ok{transform:translateY(-18px)}
+.carte.ok{transform:translateY(-6%)}
 .carte.ok svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 5px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
-.carte.non svg{filter:grayscale(.75) brightness(.62) drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
-.aide{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--hh,200px) + 34px);z-index:12;max-width:min(680px,92vw);
-  background:#FFFDF2;color:#3E2410;border:4px solid var(--cadre);border-radius:18px;padding:12px 20px;font-size:26px;font-weight:700;text-align:center;text-wrap:balance;
-  box-shadow:inset 0 0 0 2px var(--liseré),0 4px 0 var(--bord-fonce),0 0 22px rgba(255,216,107,.85)}
-.aide::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:14px solid transparent;border-top-color:var(--cadre)}
+.carte.non svg{filter:grayscale(.7) brightness(.6) drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
+.conseil,.aide{position:absolute;left:50%;transform:translateX(-50%);font-family:var(--f-body);font-weight:700;color:var(--brun);border:2px solid var(--cadre);text-align:center}
+.conseil{z-index:5;font-size:17px;padding:2px 12px;border-radius:10px;background:rgba(251,240,210,.9);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.conseil.attente{font-weight:400;opacity:.85}
+.aide{z-index:12;max-width:min(520px,90vw);background:#FFFDF2;border-radius:12px;padding:6px 14px;font-size:18px;text-wrap:balance;
+  box-shadow:0 3px 0 var(--bord-fonce),0 0 14px rgba(255,216,107,.7);animation:fondu 4.5s forwards}
+@keyframes fondu{0%,85%{opacity:1}100%{opacity:0}}
+/* fenêtres de fin de donne : fines, sans gros titre */
+html body .panel.leger{border-width:3px;padding:16px 22px;gap:10px;max-width:600px;box-shadow:0 4px 0 #3A2010}
+html body .panel.leger h2{font-size:26px;-webkit-text-stroke:4px #4A2A12;text-shadow:0 2px 0 #4A2A12}
+html body .panel.leger p{font-size:18px}
+html body .panel.leger .big{min-height:58px;font-size:22px}
+html body .panel.leger .compte{font-size:17px;padding:8px 14px;border-width:2px;box-shadow:none}
+html body .panel.leger .compte b{font-size:19px}
+html body .panel.leger .compte .tot b{font-size:22px}
+html body .overlay.doux{background:rgba(40,22,8,.35)}
 .choixn{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
 .choixn .big{min-width:240px}
 .choixn .big[aria-pressed="true"]{box-shadow:inset 0 2px 0 rgba(255,230,180,.45),0 0 0 5px var(--lueur),0 0 18px var(--lueur),0 5px 0 #3A2010}
@@ -136,15 +149,7 @@ html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A
 .compte b{text-align:right;font-family:var(--f-titre);font-size:24px}
 .compte .tot b{font-size:30px}
 .verdict{font-family:var(--f-titre);font-size:30px;color:var(--brun)}
-@media (max-width:820px){ .top .titre{display:none} }
-@media (orientation:portrait){
-  .tablejeu{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto 1fr}
-  .place.haut{grid-column:1 / span 2;grid-row:1}
-  .place.gauche{grid-column:1;grid-row:2;justify-self:center}
-  .place.droite{grid-column:2;grid-row:2;justify-self:center}
-  .pli{grid-column:1 / span 2;grid-row:3;justify-self:center}
-}
-@media (prefers-reduced-motion: reduce){.carte{transition:none}}
+@media (prefers-reduced-motion: reduce){.carte{transition:none}.arrive{animation:none}.part{animation:none;opacity:0}}
 </style>
 </head>
 <body data-tapis="vert">
@@ -289,7 +294,7 @@ function act(a){
   aide=''; commit(r.st);
 }
 /* La bulle d'aide : une phrase courte, qui s'efface toute seule. */
-function say(msg){ aide=msg; clearTimeout(aideT); aideT=setTimeout(()=>{ aide=''; render(); },6000); render(); }
+function say(msg){ aide=msg; clearTimeout(aideT); aideT=setTimeout(()=>{ aide=''; render(); },4500); render(); }
 
 /* ---------- Liaison entre tablettes (la même façon de faire que le rami) ---------- */
 function send(m){ if(conn&&conn.open){ try{ conn.send(m); }catch{} } }
@@ -502,28 +507,36 @@ function teamLabel(v,t){
   if(v.n===3) return t===teamOf(v,v.you)?'Vous':v.players[t].name;
   return t===teamOf(v,v.you)?'Nous':'Eux';
 }
-function scoresHTML(v){
+/* La rangée fine de plaques : l'atout d'abord (lisible d'un coup d'œil), puis les points. */
+function hudHTML(v){
   const me=teamOf(v,v.you), T=nTeams(v);
-  return Array.from({length:T},(_,t)=>{
-    const sub=v.n===4?v.players.filter((p,k)=>teamOf(v,k)===t).map(p=>p.name).join(' et '):'';
-    return `<span class="plaque${t===me?' moi':''}"><small>${esc(teamLabel(v,t))}${sub?' · '+esc(sub):''}</small><b>${v.scores[t]}</b></span>`;
-  }).join('')+`<span class="plaque"><small>Partie en</small><b>${v.target}</b></span>`;
+  let at;
+  if(v.trump!=null) at=`<span class="pl atout pris">${suitIcon(v.trump,26)}<b>${SUIT_NAME[v.trump]}</b><small>atout</small></span>`;
+  else if(v.phase==='bid'&&v.bidRound===1) at=`<span class="pl atout">${suitIcon(suitOf(v.turned),26)}<b>${SUIT_NAME[suitOf(v.turned)]}&nbsp;?</b></span>`;
+  else at=`<span class="pl atout"><small>atout</small><b>au choix</b></span>`;
+  const sc=Array.from({length:T},(_,t)=>`<span class="pl${t===me?' moi':''}"><small>${esc(teamLabel(v,t))}</small><b>${v.scores[t]}</b></span>`).join('');
+  return `<div class="hud">${at}${sc}<span class="pl"><small>en</small><b>${v.target}</b></span></div>`;
 }
-function atoutHTML(v){
-  if(v.trump!=null) return `<div class="atout">${suitIcon(v.trump,50)}<span class="mot"><small>Atout · pris par ${esc(v.taker===v.you?'vous':v.players[v.taker].name)}</small><b>${SUIT_NAME[v.trump]}</b></span></div>`;
-  if(v.phase==='bid'){ const s=suitOf(v.turned);
-    return `<div class="atout attente">${v.bidRound===1?suitIcon(s,50):''}<span class="mot"><small>${v.bidRound===1?'Atout proposé':'Second tour'}</small><b>${v.bidRound===1?SUIT_NAME[s]+'&nbsp;?':'au choix'}</b></span></div>`; }
-  return `<div class="atout attente"><span class="mot"><small>Atout</small><b>…</b></span></div>`;
-}
+/* Toute la table se mesure sur l'écran réel : la main d'abord, aussi grande que possible ; le pli dans la place qui reste. */
 function layout(v){
-  const portrait=innerHeight>innerWidth, n=v.hands[v.you].length||8;
-  const avail=app.clientWidth-56;
-  let W=fitK*Math.min(150, innerHeight*(portrait?0.15:0.22), innerWidth*(portrait?0.24:0.13));
-  let step=n>1?Math.min(W*1.04,(avail-W)/(n-1)):W;
-  if(step<0.5*W){ W=avail/(1+0.5*(n-1)); step=0.5*W; }
-  const Wp=Math.round(fitK*Math.min(112, innerHeight*(portrait?0.1:0.135), innerWidth*0.16));
-  return {W:Math.floor(W),step,Wp};
+  const vw=innerWidth, vh=innerHeight, portrait=vh>vw, n=Math.max(1,(v.hands[v.you]||[]).length);
+  const avail=vw-28;
+  let Hc=portrait?vh*0.25:vh*0.34, W=Hc/1.4, step=n>1?Math.min(W*0.78,(avail-W)/(n-1)):W;
+  if(step<0.38*W){ W=avail/(1+0.38*(n-1)); step=0.38*W; Hc=W*1.4; }
+  const handTop=vh-12-Hc*1.06;
+  const Wb=Math.round(portrait?vw*0.055:vh*0.065), Hb=Math.round(Wb*1.4), seatH=30+Hb, sideW=Math.round(Wb*3.1)+20;
+  const topY=(portrait?66:18)+seatH/2;
+  const topBottom=v.n===4?topY+seatH/2+24:(portrait?72:62);
+  let Hp=Math.min(portrait?vh*0.15:vh*0.21,(handTop-topBottom-30)/2.25), Wp=Hp/1.4, pw=Wp*3.4;
+  const pwMax=vw-2*(sideW+24); if(pw>pwMax){ pw=pwMax; Wp=pw/3.4; }
+  Wp=Math.round(Wp);
+  const cy=Math.round((topBottom+handTop)/2);
+  return {W:Math.floor(W),step,handTop,Wb,Wp,pw:Math.round(pw),ph:Math.round(Wp*1.4*2.25),cy,
+    seat:{haut:[vw/2,topY],gauche:[14+sideW/2,cy],droite:[vw-14-sideW/2,cy]}};
 }
+const arrived=new Set(), parted=new Set();
+/* Le chemin d'une carte entre le pli et une place (pour les deux glissements). */
+function vecteur(pos){ const a=innerWidth*0.32, b=innerHeight*0.32; return {bas:[0,b],haut:[0,-b],gauche:[-a,0],droite:[a,0]}[pos]; }
 function helpText(v,info){
   const me=v.you, P=v.players, who=k=>esc(P[k].name);
   if(v.phase==='bid'){
@@ -556,61 +569,66 @@ function renderGame(pan){
   const playing=v.phase==='play'&&myTurn&&v.trick.length<v.n;
   const info=v.phase==='play'?legalInfo(hand,v.trick,v.trump,v.n,me):{ok:[],why:null};
   const okSet=new Set(playing?info.ok:[]);
-  const {W,step,Wp}=layout(v);
+  const L=layout(v), W=L.W, step=L.step, Wp=L.Wp, vh=innerHeight;
   const win=v.phase==='play'&&v.trick.length===v.n?trickWinner(v.trick,v.trump).seat:null;
   const away=role==='host'?new Set(P.map((p,k)=>!p.bot&&p.cid!==cid&&!(conns.get(p.cid)?.open)?k:-1)):new Set();
+  // les autres joueurs : leur prénom et leur main, retournée, au bord du tapis
   const places=P.map((p,k)=>{
     if(k===me) return '';
-    const pos=posOf(v,k), nb=typeof v.hands[k]==='number'?v.hands[k]:0;
-    const sub=v.n===4?(teamOf(v,k)===teamOf(v,me)?'partenaire':'adversaire'):'chacun pour soi';
+    const pos=posOf(v,k), [x,y]=L.seat[pos], nb=typeof v.hands[k]==='number'?v.hands[k]:0;
+    const sub=v.n===4?(teamOf(v,k)===teamOf(v,me)?'partenaire':''):'';
     const tour=(v.phase==='bid'||v.phase==='play')&&v.turn===k&&v.trick.length<v.n;
-    return `<div class="place ${pos}${tour?' tour':''}">
-      <span class="bulle">${esc(v.say?.[k]||'')}</span>
-      <span class="nom">${esc(p.name)}<small>${sub}${k===v.dealer?' · donne':''}${away.has(k)?' · pas connectée':''}</small></span>
-      <span class="dos">${Array.from({length:nb},()=>backSVG(30,'')).join('')}</span></div>`;
+    const say=v.say?.[k]?`<span class="bulle">${esc(v.say[k])}</span>`:'';
+    return `<div class="siege s${pos}${tour?' tour':''}" style="left:${Math.round(x)}px;top:${Math.round(y)}px">
+      <span class="nom">${say}${esc(p.name)}${sub||k===v.dealer||away.has(k)?`<small>${[sub,k===v.dealer?'donne':'',away.has(k)?'pas connectée':''].filter(Boolean).join(' · ')}</small>`:''}</span>
+      <span class="dos">${Array.from({length:nb},(_,j)=>`<span style="margin-left:${j?Math.round(-L.Wb*0.7):0}px">${backSVG(L.Wb,'')}</span>`).join('')}</span></div>`;
   }).join('');
-  const Hp=Math.round(Wp*1.4);
-  const pw=Math.round(Wp*4.3), ph=Math.round(Hp*2.35);
+  // le pli : chaque carte arrive en glissant de chez son joueur ; le pli ramassé glisse vers qui l'a remporté
   let mid='';
   if(v.phase==='bid'||v.phase==='nobid'){
-    mid=`<div class="retournee">${cardSVG(v.turned,Math.round(Wp*1.15))}<span>${v.bidRound===1?'La carte retournée':'Retournée : '+SUIT_NAME[suitOf(v.turned)]+' refusé'}</span></div>`;
+    let ench='';
+    if(v.phase==='bid'&&myTurn){
+      const ts=suitOf(v.turned);
+      ench=v.bidRound===1?`<button class="big" data-act="prendre">${suitIcon(ts,28)} Je prends</button><button class="big alt" data-act="passer">Je passe</button>`
+        :[0,1,2,3].filter(s=>s!==ts).map(s=>`<button class="big" data-act="prendre" data-s="${s}">${suitIcon(s,28)} ${SUIT_NAME[s]}</button>`).join('')+`<button class="big alt" data-act="passer">Je passe</button>`;
+    }
+    mid=`<div class="retournee">${cardSVG(v.turned,Math.round(Wp*(ench?1:1.2)))}${ench?`<div class="enchere">${ench}</div>`:''}</div>`;
   } else {
-    mid=v.trick.map(t=>`<div class="pc s-${posOf(v,t.seat)}${t.seat===win?' gagne':''}">${cardSVG(t.card,Wp)}</div>`).join('');
+    mid=v.trick.map(t=>{
+      const pos=posOf(v,t.seat), key=v.donne+':'+t.card, neuf=!arrived.has(key), [dx,dy]=vecteur(pos);
+      arrived.add(key);
+      return `<div class="pc s-${pos}${t.seat===win?' gagne':''}"><span class="${neuf?'arrive':''}" style="--dx:${dx}px;--dy:${dy}px">${cardSVG(t.card,Wp)}</span></div>`;
+    }).join('');
+    const lt=v.lastTrick;
+    if(!v.trick.length&&lt){
+      const key=v.donne+':p:'+lt.cards.map(t=>t.card).join(',');
+      if(!parted.has(key)){
+        parted.add(key);
+        const [dx,dy]=vecteur(posOf(v,lt.winner));
+        mid+=lt.cards.map(t=>`<div class="pc s-${posOf(v,t.seat)}"><span class="part" style="--dx:${dx}px;--dy:${dy}px">${cardSVG(t.card,Wp)}</span></div>`).join('');
+      }
+    }
   }
-  const myBubble=v.say?.[me]?`<span class="bulle mabulle">${esc(v.say[me])}</span>`:'';
   const h=helpText(v,info);
-  let actions='';
-  if(v.phase==='bid'&&myTurn){
-    const ts=suitOf(v.turned);
-    if(v.bidRound===1) actions=`<button class="big" data-act="prendre">${suitIcon(ts,40)} Je prends à ${SUIT_NAME[ts]}</button><button class="big alt" data-act="passer">Je passe</button>`;
-    else actions=[0,1,2,3].filter(s=>s!==ts).map(s=>`<button class="big" data-act="prendre" data-s="${s}">${suitIcon(s,40)} ${SUIT_NAME[s]}</button>`).join('')+`<button class="big alt" data-act="passer">Je passe</button>`;
-  }
-  const n=hand.length;
+  const hb=Math.round(vh-L.handTop+8);
+  const myBubble=v.say?.[me]?`<span class="bulle" style="bottom:${hb+34}px;top:auto">${esc(v.say[me])}</span>`:'';
   const handHTML=hand.map((c,k)=>{
     const cls=v.phase!=='play'||!myTurn||v.trick.length===v.n?'':okSet.has(c)?' ok':' non';
     return `<button class="carte${cls}" data-act="carte" data-id="${c}" style="margin-left:${k?Math.round(step-W):0}px;z-index:${k}" aria-label="${cardName(c)}">${cardSVG(c,W)}</button>`;
   }).join('');
-  app.innerHTML=`
-    <div class="top">
-      <span class="titre">Belote</span>
-      <div class="scores">${scoresHTML(v)}</div>
-      ${atoutHTML(v)}
-      <button class="small" data-act="regles">Les règles</button>
-      <button class="small" data-act="${mode==='seul'?'quitter-seul':'leave'}">${mode==='seul'?'Arrêter':'Changer de salle'}</button>
-    </div>
-    <div class="tablejeu">${places}
-      <div class="pli" style="--pw:${pw}px;--ph:${ph}px">${mid}${myBubble}</div>
-    </div>
-    <p class="help${h.wait?' wait':' mine'}" aria-live="polite">${h.t}</p>
-    <div class="actions">${actions}</div>
-    <div class="main" id="main">${handHTML}</div>
-    ${aide?`<div class="aide" role="alert">${esc(aide)}</div>`:''}
-    ${(v.phase==='done'||v.phase==='over')&&!panel?resultHTML(v):''}${pan}`;
-  const mh=document.getElementById('main'); if(mh) document.documentElement.style.setProperty('--hh',mh.offsetHeight+'px');
-  // Tout doit tenir dans l'écran, sans défiler : sinon les cartes rapetissent un peu et on redessine.
-  if(document.documentElement.scrollHeight>innerHeight+2&&fitK>0.55){ fitK-=0.06; renderGame(pan); }
+  const quitter=mode==='seul'?'<button class="small" data-act="quitter-seul">Arrêter la partie</button>':'<button class="small" data-act="leave">Changer de salle</button>';
+  app.innerHTML=`<div class="jeu">
+    ${hudHTML(v)}
+    <div class="coin"><button class="rond" data-act="regles" aria-label="Les règles">?</button><button class="rond" data-act="menu" aria-label="Réglages">⚙</button></div>
+    ${panel==='menu'?`<div class="menu">${quitter}<button class="small" data-act="maison">Retour à l'accueil</button></div>`:''}
+    ${places}
+    <div class="pli" style="left:50%;top:${L.cy}px;width:${L.pw}px;height:${L.ph}px">${mid}</div>
+    ${(v.phase==='done'||v.phase==='over')?'':`<p class="conseil${h.wait?' attente':''}" style="bottom:${hb}px" aria-live="polite">${h.t}</p>`}
+    ${myBubble}
+    <div class="main" style="bottom:12px">${handHTML}</div>
+    ${aide?`<div class="aide" role="alert" style="bottom:${hb+48}px">${esc(aide)}</div>`:''}
+    ${(v.phase==='done'||v.phase==='over')&&panel!=='regles'?resultHTML(v):''}${pan}</div>`;
 }
-let fitK=1;
 
 const KIND={reussi:'Contrat réussi !',dedans:'Dedans !',litige:'Litige : égalité',capot:'Capot ! Tous les plis','dedans-capot':'Dedans et capot !'};
 function resultHTML(v){
@@ -636,14 +654,14 @@ function resultHTML(v){
     if(v.players[v.you]&&!v.players[v.you].bot) versVillage(gain,'belote-'+v.gameId);
     const wn=v.n===4?v.players.filter((p,k)=>teamOf(v,k)===v.gameWinner).map(p=>esc(p.name)).join(' et '):esc(v.players[v.gameWinner].name);
     const again=authority()?'<button class="big" data-act="again">Nouvelle partie</button>':'<p class="note">La tablette qui a ouvert la salle peut lancer une nouvelle partie.</p>';
-    return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de la partie">
+    return `<div class="overlay doux"><div class="panel leger" role="dialog" aria-label="Fin de la partie">
       <h2>${won?'Bravo, vous avez gagné !':'Bravo '+wn+' !'}</h2>
       <p class="verdict">${wn} ${v.n===4?'gagnent':'gagne'} la partie en ${v.target} points.</p>
       <p>🏡 +${gain} pièces et des étoiles pour votre village${won?'':' (perdre ne coûte rien)'}.</p>
       ${body}${again}
       <button class="small" data-act="${mode==='seul'?'quitter-seul':'leave'}">Retour</button></div></div>`;
   }
-  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de la donne">
+  return `<div class="overlay doux"><div class="panel leger" role="dialog" aria-label="Fin de la donne">
     <h2>${KIND[R.kind]}</h2><p>${expl}</p>${body}
     <button class="big" data-act="next">Donne suivante</button></div></div>`;
 }
@@ -696,6 +714,7 @@ app.addEventListener('click',e=>{
     case 'leave': leave(); break;
     case 'regles': panel='regles'; render(); break;
     case 'close': panel=null; render(); break;
+    case 'menu': panel=panel==='menu'?null:'menu'; render(); break;
     case 'prendre': act(t.dataset.s!==undefined?{type:'bid',take:true,suit:+t.dataset.s}:{type:'bid',take:true}); break;
     case 'passer': act({type:'bid',take:false}); break;
     case 'next': act({type:'next'}); break;
@@ -712,7 +731,7 @@ app.addEventListener('click',e=>{
     }
   }
 });
-let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ fitK=1; if(screen()==='game') render(); },120); });
+let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(screen()==='game') render(); },120); });
 async function keepAwake(){ try{ await navigator.wakeLock?.request('screen'); }catch{} }
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden||mode!=='salle'||!word) return;
