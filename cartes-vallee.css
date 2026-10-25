@@ -1,0 +1,115 @@
+/* ===== Les cartes en bois et parchemin (25/10, Florian : « oui habille les cartes en bois et parchemin »).
+   Même habit que le village (village.html, <style id="vallee">) : cadres de bois chaud bordés de brun foncé,
+   intérieur parchemin, planchettes de bois, plaques de bois pour les compteurs, aucun contour bleu.
+   Chargé après les styles de index.html : à force égale, ces règles passent devant. Rien n'est chargé du dehors. ===== */
+/* Fredoka (licence OFL, fonts/Fredoka-OFL.txt), servie avec le jeu : titres, boutons, compteurs, index des cartes */
+@font-face{font-family:"Fredoka";src:url('fonts/Fredoka.ttf') format('truetype');font-weight:300 700;font-display:swap}
+:root{--f-titre:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",var(--f-body);
+--bord:#4A2A12;--bord-fonce:#3A2010;--cadre:#5A3418;--liseré:#C9A36A;--brun:#3E2410;--brun-doux:#6B4A2C;--lueur:#FFD86B;
+  --plaque:repeating-linear-gradient(90deg,rgba(60,30,10,.08) 0 2px,transparent 2px 13px),linear-gradient(#B97B45,#8A5428)}
+
+/* ---------- Les trois tapis ---------- */
+/* Feutre vert bordé de bois */
+html body[data-tapis="vert"]{--txt:#FFF4D6;--txt-dim:#F2E2BC;--line:rgba(255,241,204,.5);--band:rgba(40,22,8,.32);--alert-txt:#FFE3A3;
+  background:#2E6A3C radial-gradient(ellipse at 50% 40%,#3D8150 0%,#2A5F37 55%,#1C4426 100%) fixed}
+/* Nappe à carreaux rouges posée sur la table */
+html body[data-tapis="carreaux"]{--txt:#3E2410;--txt-dim:#6B4A2C;--line:rgba(90,52,24,.55);--band:rgba(58,32,16,.3);--alert-txt:#A0281A;
+  background-color:#F6E7C8;
+  background-image:linear-gradient(90deg,rgba(178,44,36,.30) 50%,transparent 50%),linear-gradient(rgba(178,44,36,.30) 50%,transparent 50%);
+  background-size:56px 56px;background-attachment:fixed}
+/* Table de bois chaud, en planches */
+html body[data-tapis="bois"]{--txt:#FFF4D6;--txt-dim:#F2E2BC;--line:rgba(255,230,190,.45);--band:rgba(45,22,6,.38);--alert-txt:#FFE3A3;
+  background-color:#9A6334;
+  background-image:repeating-linear-gradient(180deg,transparent 0 118px,rgba(58,32,16,.55) 118px 121px,rgba(255,220,170,.18) 121px 123px),
+    repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px,rgba(255,220,170,.05) 15px 17px,transparent 17px 31px),
+    linear-gradient(180deg,#C08550 0%,#9A6334 100%);
+  background-attachment:fixed}
+/* Le cadre de bois autour du tapis */
+html body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:15;
+  box-shadow:inset 0 0 0 3px var(--bord-fonce),inset 0 0 0 9px #A86E3C,inset 0 0 0 11px var(--bord),inset 0 0 26px 10px rgba(30,15,4,.35)}
+html body[data-tapis="bois"]::before{box-shadow:inset 0 0 0 3px var(--bord-fonce),inset 0 0 0 9px #6E4020,inset 0 0 0 11px var(--bord-fonce),inset 0 0 26px 10px rgba(30,15,4,.35)}
+
+/* ---------- Les faces des cartes : parchemin à bord brun arrondi ---------- */
+html body svg[viewBox="0 0 100 140"] > rect:first-child{fill:#FCF2D8;stroke:#6B4022;stroke-width:2.6px}
+/* pique et trèfle en brun foncé ; cœur et carreau restent rouges */
+html body svg[viewBox="0 0 100 140"] [fill="#151515"]{fill:#2E1A0C}
+html body svg[viewBox="0 0 100 140"] [stroke="#151515"]{stroke:#2E1A0C}
+/* les figures sur fond chaud, jamais bleuté */
+html body svg[viewBox="0 0 100 140"] rect[fill="#E8ECF4"]{fill:#EBD8AE}
+html body svg[viewBox="0 0 100 140"] rect[fill="#FBE6E3"]{fill:#F8DCC8}
+/* gros index en police ronde */
+html body svg[viewBox="0 0 100 140"]:not([aria-label="dos de carte"]) text{font-family:var(--f-titre)}
+html body svg[viewBox="0 0 100 140"] text[font-size="31"]{font-size:35px}
+html body svg[viewBox="0 0 100 140"] text[font-size="25"]{font-size:29px}
+/* le dos fleuri garde son prénom, dans un cadre de bois */
+html body svg[aria-label="dos de carte"] > rect:first-child{fill:#A86E3C;stroke:var(--bord);stroke-width:2.6px}
+html body svg[aria-label="dos de carte"] rect[fill="url(#fleurs)"]{stroke:var(--bord);stroke-width:2.2px}
+html body svg[aria-label="dos de carte"] [fill="#FFF8EE"]{fill:#FBF0D2;stroke:#6B4022}
+html body svg[aria-label="dos de carte"] text{fill:#6B2A2A}
+
+/* ---------- Bandeaux du haut : panneaux de parchemin cadrés de bois ---------- */
+html body .top,html body .soltop{background:var(--parchemin);color:var(--brun);border:5px solid var(--cadre);border-radius:12px;padding:6px 10px;
+  box-shadow:inset 0 0 0 3px var(--liseré),0 4px 0 var(--bord-fonce)}
+html body .opp b,html body .soltop b{font-family:var(--f-titre);color:var(--brun)}
+html body .opp span{color:var(--brun)}
+html body .away{color:#A0281A}
+
+/* ---------- Compteurs : petites plaques de bois ---------- */
+html body .score,html body .moves,html body .pile span,html body .opp > span:not(.minibacks):not(.away),html body .sugg > span{
+  display:inline-flex;align-items:center;min-height:34px;box-sizing:border-box;padding:2px 12px;
+  background:var(--plaque);color:#FFF4D6;font-family:var(--f-titre);font-size:19px;font-weight:700;white-space:nowrap;
+  border:3px solid var(--bord);border-radius:8px;text-shadow:0 1px 0 var(--bord-fonce);
+  box-shadow:inset 0 1px 0 rgba(255,230,180,.45),inset 0 -2px 0 rgba(0,0,0,.25),0 2px 0 var(--bord-fonce)}
+html body .opp{flex:1 1 0;min-width:auto}
+html body .opp .minibacks{flex:1 1 0;width:0}
+html body .opp > span:not(.minibacks){flex-shrink:0}
+html body .score{white-space:normal;flex:0 1 auto;min-width:0;max-width:250px;font-size:17px;line-height:1.15;padding:2px 9px}
+
+/* ---------- La main du rami tient à l'écran, au-dessus du cadre de bois ---------- */
+html body #app{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+html body .hand{padding-top:16px}
+html body .hand .card svg{width:auto;max-height:24vh}
+
+/* ---------- Phrases d'aide et nouvelles : parchemin ---------- */
+html body .help,html body .last,html body .table .empty{background:var(--parchemin);color:var(--brun);border:4px solid var(--cadre);border-radius:12px;
+  box-shadow:inset 0 0 0 2px var(--liseré),0 3px 0 var(--bord-fonce)}
+html body .last:empty{display:none}
+html body .help.mine{background:radial-gradient(ellipse at 50% 40%,#FFF8DE,#F6E2B0);color:var(--brun);
+  box-shadow:inset 0 0 0 3px var(--lueur),0 3px 0 var(--bord-fonce),0 0 16px rgba(255,216,107,.8)}
+html body .err:not(:empty){background:var(--parchemin);color:#A0281A;border:4px solid var(--cadre);border-radius:12px;padding:6px 14px;
+  box-shadow:inset 0 0 0 2px var(--liseré),0 3px 0 var(--bord-fonce)}
+html body .panel .err:not(:empty){border-width:3px;box-shadow:none}
+
+/* ---------- La table du rami : plateaux de bois ---------- */
+html body .grp{background:rgba(58,32,16,.30);border:3px solid rgba(74,42,18,.55);border-radius:12px}
+html body .grp.can{border-color:var(--lueur);box-shadow:0 0 12px rgba(255,216,107,.8)}
+html body .grp.staged{border:3px dashed #FFF1CC}
+html body .grp .tag{background:#FBF0D2;color:var(--brun);border:2px solid #6B4022;border-radius:7px;padding:0 8px;font-size:17px}
+html body .grp.can .tag{font-size:20px;background:#FFF4CC;border-color:var(--bord)}
+html body .chip{background:linear-gradient(#FBF0D2,#EFD9A6);color:var(--brun);border:3px solid #6B4022;border-radius:12px;font-family:var(--f-titre);
+  box-shadow:inset 0 0 0 2px #D9B67E,0 4px 0 var(--bord-fonce);transition:transform .08s,filter .12s}
+html body .chip:active{transform:translateY(3px);box-shadow:inset 0 0 0 2px #D9B67E,0 1px 0 var(--bord-fonce);filter:brightness(1.1) sepia(.15)}
+
+/* ---------- Emplacements vides et cartes qui s'allument ---------- */
+html body .slot,html body .sslot{border:3px dashed rgba(255,241,204,.6);background:rgba(58,32,16,.38);color:#FFF1CC;border-radius:10px;
+  font-family:var(--f-titre);text-shadow:0 1px 0 var(--bord-fonce)}
+html body .sslot.starget{border:4px solid var(--lueur);box-shadow:0 0 14px var(--lueur)}
+html body .pile.go svg,html body .starget svg{filter:drop-shadow(0 0 9px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
+html body .card.sel svg,html body .ssel svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 5px var(--lueur)) drop-shadow(0 0 5px var(--lueur))}
+
+/* ---------- Fenêtres et carnet des victoires ---------- */
+html body .overlay{background:rgba(40,22,8,.62)}
+html body .panel h3{font-family:var(--f-titre);color:var(--brun)}
+html body .panel p,html body .panel li{color:var(--brun)}
+html body .note,html body .tally .h{color:var(--brun-doux)}
+html body .tally{background:linear-gradient(#FBF0D2,#EFD9A6);border:4px solid #6B4022;border-radius:10px;padding:12px 18px;
+  box-shadow:inset 0 0 0 2px #D9B67E,0 4px 0 var(--bord-fonce);color:var(--brun)}
+html body .tally b{font-family:var(--f-titre);font-size:28px;color:var(--brun)}
+/* choix du tapis : petits cadres de bois */
+html body .tapis button{border:4px solid var(--cadre);border-radius:10px;box-shadow:inset 0 0 0 2px var(--liseré),0 4px 0 var(--bord-fonce)}
+html body .tapis button span{background:#FBF0D2;color:var(--brun);border:2px solid #6B4022;border-radius:7px;font-family:var(--f-titre)}
+html body .tapis button[aria-pressed="true"]{border-color:var(--bord);box-shadow:inset 0 0 0 2px var(--liseré),0 0 0 4px var(--lueur),0 0 14px var(--lueur)}
+html body .tapis .t-vert{background:radial-gradient(ellipse at 50% 40%,#3D8150,#1C4426);box-shadow:inset 0 0 0 6px #A86E3C,0 4px 0 var(--bord-fonce)}
+html body .tapis .t-carreaux{background-color:#F6E7C8;background-image:linear-gradient(90deg,rgba(178,44,36,.35) 50%,transparent 50%),linear-gradient(rgba(178,44,36,.35) 50%,transparent 50%);background-size:28px 28px}
+html body .tapis .t-bois{background:repeating-linear-gradient(180deg,transparent 0 34px,rgba(58,32,16,.55) 34px 36px),repeating-linear-gradient(90deg,rgba(60,30,10,.08) 0 2px,transparent 2px 11px),linear-gradient(#C08550,#9A6334)}
+html body .tapis .t-vert[aria-pressed="true"]{box-shadow:inset 0 0 0 6px #A86E3C,0 0 0 4px var(--lueur),0 0 14px var(--lueur)}

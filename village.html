@@ -136,7 +136,7 @@ const FRISE=[
  {id:'mairie',cout:{etoiles:50,pieces:800}},{id:'kiosque',cout:{etoiles:40,pieces:600}},{id:'serre',cout:{etoiles:40,pieces:600}}];
 const epIdx=()=>Math.max(0,EPOQUES.findIndex(e=>e.id===S.epoque));
 const debloque=k=>BAT[k].ep===0||S.frise.includes(k);
-const mult=o=>(1+.5*(o.ep||0))*(BAT[o.type].mult||1)*(1+(window.BONUS_MONUMENT||0));   // le monument (saisons.js) : +5 % par niveau
+const mult=o=>(1+.5*(o.ep||0))*(BAT[o.type].mult||1)*(1+(window.BONUS_MONUMENT||0))*(S.fleuris&&S.fleuris[o.id]>Date.now()?1.5:1);   // la fleur de la sœur : +50 %   // le monument (saisons.js) : +5 % par niveau
 const coutMonter=o=>({pieces:60*((o.ep||0)+1)*BAT[o.type].t*BAT[o.type].t});
 /* Images d'époque : img/v3/<type>-<époque>.webp si elle existe ; sinon une image plus ancienne ; sinon le dessin. */
 const IMGS={}, ANCIENNES={maison:'maison-1',boulangerie:'boulangerie',fleuriste:'fleuriste',atelier:'garage',mairie:'mairie'};
@@ -176,13 +176,15 @@ if(S&&S.v!==3)S=null;
 if(S&&!S.epoque)S.epoque='hameau';
 if(S&&!S.frise)S.frise=[];
 if(S&&!S.monde){S.blocs=S.blocs.map(k=>{const [a,c]=k.split(',').map(Number);return (a+3)+','+(c+3)});S.b.forEach(o=>{o.i+=12;o.j+=12});S.monde=40}   // contrat lu par habitants.js et saisons.js : 'hameau' | 'village' | 'bourg' | 'ville'
-function sauve(){ls.set(CLE,JSON.stringify(S));if(window.envoyerSoeur)envoyerSoeur()}   // la sœur reçoit aussitôt, si elle est là
-function sauveIci(){ls.set(CLE,JSON.stringify(S))}
+if(S&&S.base)delete S.base;   // un village commun déjà fusionné reste, tel quel, le village de cette tablette
+function sauve(){if(MOI)return;ls.set(CLE,JSON.stringify(S));if(window.envoyerSoeur)envoyerSoeur()}   // la sœur reçoit aussitôt, si elle est là
+function sauveIci(){if(MOI)return;ls.set(CLE,JSON.stringify(S))}
 
 /* ===================== Outils ===================== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let message='', feuille=null, mode=null, dernierPose=null, fete=false;   // mode : {pose:type,i,j} | {deplace:id,i,j} | {chemins:true} ; i,j : où se tient le fantôme
+let message='', feuille=null, mode=null, dernierPose=null, fete=false, VISITE=false, MOI=null;   // VISITE : on regarde le village de l'autre ; MOI : mon état, mis de côté pendant qu'on le dessine
+   // mode : {pose:type,i,j} | {deplace:id,i,j} | {chemins:true} ; i,j : où se tient le fantôme
 const assez=c=>Object.entries(c).every(([k,v])=>(S.stock[k]||0)>=v);
 const retire=c=>Object.entries(c).forEach(([k,v])=>S.stock[k]-=v);   // retire du stock ce que coûte un geste du jeu
 const txt=c=>Object.entries(c).map(([k,v])=>`<span class="cout"><i class="case">${RES[k].e}</i>${v}</span>`).join(' ');   // les coûts, comme un inventaire
@@ -268,7 +270,7 @@ function dessinNature(n,sa){const [cx,cy]=P(n.i+.5,n.j+.5),st=stade(n);let h='';
   else if(st==='rocher'){const k=.75+.3*(n.n||1);h=`<ellipse cx="${cx}" cy="${cy+3}" rx="${14*k}" ry="${6*k}" fill="#00000026"/><ellipse cx="${cx}" cy="${cy-4*k}" rx="${13*k}" ry="${9*k}" fill="#9E9E9E" stroke="#5F5F5F" stroke-width="1.5"/><ellipse cx="${cx-4*k}" cy="${cy-8*k}" rx="${5*k}" ry="${3*k}" fill="#C9C9C9"/><path d="M${cx+2} ${cy-10*k}l${4*k} ${6*k}" stroke="#6E6E6E"/>`}
   else if(st==='butte')h=`<ellipse cx="${cx}" cy="${cy}" rx="24" ry="11" fill="#9C7650" stroke="#6B4A2C"/><ellipse cx="${cx}" cy="${cy-4}" rx="17" ry="7" fill="#B58C5C"/><ellipse cx="${cx-3}" cy="${cy-7}" rx="9" ry="3.5" fill="#7FB55A"/>`;
   return `<g data-n="${n.id}" style="${mode?'pointer-events:none;opacity:.55':'cursor:pointer'}">${h}</g>`}
-function toucherNature(id,ev){const n=(S.nature||[]).find(x=>x.id===id);if(!n)return;
+function toucherNature(id,ev){if(VISITE)return;const n=(S.nature||[]).find(x=>x.id===id);if(!n)return;
   if(!possede(n.i,n.j)){message='Ce terrain n\'est pas encore à vous : touchez le + pour l\'acheter.';rendu();return}
   const st=stade(n),sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2,t=Date.now();let gains=[];
   const enleve=()=>{S.nature=S.nature.filter(x=>x!==n)};
@@ -397,9 +399,12 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
   h+=vie(o,cx,cy,seul,ok);   // ce qui vit autour : poules, bûches, fumée, seau, papillons
   if(seul)return h;
   if((o.ep||0)<epIdx()&&B.sorte!=='chemin')h+=`<g><circle cx="${cx+30}" cy="${top+6}" r="13" fill="#7BB661" stroke="#fff" stroke-width="2"/><text x="${cx+30}" y="${top+12}" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">⬆</text></g>`;
-  // bulles : prêt (brille), à lancer (pâle), pas relié (panneau)
+  // la fleur de la sœur, posée sur le bâtiment jusqu'au lendemain
+  if(fleurie(o))h+=`<g transform="translate(${cx-26} ${top+4})"><circle r="13" fill="#FFF9E8" stroke="#C2457A" stroke-width="2.5"/>${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-5" rx="3.6" ry="5" fill="#F48FB1" transform="rotate(${a})"/>`).join('')}<circle r="3" fill="#FFD54F"/></g>`;
+  // bulles : prêt (brille), à lancer (pâle), pas relié (panneau) ; aucune en visite
   let bulle='';const relie=B.sorte==='deco'||estRelie(o,ok);
-  if(!relie)bulle=`<g class="flotte"><rect x="${cx-24}" y="${top-46}" width="48" height="36" rx="8" fill="#FFF3D6" stroke="#B5523A" stroke-width="3"/><text x="${cx}" y="${top-20}" font-size="22" text-anchor="middle">🚧</text></g>`;
+  if(MOI)bulle='';
+  else if(!relie)bulle=`<g class="flotte"><rect x="${cx-24}" y="${top-46}" width="48" height="36" rx="8" fill="#FFF3D6" stroke="#B5523A" stroke-width="3"/><text x="${cx}" y="${top-20}" font-size="22" text-anchor="middle">🚧</text></g>`;
   else if(pret(o,ok)){const e=B.sorte==='maison'?'🪙':RES[B.produit].e;
     bulle=`<g class="brille" style="transform-box:fill-box"><circle cx="${cx}" cy="${top-26}" r="22" fill="#FFE27A" stroke="#C99A22" stroke-width="3"/><text x="${cx}" y="${top-17}" font-size="24" text-anchor="middle">${e}</text></g>`}
   else if(B.sorte==='atelier'&&o.fin==null)bulle=`<g class="flotte"><circle cx="${cx}" cy="${top-26}" r="19" fill="#FFFDF6" stroke="#B8B09C" stroke-width="3"/><text x="${cx}" y="${top-18}" font-size="22" text-anchor="middle" fill="#7A6A50">▶</text></g>`;
@@ -410,52 +415,70 @@ function dessinObjet(o,ok,seul){   // seul : le dessin nu, sans bulle ni toucher
 }
 /* ===================== Ce qui vit autour des bâtiments (25/10, Florian : « tu as mis un poulailler mais le batiment
    ressemble à n'importe quel autre et ne contient pas de poules ») =====
-   Des dessins, remplacés par les images de la session Images à mesure qu'elles arrivent (ajouter leur nom à BETES_IMG).
+   Les images vie-* de la session Images (taille d'origine dans VIE) ; un dessin reste en secours si une image manque.
    Quelques dizaines d'éléments animés au plus (ANIME), et tout s'arrête quand la page est cachée. */
-const BETES_IMG=[];   // ex. 'bete-poule' quand img/v3/bete-poule.webp existe
+const VIE={'vie-poule-1':[130,126],'vie-poule-2':[140,110],'vie-oeufs':[120,72],'vie-enclos':[260,157],'vie-buches-1':[130,140],'vie-buches-2':[190,180],
+  'vie-buches-3':[250,222],'vie-billot-hache':[160,169],'vie-chat-dort':[150,90],'vie-chien-1':[160,110],'vie-chien-2':[160,110],'vie-canard-1':[130,112],
+  'vie-canard-2':[130,112],'vie-oiseau':[110,61],'vie-papillon':[90,61]};
+// une image posée par le milieu de son bas sur (0,0), w de large
+const vi=(nom,w)=>{const [W,H]=VIE[nom],h=w*H/W;return `<image href="img/v3/${nom}.webp" x="${-w/2}" y="${-h}" width="${w}" height="${h}"/>`};
 let ANIME=0;const anime=c=>ANIME++<40?c:'';
+// deux images qui se relaient (la poule debout puis qui picore, le canard qui lève l'aile)
+function relais(a,b,w,d,duree){const c=anime('alt-a');return `<g class="${c}" style="animation-delay:-${d}s;animation-duration:${duree}s">${vi(a,w)}</g>`+(c?`<g class="alt-b" style="animation-delay:-${d}s;animation-duration:${duree}s">${vi(b,w)}</g>`:'')}
 const Q=(o,a,c)=>P(o.i+a,o.j+c);
 const gros=(x,y,k,s)=>`<g transform="translate(${x} ${y}) scale(${k}) translate(${-x} ${-y})">${s}</g>`;
 const avancement=o=>{if(o.fin==null)return -1;const tot=(o.duree!=null&&DUREES[o.duree]?DUREES[o.duree].min:5)*60000;return Math.max(0,Math.min(1,1-(o.fin-Date.now())/tot))};
-function bete(nom,x,y,w,dessin){return BETES_IMG.includes(nom)?`<image href="img/v3/${nom}.webp" x="${x-w/2}" y="${y-w}" width="${w}" height="${w}"/>`:dessin}
 function poule(x,y,coul,flip,d){
-  return `<g transform="translate(${x} ${y}) scale(${flip?-1.8:1.8} 1.8)"><g class="${anime('trotte')}" style="animation-delay:-${d*3.1}s"><g class="${anime('picore')}" style="animation-delay:-${d*1.7}s">${bete('bete-poule',0,0,14,
+  if(VIE['vie-poule-1'])return `<g transform="translate(${x} ${y}) scale(${flip?-1:1} 1)"><g class="${anime('trotte')}" style="animation-delay:-${d*3.1}s">${relais('vie-poule-1','vie-poule-2',18,d*1.7,2.8)}</g></g>`;
+  return `<g transform="translate(${x} ${y}) scale(${flip?-1.8:1.8} 1.8)"><g class="${anime('trotte')}" style="animation-delay:-${d*3.1}s"><g class="${anime('picore')}" style="animation-delay:-${d*1.7}s">${(
     `<ellipse cx="0" cy=".6" rx="4.6" ry="1.4" fill="#00000030"/><path d="M-4 -5l-3 -3l.6 4z" fill="${coul}" stroke="#6B4A2C" stroke-width=".5"/>
      <ellipse cx="0" cy="-4" rx="4.8" ry="3.7" fill="${coul}" stroke="#6B4A2C" stroke-width=".6"/><path d="M-1.6 -4.2q1.6 1.8 3.4 0" stroke="#6B4A2C" stroke-width=".5" fill="none"/>
      <circle cx="3.7" cy="-7.6" r="2.4" fill="${coul}" stroke="#6B4A2C" stroke-width=".5"/><path d="M2.6 -9.6q.7 -1.6 1.5 -.2q.9 -1.4 1.4 .4z" fill="#E53935"/>
      <path d="M5.9 -7.9l2 .7l-2 .5z" fill="#F2A33A"/><circle cx="4.3" cy="-8" r=".5" fill="#222"/><path d="M-1 -.6v1.5M1.2 -.6v1.5" stroke="#E0902A" stroke-width=".8"/>`)}</g></g></g>`}
-function nid(x,y){return `<g transform="translate(${x} ${y}) scale(1.6)"><ellipse cx="0" cy="0" rx="8" ry="3.4" fill="#D9B85A" stroke="#A8862E" stroke-width=".8"/><path d="M-7 -1l3 1M-2 -2l2 2M3 -2l3 1.6" stroke="#B8962E" stroke-width=".7"/>
+function nid(x,y){if(VIE['vie-oeufs'])return `<g transform="translate(${x} ${y+4})">${vi('vie-oeufs',20)}</g>`;
+  return `<g transform="translate(${x} ${y}) scale(1.6)"><ellipse cx="0" cy="0" rx="8" ry="3.4" fill="#D9B85A" stroke="#A8862E" stroke-width=".8"/><path d="M-7 -1l3 1M-2 -2l2 2M3 -2l3 1.6" stroke="#B8962E" stroke-width=".7"/>
   ${[[-3,-2.4],[2.4,-2.6],[-.2,-3.6]].map(([a,b])=>`<ellipse cx="${a}" cy="${b}" rx="2" ry="2.6" fill="#FFF7E6" stroke="#C9B48A" stroke-width=".5"/>`).join('')}</g>`}
 function cloture(A,B){const n=Math.max(2,Math.round(Math.hypot(B[0]-A[0],B[1]-A[1])/10));let h='';
   for(let k=0;k<=n;k++){const x=A[0]+(B[0]-A[0])*k/n,y=A[1]+(B[1]-A[1])*k/n;h+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y-8}"/>`}
   return `<g stroke="#8D6E4F" stroke-width="1.8" stroke-linecap="round">${h}<line x1="${A[0]}" y1="${A[1]-6}" x2="${B[0]}" y2="${B[1]-6}"/><line x1="${A[0]}" y1="${A[1]-2.5}" x2="${B[0]}" y2="${B[1]-2.5}"/></g>`}
-function buches(x,y,n){const pos=[[-7,0],[0,0],[7,0],[-3.5,-5.6],[3.5,-5.6],[0,-11.2]];let h=`<ellipse cx="${x+3}" cy="${y+3}" rx="13" ry="4" fill="#00000026"/>`;
+// l'enclos le long des deux bords de devant ; l'image monte vers la droite, retournée pour l'autre bord
+function enclos(o){const [x,y]=Q(o,2,2);if(!VIE['vie-enclos'])return cloture(Q(o,2,.45),Q(o,2,2))+cloture(Q(o,.45,2),Q(o,2,2));
+  const w=2*TW,h=w*157/260;
+  return `<image href="img/v3/vie-enclos.webp" x="${x}" y="${y-h+2}" width="${w}" height="${h}"/><g transform="translate(${x} ${y}) scale(-1 1)"><image href="img/v3/vie-enclos.webp" x="0" y="${-h+2}" width="${w}" height="${h}"/></g>`}
+function buches(x,y,n){if(VIE['vie-buches-1']){const k=n<=2?1:n<=4?2:3;return `<g transform="translate(${x} ${y})">${vi('vie-buches-'+k,[0,18,24,30][k])}</g>`}
+  return gros(x,y,1.5,buchesDessin(x,y,n))}
+function buchesDessin(x,y,n){const pos=[[-7,0],[0,0],[7,0],[-3.5,-5.6],[3.5,-5.6],[0,-11.2]];let h=`<ellipse cx="${x+3}" cy="${y+3}" rx="13" ry="4" fill="#00000026"/>`;
   pos.slice(0,n).forEach(([a,b])=>{h+=`<path d="M${x+a} ${y+b-3.4}l9 -4.5v6.8l-9 4.5z" fill="#8A5A34"/><circle cx="${x+a}" cy="${y+b}" r="3.6" fill="#D9A866" stroke="#7A4E2D" stroke-width=".9"/><circle cx="${x+a}" cy="${y+b}" r="1.6" fill="none" stroke="#B5844A" stroke-width=".6"/>`});return h}
-function billot(x,y){return `<ellipse cx="${x}" cy="${y+2}" rx="9" ry="3.5" fill="#00000026"/><path d="M${x-7} ${y-8}v8a7 3 0 0 0 14 0v-8z" fill="#7A4E2D"/><ellipse cx="${x}" cy="${y-8}" rx="7" ry="3" fill="#D9B27C" stroke="#7A4E2D" stroke-width=".8"/>
+function billot(x,y){if(VIE['vie-billot-hache'])return `<g transform="translate(${x} ${y+3})">${vi('vie-billot-hache',22)}</g>`;return gros(x,y,1.5,billotDessin(x,y))}
+function billotDessin(x,y){return `<ellipse cx="${x}" cy="${y+2}" rx="9" ry="3.5" fill="#00000026"/><path d="M${x-7} ${y-8}v8a7 3 0 0 0 14 0v-8z" fill="#7A4E2D"/><ellipse cx="${x}" cy="${y-8}" rx="7" ry="3" fill="#D9B27C" stroke="#7A4E2D" stroke-width=".8"/>
   <path d="M${x+1} ${y-9}l9 -12" stroke="#8D6E4F" stroke-width="2.2" stroke-linecap="round"/><path d="M${x-1} ${y-12}l5 -2l-1 7z" fill="#B0BEC5" stroke="#546E7A" stroke-width=".7"/>`}
 function fumee(x,y){return `<path d="M${x-4} ${y+14}v-13h8v11z" fill="#8D5A3C" stroke="#4E342E" stroke-width=".8"/><rect x="${x-5}" y="${y-1}" width="10" height="3" fill="#6D4C41" stroke="#4E342E" stroke-width=".6"/>`
   +[0,1,2].map(k=>`<circle class="${anime('fume')}" cx="${x}" cy="${y-4}" r="${4+k}" fill="#E4DFD6" stroke="#B9B1A3" stroke-width=".6" opacity="0" style="animation-delay:${k*1.3}s"/>`).join('')}
 function choux(x,y){return [[-6,0],[0,-3],[6,0],[0,3]].map(([a,b],k)=>`<circle cx="${x+a}" cy="${y+b}" r="3.2" fill="${k%2?'#7CB342':'#9CCC65'}" stroke="#558B2F" stroke-width=".7"/>`).join('')}
 function seau(x,y){return `<g class="${anime('balance')}"><ellipse cx="${x}" cy="${y+1}" rx="5" ry="1.8" fill="#00000026"/><path d="M${x-4.5} ${y-8}l1 8h7l1 -8z" fill="#A8743F" stroke="#5D4037" stroke-width=".8"/>
   <path d="M${x-4.7} ${y-5}h9.4M${x-4.2} ${y-2}h8.4" stroke="#5D4037" stroke-width=".7"/><ellipse cx="${x}" cy="${y-8}" rx="4.6" ry="1.6" fill="#4FA3D9" stroke="#5D4037" stroke-width=".8"/><path d="M${x-4.4} ${y-8}q4.4 -7 8.8 0" stroke="#5D4037" stroke-width=".8" fill="none"/></g>`}
-function papillon(x,y,coul,d){return `<g transform="translate(${x} ${y}) scale(1.5)"><g class="${anime('vole')}" style="animation-delay:-${d}s"><g class="${anime('bat')}">
+function papillon(x,y,coul,d){if(VIE['vie-papillon'])return `<g transform="translate(${x} ${y})"><g class="${anime('vole')}" style="animation-delay:-${d}s"><g class="${anime('bat')}">${vi('vie-papillon',12)}</g></g></g>`;
+  return `<g transform="translate(${x} ${y}) scale(1.5)"><g class="${anime('vole')}" style="animation-delay:-${d}s"><g class="${anime('bat')}">
   <ellipse cx="-2.4" cy="0" rx="2.6" ry="3.4" fill="${coul}" stroke="#5D4037" stroke-width=".4"/><ellipse cx="2.4" cy="0" rx="2.6" ry="3.4" fill="${coul}" stroke="#5D4037" stroke-width=".4"/><rect x="-.5" y="-2.6" width="1" height="5.4" fill="#4E342E"/></g></g></g>`}
-function chat(x,y){return `<g transform="translate(${x} ${y}) scale(1.6)">${bete('bete-chat',0,0,18,`<ellipse cx="0" cy="1" rx="9" ry="2.4" fill="#00000030"/><g class="${anime('respire')}">
+function chat(x,y){if(VIE['vie-chat-dort'])return `<g transform="translate(${x} ${y})"><g class="${anime('respire')}">${vi('vie-chat-dort',26)}</g></g>`;
+  return `<g transform="translate(${x} ${y}) scale(1.6)">${(`<ellipse cx="0" cy="1" rx="9" ry="2.4" fill="#00000030"/><g class="${anime('respire')}">
   <ellipse cx="0" cy="-3" rx="8" ry="4.6" fill="#F0A35E" stroke="#8A5A2E" stroke-width=".7"/><path d="M-3 -6.5q2 -1.2 4 0M-1 -7.4q2 -1 4 .2" stroke="#C97A3A" stroke-width=".9" fill="none"/>
   <circle cx="6" cy="-4" r="3.6" fill="#F0A35E" stroke="#8A5A2E" stroke-width=".7"/><path d="M4 -7l.6 -2.8l1.8 2.2M7 -7.2l1.6 -2.4l.8 2.6" fill="#F0A35E" stroke="#8A5A2E" stroke-width=".6"/>
   <path d="M4.6 -4q.8 .6 1.6 0M7.2 -4q.8 .6 1.6 0" stroke="#4E342E" stroke-width=".6" fill="none"/><path d="M-8 -2q-3 3 2 4.4q4 .6 7 -.6" stroke="#E08A44" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>
   <text class="${anime('dort')}" x="9" y="-10" font-size="6" font-weight="700" fill="#5D4E8C" opacity="0">z</text>`)}</g>`}
-function canard(x,y,flip,d){return `<g transform="translate(${x} ${y}) scale(${flip?-1.7:1.7} 1.7)"><g class="${anime('nage')}" style="animation-delay:-${d}s">${bete('bete-canard',0,0,16,
+function canard(x,y,flip,d){if(VIE['vie-canard-1'])return `<g transform="translate(${x} ${y+3}) scale(${flip?-1:1} 1)"><g class="${anime('nage')}" style="animation-delay:-${d}s">${relais('vie-canard-1','vie-canard-2',20,d,6)}</g></g>`;
+  return `<g transform="translate(${x} ${y}) scale(${flip?-1.7:1.7} 1.7)"><g class="${anime('nage')}" style="animation-delay:-${d}s">${(
   `<ellipse cx="0" cy="0" rx="8" ry="2" fill="#FFFFFF" opacity=".35"/><path d="M-6 -3q0 4 6 4q6 0 6 -4q-2 -3 -6 -2.6q-4 0 -6 -2z" fill="#FFFFFF" stroke="#9E9E9E" stroke-width=".6"/>
    <circle cx="4.4" cy="-6.2" r="2.6" fill="#2E7D32" stroke="#1B5E20" stroke-width=".5"/><path d="M6.6 -6.2l2.6 .6l-2.6 .8z" fill="#F2A33A"/><circle cx="5" cy="-6.8" r=".5" fill="#111"/><path d="M2.4 -4.2h3.6" stroke="#FFFFFF" stroke-width=".8"/>`)}</g></g>`}
-function oiseau(x,y,d){return `<g transform="translate(${x} ${y}) scale(1.6)"><g class="${anime('pose-oiseau')}" style="animation-delay:-${d}s">
+function oiseau(x,y,d){if(VIE['vie-oiseau'])return `<g transform="translate(${x} ${y})"><g class="${anime('pose-oiseau')}" style="animation-delay:-${d}s">${vi('vie-oiseau',15)}</g></g>`;
+  return `<g transform="translate(${x} ${y}) scale(1.6)"><g class="${anime('pose-oiseau')}" style="animation-delay:-${d}s">
   <ellipse cx="0" cy=".4" rx="3" ry="1" fill="#00000026"/><ellipse cx="0" cy="-2.6" rx="3.2" ry="2.3" fill="#9C7A54" stroke="#5D4037" stroke-width=".5"/><circle cx="2.6" cy="-4.2" r="1.7" fill="#8A6A48"/>
   <path d="M4.1 -4.3l1.5 .4l-1.5 .4z" fill="#F2A33A"/><path d="M-3 -2.6l-2.2 -1l.6 2z" fill="#7A5A3A"/><circle cx="2.9" cy="-4.6" r=".4" fill="#111"/></g></g>`}
 function vie(o,cx,cy,seul,ok){if(seul)return '';const ep=o.ep||0,p=avancement(o),pr=pret(o,ok);
-  if(o.type==='poulailler'){const coul=['#FFFFFF','#C9874A','#FFFFFF','#8A5A34'];let h=cloture(Q(o,2,.45),Q(o,2,2))+cloture(Q(o,.45,2),Q(o,2,2));
+  if(o.type==='poulailler'){const coul=['#FFFFFF','#C9874A','#FFFFFF','#8A5A34'];let h='';
     if(pr)h+=nid(...Q(o,1.55,1.3));
-    [[1.75,.85],[1.72,1.55],[1.3,1.78],[.85,1.75]].forEach(([a,c],k)=>{const [x,y]=Q(o,a,c);h+=poule(x,y,coul[k],k%2,k)});return h}
-  if(o.type==='bucheron'){const n=pr?6:p<0?1:1+Math.floor(p*4.9);const [bx,by]=Q(o,1.8,.7),[ax,ay]=Q(o,.75,1.82);return gros(bx,by,1.5,buches(bx,by,n))+gros(ax,ay,1.5,billot(ax,ay))}
+    [[1.75,.85],[1.72,1.55],[1.3,1.78],[.85,1.75]].forEach(([a,c],k)=>{const [x,y]=Q(o,a,c);h+=poule(x,y,coul[k],k%2,k)});return h+enclos(o)}
+  if(o.type==='bucheron'){const n=pr?6:p<0?1:1+Math.floor(p*4.9);const [bx,by]=Q(o,1.8,.7),[ax,ay]=Q(o,.75,1.82);return buches(bx,by,n)+billot(ax,ay)}
   if(o.type==='maison'&&ep===0){const [gx,gy]=Q(o,1.82,.8);return gros(gx,gy,1.5,choux(gx,gy))+fumee(cx+18,cy-62)}
   if(o.type==='maison')return fumee(cx+18,cy-66);
   if(o.type==='puits'){const [x,y]=Q(o,.5,.97);return gros(x,y,1.6,seau(x,y))}
@@ -473,7 +496,7 @@ let chienXY=null,chienSens=1;
 function chienSuit(){requestAnimationFrame(chienSuit);const svg=$('.carte svg');if(!svg||document.hidden)return;
   const h=svg.querySelector('[data-h-qui]'),m=h&&/translate\(([-\d.]+),\s*([-\d.]+)\)/.exec(h.getAttribute('transform')||'');
   let c=svg.querySelector('#chien');if(!m){if(c)c.remove();return}
-  if(!c){const voile=svg.querySelector('rect[fill="#1A2A55"]'),s=`<g id="chien" pointer-events="none"><g class="cg">${bete('bete-chien',0,0,16,`<ellipse cx="0" cy=".8" rx="7" ry="1.8" fill="#00000030"/>
+  if(!c){const voile=svg.querySelector('rect[fill="#1A2A55"]'),s=`<g id="chien" pointer-events="none"><g class="cg">${VIE['vie-chien-1']?`<g class="f1">${vi('vie-chien-1',14)}</g><g class="f2">${vi('vie-chien-2',14)}</g>`:(`<ellipse cx="0" cy=".8" rx="7" ry="1.8" fill="#00000030"/>
     <g class="pattes"><path d="M-4 -3v4M-2 -3v4M3 -3v4M5 -3v4" stroke="#6B4A2C" stroke-width="1.4" stroke-linecap="round"/></g><ellipse cx="0" cy="-4.6" rx="6.4" ry="3.4" fill="#C98B4E" stroke="#6B4A2C" stroke-width=".6"/>
     <path d="M-6 -6q-3 -3 -2 -6" stroke="#C98B4E" stroke-width="1.8" fill="none" stroke-linecap="round" class="queue"/><circle cx="6" cy="-8" r="3.2" fill="#C98B4E" stroke="#6B4A2C" stroke-width=".6"/>
     <path d="M4.4 -10.4q-1.6 2.6 .4 4" fill="#8A5A34"/><ellipse cx="9" cy="-7.4" rx="1.6" ry="1.2" fill="#E8C9A0"/><circle cx="9.9" cy="-7.8" r=".7" fill="#222"/><circle cx="6.8" cy="-8.8" r=".5" fill="#222"/>`)}</g></g>`;
@@ -544,7 +567,8 @@ function dessineVillage(){
     [[0,-1,[P(i,j),P(i+1,j)]],[-1,0,[P(i,j),P(i,j+1)]],[1,0,[P(i+1,j),P(i+1,j+1)]],[0,1,[P(i,j+1),P(i+1,j+1)]]].forEach(([di,dj,[A,B]])=>{
       if(possede(i+di,j+dj))return;
       nature.push({o:i+j+(di+dj>0?1.4:-.1),svg:`<g stroke="#8D6E4F" stroke-width="2.4" stroke-linecap="round"><line x1="${A[0]}" y1="${A[1]-9}" x2="${B[0]}" y2="${B[1]-9}"/><line x1="${A[0]}" y1="${A[1]-4}" x2="${B[0]}" y2="${B[1]-4}"/><line x1="${A[0]}" y1="${A[1]}" x2="${A[0]}" y2="${A[1]-12}"/></g>`})})}
-  // un morceau à acheter : une seule grande zone touchable, cerclée de pointillés
+  // un morceau à acheter : une seule grande zone touchable, cerclée de pointillés (rien à acheter chez l'autre)
+  if(MOI)achetables.clear();
   achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number);
     h+=poly(los(a*BLOC,c*BLOC,BLOC),'transparent','#FFF4D6',`data-x="${bk}" stroke-dasharray="6 6" style="fill:rgba(255,244,214,.06)"`)});
   achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);
@@ -576,24 +600,26 @@ function rendu(){
     $('#go').onclick=()=>{const n=$('#nom').value.trim();if(!n){$('#nom').focus();return}ls.set(NOM,n);rendu()};
     return;
   }
-  document.body.classList.toggle('nuit',nuit());
+  document.body.classList.toggle('nuit',nuit());document.body.classList.toggle('visite',!!MOI);
   const vus=['pieces','etoiles',...Object.keys(RES).filter(k=>k!=='pieces'&&k!=='etoiles'&&((S.stock[k]||0)>0||S.b.some(o=>BAT[o.type].produit===k)))];
-  const pills=vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}"><i class="case">${RES[k].e}</i><b>${S.stock[k]||0}</b></span>`).join('');
+  const pills=MOI?`<span class="pill"><i class="case">🏡</i><b>Le village de ${esc(S.nom)}</b></span>`:vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}"><i class="case">${RES[k].e}</i><b>${S.stock[k]||0}</b></span>`).join('');
   /* 25/10, Florian : « que les ressources menus fassent parti de la carte et qu'on accorde plus de place au jeu ».
      La carte prend tout l'écran ; compteurs, menus et messages flottent par-dessus. */
   const mb=(a,e,mot)=>`<button class="mb" data-a="${a}"><span>${e}</span><small>${mot}</small></button>`;
   const soeurMot=SOEUR.etat==='ensemble'?(S.soeur||'Ma sœur')+' ✓':'Ma sœur';
-  const bas=typeVise()?'':mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>Terminé</button>`
+  const bas=MOI?`<button class="big vert fini" data-a="rentrer"><span class="e">🏠</span>Rentrer chez moi</button>`:typeVise()?'':mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>Terminé</button>`
     :mb('construire','🔨','Construire')+mb('frise','⭐','Progrès')+mb('marche','⚖️','Marché')+mb('commandes','📋','Commandes')
      +mb('monument','🏛️','Monument')+mb('fete-saison','🎉','Fête')+mb('soeur','👭',esc(soeurMot))+mb('accueil','🏠','Accueil');
   const SAIS={printemps:['🌸','Printemps'],ete:['🌻','Été'],automne:['🍂','Automne'],hiver:['❄️','Hiver']}[saisonVue()];
-  const aide=mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':'')
+  const fj=MOI&&MOI.fleurDonnee&&MOI.fleurDonnee.jour===jourN();
+  const aide=MOI?(fj?'🌸 Vous avez fleuri un bâtiment aujourd\'hui. Promenez-vous, et revenez demain pour fleurir encore.':'🌸 Touchez un de ses bâtiments pour le fleurir : elle produira plus, et vous gagnerez 3 ⭐. Une fois par jour.')
+    :mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':'')
     :'Touchez ce qui brille pour ramasser. Touchez ▶ pour lancer un travail. Un appui long sur un bâtiment le déplace.';
   $('#app').innerHTML=`
    <div class="carte">${dessineVillage()}</div>
    <div class="haut"><div class="res">${pills}<span class="pill saisonp"><i class="case">${SAIS[0]}</i><b>${SAIS[1]}</b></span></div><button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div>
    <div class="msg" role="status">${message}</div>
-   ${mode?`<div class="aide">${aide}</div>`:''}
+   ${mode||MOI?`<div class="aide">${aide}</div>`:''}
    <div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div>
    <div class="bas">${bas}</div>
    ${typeVise()?`<div class="valide"><button class="big vert" data-a="poser">✔&nbsp; Poser ici</button><button class="big alt" data-a="annuler">✖&nbsp; Annuler</button></div>`:''}
@@ -625,15 +651,20 @@ function feuilleHTML(){
     if(o.type!=='chemin')corps+=`<div class="actions">${(o.ep||0)<epIdx()?`<button class="big" data-a="monter" ${assez(coutMonter(o))?'':'disabled'}>⬆️ Monter d'époque : ${txt(coutMonter(o))}</button>`:''}<button class="big alt" data-a="deplacer">↔️ Déplacer</button></div>`;
     return cadre(`${B.e} ${B.nom}`,corps)}
   if(f.quoi==='soeur'){const L=lien();
-    if(!L)return cadre('👭 Jouer avec ma sœur',`<p class="sous">Un seul village pour vous deux : ce que l'une construit, l'autre le voit. Chacune garde ses réserves et ses cœurs.</p>
+    if(!L)return cadre('👭 Ma sœur',`<p class="sous">Chacune son village. Reliées, vous pouvez visiter le village de l'autre, y fleurir un bâtiment une fois par jour, et voir laquelle avance le plus vite.</p>
       <div class="actions"><button class="big" data-a="soeur-creer"><span class="e">✨</span>Créer notre code</button></div>
       <p style="margin-top:18px"><b>Ou bien, votre sœur vous a donné un code :</b></p>
       <div class="actions" style="align-items:center"><input id="code-soeur" class="champ" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" style="max-width:220px;margin:0;text-transform:uppercase"><button class="big alt" data-a="soeur-rejoindre">Rejoindre</button></div>`);
-    const etat={ensemble:`✅ Vous jouez ensemble${S.soeur?' avec <b>'+esc(S.soeur)+'</b>':''} : tout passe chez l'autre aussitôt.`,
-      attente:'⏳ On attend votre sœur : son jeu doit être ouvert, avec ce même code. Vous pouvez jouer en attendant, tout se rejoindra.',
-      hors:'📴 Pas de connexion pour l\'instant. On continue chacune de son côté : tout se rejoindra à la prochaine connexion.',seul:'⏳ Connexion…'}[SOEUR.etat];
-    return cadre('👭 Jouer avec ma sœur',`<p class="sous">Notre code, à dicter à votre sœur :</p><p style="font-family:var(--f-titre);font-size:64px;letter-spacing:12px;margin:6px 0;text-align:center">${L.code}</p>
-      <p>${etat}</p><div class="actions"><button class="big alt" data-a="soeur-oublier">Oublier ce lien</button></div>`)}
+    const etat={ensemble:`✅ Reliées${S.soeur?' avec <b>'+esc(S.soeur)+'</b>':''} : le tableau est à jour.`,
+      attente:'⏳ On attend votre sœur : son jeu doit être ouvert, avec ce même code.',
+      hors:'📴 Pas de connexion pour l\'instant : le tableau garde ce qu\'on a vu la dernière fois.',seul:'⏳ Connexion…'}[SOEUR.etat];
+    const V=S.voisine,fj=S.fleurDonnee&&S.fleurDonnee.jour===jourN();
+    return cadre('👭 Ma sœur',`${tableauDeux()}
+      <div class="actions">${V?`<button class="big" data-a="visiter"><span class="e">🏡</span>Visiter le village de ${esc(V.nom)}</button>`:''}</div>
+      ${V?`<p class="sous">${fj?'🌸 Vous avez déjà fleuri un bâtiment aujourd\'hui.':'🌸 En visite, touchez un de ses bâtiments pour le fleurir : elle produit plus, vous gagnez 3 ⭐. Une fois par jour.'}</p>`:''}
+      <p>${etat}${V&&SOEUR.etat!=='ensemble'?` <small>(vu le ${new Date(V.maj).toLocaleDateString('fr-FR')} à ${heure(V.maj)})</small>`:''}</p>
+      <p class="sous">Notre code : <b style="font-family:var(--f-titre);font-size:28px;letter-spacing:6px">${L.code}</b></p>
+      <div class="actions"><button class="big alt" data-a="soeur-oublier">Oublier ce lien</button></div>`)}
   if(f.quoi==='frise'){let suivant=true;
     const cases=FRISE.map(c=>{const fait=S.frise.includes(c.id),ouvert=!fait&&suivant;if(!fait)suivant=false;
       const tit=c.epoque?`🎉 Époque ${EPOQUES[c.epoque].nom}`:`${BAT[c.id].e} ${BAT[c.id].nom}`;
@@ -642,6 +673,11 @@ function feuilleHTML(){
     return cadre(`⭐ Le progrès du village · ${EPOQUES[epIdx()].nom}`,`<p class="sous">Les étoiles se gagnent en ramassant et en jouant aux cartes. Les cases s'ouvrent dans l'ordre.</p><div class="grille">${cases}</div>`)}
   return '';
 }
+// le tableau des deux villages, côte à côte ; la plus avancée sur chaque ligne a sa couronne
+function tableauDeux(){const a=resume(),b=S.voisine&&S.voisine.r,ep=r=>Math.max(0,EPOQUES.findIndex(e=>e.id===r.epoque));
+  const L=[['Époque',r=>ep(r),r=>EPOQUES[ep(r)].nom],['🏠 Bâtiments',r=>r.bats],['⭐ Étoiles',r=>r.etoiles],['🏛️ Monument',r=>r.monument,r=>'niveau '+r.monument],['❤️ Cœurs',r=>r.coeurs]];
+  const c=(r,o,f,t)=>{if(!r)return '<span>—</span>';const v=f(r),w=o?f(o):-1;return `<span class="${o&&v>w?'devant':''}">${t?t(r):v}${o&&v>w?' 👑':''}</span>`};
+  return `<div class="tableau"><span class="lib"></span><b>${esc(a.nom)}</b><b>${b?esc(b.nom):'Ma sœur'}</b>${L.map(([n,f,t])=>`<span class="lib">${n}</span>${c(a,b,f,t)}${c(b,a,f,t)}`).join('')}</div>`}
 function feteHTML(){const E=EPOQUES[epIdx()];
   return `<div class="voile" style="align-items:center;background:rgba(255,236,170,.92);z-index:9"><div style="text-align:center;padding:24px;max-width:700px">
     <div style="font-size:90px;line-height:1">🎉</div><h1 style="font-size:46px;margin:12px 0">Bienvenue au ${E.nom} !</h1>
@@ -663,7 +699,7 @@ function lier(){
     message=`Vendu ${n} ${RES[k].e} pour ${n*RES[k].vend} pièces.`;SON.piece();sauve();rendu()});
   document.querySelectorAll('[data-case]').forEach(e=>e.onclick=()=>caseFrise(e.dataset.case));
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
-  document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
+  document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode||VISITE)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
   document.querySelectorAll('[data-c]').forEach(e=>{e.onclick=()=>{premierGeste();appui=null;toucherCase(...e.dataset.c.split(',').map(Number))};
     // pour les chemins, la case visée s'allume sous le doigt avant d'être posée
     if(mode&&mode.chemins)e.addEventListener('pointerdown',()=>{e.style.fill='rgba(255,216,107,.75)'})});
@@ -677,7 +713,7 @@ function lier(){
       if(typeVise()&&e.target.closest('#fantome-boite')){const [fi,fj]=versCase(...versCarte(e.clientX,e.clientY));porte={di:fi-mode.i,dj:fj-mode.j,bouge:false};return}
       const v=svg.viewBox.baseVal;glisse={x:e.clientX,y:e.clientY,vb:[v.x,v.y,v.width,v.height],bouge:false}});}
   document.querySelectorAll('g[data-o],polygon[data-o]').forEach(e=>{
-    e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{appui.long=true;
+    e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{if(VISITE)return;appui.long=true;
       const o=S.b.find(x=>x.id===id);if(BAT[o.type].sorte!=='chemin'){mode={deplace:id,i:o.i,j:o.j};feuille=null;message='';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
     e.addEventListener('pointerup',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('pointerleave',()=>{if(appui)clearTimeout(appui.t)});
@@ -696,6 +732,8 @@ function action(a){
   else if(a==='fini'){mode=null;message=''}
   else if(a==='son'){S.musique=!S.musique;musique(S.musique)}
   else if(a==='soeur')feuille={quoi:'soeur'};
+  else if(a==='visiter'){if(S.voisine){VISITE=true;feuille=null;mode=null;message='';CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=2}}
+  else if(a==='rentrer'){VISITE=false;message='';CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=2}
   // Commandes (habitants.js), Monument et Fête (saisons.js) : leurs boutons vivent dans la colonne cachée, on les touche pour elle
   else if(a==='commandes'||a==='monument'||a==='fete-saison'){
     const cible=document.querySelector(a==='commandes'?'[data-h-a="commandes"]':a==='monument'?'[data-s-ouvre="monument"]':'[data-s-ouvre="fete"]');
@@ -740,6 +778,7 @@ function poser(){const k=typeVise();if(!k)return;const i=mode.i,j=mode.j;
 }
 function apresPose(o){SON.pose();const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t);const [sx,sy]=versEcran(x,y);setTimeout(()=>poussiere(sx,sy-6),320)}
 function toucherObjet(id,ev){
+  if(VISITE){fleurir(id,ev);return}
   const o=S.b.find(x=>x.id===id);if(!o)return;
   if(mode){if(mode.chemins&&o.type==='chemin'){toucherCase(o.i,o.j);return}if(mode.deplace||mode.pose)toucherCase(o.i,o.j);return}
   const ok=relies();
@@ -763,15 +802,18 @@ function caseFrise(id){const c=FRISE.find(x=>x.id===id);if(!c||S.frise.includes(
 function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.maj=Date.now();o.fin=Date.now()+DUREES[n].min*60000;feuille=null;
   message=`${RES[BAT[o.type].produit].e} C'est parti : prêt vers ${heure(o.fin)}.`;SON.lance();sauve();rendu()}
 
-/* ===================== Le village à deux (25/10, Florian : « qu'elles puissent développer leur petit village ensemble ») =====
-   La liaison est celle du rami (PeerJS, sans compte) : on se synchronise quand les deux jeux sont ouverts en même temps.
-   Commun : les bâtiments, les arbres et rochers, les morceaux de terrain, l'époque, la frise, le monument et la fête.
-   À chacune : ses réserves, ses cœurs et ses commandes. La fusion est à trois (la dernière version commune, la mienne,
-   la sienne) : ce que chacune a fait hors connexion se rejoint, rien ne se perd. */
+/* ===================== Deux villages (25/10, Florian : « elles font chacune leur village de leur côté ça fera une petite
+   compétition de celle qui avance le plus vite », puis « deux villages ») =====
+   Chaque tablette garde SON village, entier. La liaison est celle du rami (PeerJS, sans compte) ; reliées, chacune reçoit
+   une copie du village de l'autre pour le visiter en lecture seule, peut fleurir un de ses bâtiments une fois par jour (comme
+   l'aide de Forge of Empires), et le tableau des deux villages les compare. La dernière copie reçue reste gardée hors ligne. */
 const SOEUR={peer:null,conn:null,etat:'seul'};
 const lien=()=>{try{return JSON.parse(ls.get(LIEN)||'null')}catch{return null}};
 const clone=x=>JSON.parse(JSON.stringify(x));
-const partage=()=>({b:S.b,nature:S.nature||[],blocs:S.blocs,ext:S.ext,epoque:S.epoque,frise:S.frise,monument:S.monument||null,saison:S.saison||null});
+// ce que l'autre reçoit : de quoi dessiner mon village, et le résumé du tableau
+const copieVillage=()=>({b:S.b,nature:S.nature||[],blocs:S.blocs,ext:S.ext,epoque:S.epoque,frise:S.frise,monument:S.monument||null,saison:S.saison||null});
+const resume=()=>({nom:S.nom,epoque:S.epoque,bats:S.b.filter(o=>BAT[o.type].sorte!=='chemin').length,etoiles:S.stock.etoiles||0,
+  monument:(S.monument&&S.monument.niveau)||0,coeurs:Object.values((S.habitants&&S.habitants.coeurs)||{}).reduce((a,b)=>a+(+b||0),0)});
 const ID_SOEUR=c=>'villagemamie51-'+c;
 function majSoeur(){if(!glisse&&(!feuille||feuille.quoi==='soeur')&&!mode&&!fete)rendu()}
 function chargerPeer(suite){if(window.Peer)return suite();const sc=document.createElement('script');sc.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
@@ -795,44 +837,25 @@ function brancher(c){SOEUR.conn=c;
   c.on('open',()=>{SOEUR.etat='ensemble';envoyerSoeur();majSoeur()});
   c.on('data',recevoir);
   c.on('close',()=>{if(SOEUR.conn!==c)return;SOEUR.conn=null;SOEUR.etat='attente';majSoeur();const L=lien();if(L&&L.role==='invite')setTimeout(()=>joindre(L.code),4000)})}
-window.envoyerSoeur=function(){const c=SOEUR.conn;if(S&&c&&c.open)try{c.send({t:'etat',p:partage(),nom:S.nom})}catch{}};
-function recevoir(m){if(!m||m.t!=='etat'||!S)return;
-  S.soeur=m.nom;const avant=new Set(S.b.map(o=>o.id));
-  fusion(m.p);
-  const neufs=S.b.filter(o=>!avant.has(o.id)&&o.par&&o.par!==S.nom&&o.type!=='chemin');
-  if(neufs.length)message=`👭 ${esc(m.nom)} a posé : ${neufs.map(o=>BAT[o.type].e+' '+BAT[o.type].nom).join(', ')}.`;
-  sauveIci();if(JSON.stringify(partage())!==JSON.stringify(m.p))envoyerSoeur();majSoeur()}
-// une liste partagée : la version la plus récente gagne ; ce que l'une a retiré (un chemin, un arbre coupé) ne revient pas
-function fusionListe(mienne,sienne,commune){const mien=new Map((mienne||[]).map(o=>[o.id,o])),sien=new Map((sienne||[]).map(o=>[o.id,o])),
-  avant=new Set((commune||[]).map(o=>o.id)),res=[];
-  new Set([...mien.keys(),...sien.keys()]).forEach(id=>{const m=mien.get(id),t=sien.get(id);
-    if(m&&t)res.push((t.maj||0)>(m.maj||0)?clone(t):m);else if(m){if(!avant.has(id))res.push(m)}else if(!avant.has(id))res.push(clone(t))});
-  return res.sort((a,b)=>(a.maj||0)-(b.maj||0))}
-function fusion(T){if(!T)return;const B=S.base||{};
-  // la toute première rencontre : le même bâtiment au même endroit chez les deux (le village de départ) n'en fait qu'un
-  if(!S.base&&T.b){const ici=new Set(S.b.map(o=>o.type+'@'+o.i+','+o.j));T=Object.assign({},T,{b:T.b.filter(o=>!ici.has(o.type+'@'+o.i+','+o.j))})}
-  S.blocs=[...new Set([...S.blocs,...(T.blocs||[])])];S.ext=Math.max(S.ext||0,T.ext||0,S.blocs.length-4);
-  // les bâtiments des deux ; s'ils tombent sur les mêmes cases, le plus récent va sur la case libre la plus proche
-  const bats=fusionListe(S.b,T.b,B.b);S.b=[];S.nature=fusionListe(S.nature,T.nature,B.nature);
-  bats.forEach(o=>{if(libre(o.type,o.i,o.j,o.id)){S.b.push(o);return}
-    let mieux=null;for(let r=1;r<MONDE&&!mieux;r++)for(let di=-r;di<=r&&!mieux;di++)for(let dj=-r;dj<=r&&!mieux;dj++){
-      if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;if(libre(o.type,o.i+di,o.j+dj,o.id))mieux=[o.i+di,o.j+dj]}
-    if(mieux){o.i=mieux[0];o.j=mieux[1];o.maj=Date.now()}S.b.push(o)});
-  // un arbre ou un rocher sous un bâtiment s'efface, deux sur la même case n'en font qu'un
-  const vus=new Set();S.nature=S.nature.filter(n=>{const k=n.i+','+n.j;if(vus.has(k)||occupe(n.i,n.j)||surPlace(n.i,n.j))return false;vus.add(k);return true});
-  // l'époque la plus avancée, la frise des deux
-  const idx=e=>EPOQUES.findIndex(x=>x.id===e);if(idx(T.epoque)>idx(S.epoque))S.epoque=T.epoque;
-  S.frise=[...new Set([...(S.frise||[]),...(T.frise||[])])];
-  // le monument et la fête : chacune verse sa part ; ce qu'elles ont versé chacune de son côté s'additionne
-  const somme=(m,t,b)=>{const r={};new Set([...Object.keys(m||{}),...Object.keys(t||{})]).forEach(k=>{r[k]=Math.max(0,(m&&m[k]||0)+(t&&t[k]||0)-(b&&b[k]||0))});return r};
-  if(T.monument){const m=S.monument;
-    if(!m||T.monument.niveau>m.niveau)S.monument=clone(T.monument);
-    else if(T.monument.niveau===m.niveau){const b0=B.monument&&B.monument.niveau===m.niveau?B.monument.verse:{};m.verse=somme(m.verse,T.monument.verse,b0)}}
-  if(T.saison){const m=S.saison,t=T.saison;
-    if(!m||t.semaine>m.semaine){const d=m&&m.decos;S.saison=clone(t);S.saison.decos=S.saison.decos||{};if(d)Object.keys(d).forEach(k=>S.saison.decos[k]=Math.max(S.saison.decos[k]||0,d[k]||0))}
-    else if(t.semaine===m.semaine){const b0=B.saison&&B.saison.semaine===m.semaine?B.saison.verse:{};m.verse=somme(m.verse,t.verse,b0);m.finie=!!(m.finie||t.finie);
-      m.decos=m.decos||{};Object.keys(t.decos||{}).forEach(k=>m.decos[k]=Math.max(m.decos[k]||0,t.decos[k]||0))}}
-  S.base=clone(partage())}
+window.envoyerSoeur=function(){const c=SOEUR.conn;if(S&&!MOI&&c&&c.open)try{c.send({t:'village',v:copieVillage(),r:resume(),nom:S.nom,fleur:S.fleurDonnee||null})}catch{}};
+function recevoir(m){if(!m||m.t!=='village'||!S||!m.v)return;
+  S.soeur=m.nom;S.voisine={nom:m.nom,v:m.v,r:m.r||null,maj:Date.now()};
+  // sa fleur du jour, posée sur un de mes bâtiments : un bonus de production jusqu'au lendemain
+  const f=m.fleur;if(f&&f.jour>=jourN()-1&&S.fleurRecue!==f.jour){const o=S.b.find(x=>x.id===f.id);S.fleurRecue=f.jour;
+    if(o){S.fleuris=S.fleuris||{};S.fleuris[o.id]=Date.now()+24*3600000;message=`🌸 ${esc(m.nom)} a fleuri votre ${BAT[o.type].nom} : +50 % de production jusqu'à demain.`;
+      try{SON.ramasse()}catch{}}}
+  sauveIci();majSoeur()}
+/* La visite : le village de l'autre se dessine à la place du mien, le temps du rendu (S est échangé puis rendu) ;
+   rien ne s'y pose ni ne s'y ramasse, rien n'est sauvegardé pendant l'échange. */
+function villageVisite(moi){const v=moi.voisine.v,c=clone(moi);
+  return Object.assign(c,{nom:moi.voisine.nom,b:clone(v.b||[]),nature:clone(v.nature||[]),blocs:clone(v.blocs||['4,4']),ext:v.ext||0,epoque:v.epoque||'hameau',
+    frise:clone(v.frise||[]),monument:v.monument?clone(v.monument):c.monument,saison:v.saison?clone(v.saison):c.saison})}
+const fleurie=o=>MOI?!!(MOI.fleurDonnee&&MOI.fleurDonnee.id===o.id&&MOI.fleurDonnee.jour===jourN()):!!(S.fleuris&&S.fleuris[o.id]>Date.now());
+function fleurir(id,ev){const v=S.voisine&&S.voisine.v,o=v&&(v.b||[]).find(x=>x.id===id);if(!o||BAT[o.type].sorte==='chemin')return;
+  if(S.fleurDonnee&&S.fleurDonnee.jour===jourN()){message=S.fleurDonnee.id===id?`🌸 Celui-ci est déjà fleuri aujourd'hui.`:`🌸 Vous avez déjà fleuri un bâtiment aujourd'hui. Revenez demain !`;SON.non();rendu();return}
+  S.fleurDonnee={id,jour:jourN()};S.stock.etoiles=(S.stock.etoiles||0)+3;
+  message=`🌸 ${BAT[o.type].nom} de ${esc(S.voisine.nom)} est fleuri : +3 ⭐ pour vous, et elle produira plus jusqu'à demain.`;
+  sauve();rendu();const sx=ev&&ev.clientX||innerWidth/2,sy=ev&&ev.clientY||innerHeight/2;etincelles(sx,sy);voler(sx,sy,'etoiles',3)}
 
 /* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
 function encaisser(){
@@ -860,20 +883,27 @@ addEventListener('pointerup',()=>{if(porte){const b=porte.bouge;porte=null;if(b)
 // les bulles apparaissent toutes seules quand c'est prêt, et le soir tombe à l'heure de la tablette
 // (et les potagers poussent, les bûches s'empilent)
 let signe='';
-setInterval(()=>{if(!S||feuille||mode||fete||glisse)return;const ok=relies(),s=S.b.map(o=>(pret(o,ok)?1:0)+''+Math.floor(avancement(o)*4)).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
+setInterval(()=>{if(!S||feuille||mode||fete||glisse||VISITE)return;const ok=relies(),s=S.b.map(o=>(pret(o,ok)?1:0)+''+Math.floor(avancement(o)*4)).join('')+nuit();if(s!==signe){signe=s;rendu()}},5000);
 document.addEventListener('visibilitychange',()=>{document.body.classList.toggle('cache',document.hidden);if(!document.hidden&&S){natureVivante();encaisser();rendu()}});
 </script>
 <script src="habitants.js"></script><script src="saisons.js"></script>
+<script>
+/* La visite : le temps d'un rendu, S devient le village de l'autre (les habitants et les saisons dessinent alors le sien), puis
+   mon état revient. Posé après habitants.js et saisons.js pour envelopper leurs couches aussi. */
+(function(){const r1=rendu;rendu=function(){if(!VISITE||!S||!S.voisine||MOI)return r1.apply(this,arguments);
+  MOI=S;S=villageVisite(MOI);try{r1.apply(this,arguments)}finally{S=MOI;MOI=null}}})();
+</script>
 <style id="vallee">
 /* ===== Habit Vallée (25/10, Florian : « un style graphique d'écriture et de visualisation des menus et ressources qui
    corresponde à Vallée ») : bois chaud, parchemin, titres crème cernés de brun, aucune bordure bleue.
    Placé en fin de page pour passer aussi devant les styles que posent habitants.js et saisons.js. ===== */
-@font-face{font-family:"Vallee Titre";src:local("Arial Rounded MT Bold"),local("ArialRoundedMTBold");font-display:swap}
+/* Fredoka (licence OFL, fonts/Fredoka-OFL.txt), servie avec le jeu : titres, boutons, compteurs */
+@font-face{font-family:"Fredoka";src:url('fonts/Fredoka.ttf') format('truetype');font-weight:300 700;font-display:swap}
 :root{--gold:#B98048;--gold-deep:#4A2A12;--gold-ink:#FFF4D6;--paper:#F6E5BC;--line:#8A5A2E;--ink:#3E2410;--ink-dim:#6B4A2C;
   --bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
   --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
   --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);
-  --f-titre:"Vallee Titre","Arial Rounded MT Bold","Trebuchet MS",var(--f-body)}
+  --f-titre:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",var(--f-body)}
 html body *{-webkit-tap-highlight-color:transparent}
 html body *:focus{outline:none}
 html body *:focus-visible{outline:none;box-shadow:0 0 0 4px #FFD86B,0 0 14px #FFD86B}
@@ -982,8 +1012,21 @@ html body .aide.gonfle{animation:gonfle .45s}
 @keyframes oiseau{0%{transform:translate(-40px,-70px);opacity:0}6%{opacity:1}10%{transform:none}30%{transform:translate(3px,0)}32%{transform:translate(3px,-3px)}34%,60%{transform:translate(6px,0)}
   62%{transform:translate(6px,-3px)}64%,84%{transform:translate(9px,0)}94%{transform:translate(50px,-80px);opacity:1}95%,100%{transform:translate(50px,-80px);opacity:0}}
 #chien .cg.court .pattes{animation:pattes .22s steps(2) infinite}
+.alt-a{animation:altA 3s steps(1) infinite}.alt-b{animation:altB 3s steps(1) infinite}
+@keyframes altA{0%{opacity:1}55%{opacity:0}}
+@keyframes altB{0%{opacity:0}55%{opacity:1}}
+#chien .f2{opacity:0}
+#chien .court .f1{animation:altA .36s steps(1) infinite}#chien .court .f2{animation:altB .36s steps(1) infinite}
 @keyframes pattes{to{transform:translateX(1px)}}
 body.cache .carte *{animation-play-state:paused!important}
+/* deux villages : en visite, ni mes habitants ni mon chien ; le tableau côte à côte */
+body.visite #h-couche,body.visite #chien{display:none}
+html body .tableau{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 14px;align-items:center;background:var(--bois);border:4px solid #4A2A12;border-radius:12px;
+  padding:12px 16px;margin:6px 0 12px;color:#FFF4D6;font-size:19px;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),0 3px 0 #3A2010}
+html body .tableau b{font-family:var(--f-titre);font-size:22px;text-align:center;-webkit-text-stroke:4px #3A2010;paint-order:stroke fill}
+html body .tableau span{text-align:center;font-weight:700;background:rgba(255,244,214,.16);border-radius:8px;padding:4px 6px}
+html body .tableau .lib{text-align:left;background:none}
+html body .tableau .devant{background:#F6D36B;color:#4A2A12}
 @media (prefers-reduced-motion:reduce){.picore,.trotte,.ondule,.balance,.vole,.bat,.nage,.pose-oiseau,.respire{animation:none}}
 </style>
 </body>
