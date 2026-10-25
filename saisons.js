@@ -41,7 +41,7 @@ try{(function(){
     const ancienne=saisonDe(S.saison.semaine);
     Object.assign(S.saison,nouvelleFete(w));
     const Sa=saisonDe(w);
-    try{message=`${Sa.e} Voici ${Sa.nom} ! Une nouvelle fête se prépare au village.`+(rendu_.length?` Ce que vous aviez donné pour la fête ${deLa(ancienne)} est revenu dans vos réserves : ${rendu_.join(', ')}.`:'')}catch{}
+    try{message=`${Sa.e} Voici ${Sa.nom} !`+(epN()>=1?' Une nouvelle fête se prépare au village.':'')+(rendu_.length?` Ce que vous aviez donné pour la fête ${deLa(ancienne)} est revenu dans vos réserves : ${rendu_.join(', ')}.`:'')}catch{}
     return true;
   }
 

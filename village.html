@@ -104,7 +104,7 @@ const BAT={
  bucheron:{nom:'Cabane du bûcheron',e:'🪓',sorte:'atelier',t:2,cout:{pieces:70},produit:'bois',mur:'#B07A4A',toit:'#6B4A2E',aide:'Du bois pour construire.'},
  poulailler:{nom:'Poulailler',e:'🐔',sorte:'atelier',t:2,cout:{pieces:90,bois:10},produit:'oeufs',mur:'#F2E3C4',toit:'#B5523A',aide:'Des œufs, qui se vendent bien.'},
  puits:{nom:'Puits',e:'🪣',sorte:'deco',t:1,cout:{pieces:80,bois:15},bonus:.2,aide:'Les bâtiments tout autour produisent 20 % de plus.'},
- massif:{nom:'Massif de fleurs',e:'🌷',sorte:'deco',t:1,cout:{pieces:30,legumes:5},bonus:.1,aide:'Les bâtiments tout autour produisent 10 % de plus.'},
+ massif:{nom:'Massif de fleurs',e:'🌷',sorte:'deco',t:1,cout:{pieces:30,legumes:3},bonus:.1,aide:'Les bâtiments tout autour produisent 10 % de plus.'},
  chemin:{nom:'Chemin',e:'🟫',sorte:'chemin',t:1,cout:{pieces:2},aide:'Relie les bâtiments à la place du village.'},
  arbre:{nom:'Jeune arbre',e:'🌱',sorte:'nature',t:1,cout:{pieces:5},aide:'Une jeune pousse, qui devient un arbre à couper en 3 heures.'},
  // époque Village
@@ -162,13 +162,10 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 function neuf(nom){
   const t=Date.now(), b=[];
   const pose=(type,i,j,extra)=>b.push(Object.assign({id:uid(),type,i,j},extra||{}));
-  pose('maison',16,18,{depuis:t-75*60000});
-  pose('potager',22,18,{fin:t-1000,duree:0});           // une première récolte prête : la première visite a déjà de quoi ramasser
-  pose('massif',21,21);
-  [[18,18],[18,19],[21,18],[21,19]].forEach(([i,j])=>pose('chemin',i,j));
+  // rien encore que la place et la forêt : Marcel guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
   return {v:3,monde:40,nom,blocs:['4,4','4,5','5,4','5,5'],ext:0,b,
-    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[]};
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{}},boutons:[]};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
@@ -275,6 +272,7 @@ function toucherNature(id,ev){if(VISITE)return;const n=(S.nature||[]).find(x=>x.
   const st=stade(n),sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2,t=Date.now();let gains=[];
   const enleve=()=>{S.nature=S.nature.filter(x=>x!==n)};
   if(st==='pousse'){message=`🌱 Cette jeune pousse sera un arbre vers ${heure(n.depuis+POUSSE_H*3600000)}.`;rendu();return}
+  filSignal(st==='arbre'?'couper':st==='rocher'||st==='butte'?'miner':'');
   if(st==='arbre'){n.t='souche';n.depuis=t;n.maj=t;gains=[['bois',5],['etoiles',1]];SON.coupe();message='🪓 Arbre coupé : +5 🪵. La souche partira toute seule.'}
   else if(st==='souche'){enleve();message='La souche est enlevée : la case est libre.'}
   else if(st==='rocher'){n.n=(n.n||1)-1;n.maj=t;gains=[['pierre',2]];SON.tac();
@@ -592,7 +590,7 @@ function dessineVillage(){
 
 /* ===================== Écran ===================== */
 function rendu(){
-  if(!S&&ls.get(NOM)){S=neuf(ls.get(NOM));natureVivante();message='Bienvenue au village ! Touchez la bulle qui brille.';sauve();encaisser()}
+  if(!S&&ls.get(NOM)){S=neuf(ls.get(NOM));natureVivante();garantirNature();message='';sauve();encaisser();debutFil()}
   if(!S){
     $('#app').innerHTML=`<div class="debut"><div class="boite"><h1>Le village</h1>
       <label for="nom">Votre prénom</label><input id="nom" class="champ" maxlength="16" autocomplete="off">
@@ -605,19 +603,21 @@ function rendu(){
   const pills=MOI?`<span class="pill"><i class="case">🏡</i><b>Le village de ${esc(S.nom)}</b></span>`:vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}"><i class="case">${RES[k].e}</i><b>${S.stock[k]||0}</b></span>`).join('');
   /* 25/10, Florian : « que les ressources menus fassent parti de la carte et qu'on accorde plus de place au jeu ».
      La carte prend tout l'écran ; compteurs, menus et messages flottent par-dessus. */
-  const mb=(a,e,mot)=>`<button class="mb" data-a="${a}"><span>${e}</span><small>${mot}</small></button>`;
+  const mb=(a,e,mot)=>`<button class="mb${brillent.has(a)?' neuf':''}" data-a="${a}"><span>${e}</span><small>${mot}</small></button>`;
   const soeurMot=SOEUR.etat==='ensemble'?(S.soeur||'Ma sœur')+' ✓':'Ma sœur';
   const bas=MOI?`<button class="big vert fini" data-a="rentrer"><span class="e">🏠</span>Rentrer chez moi</button>`:typeVise()?'':mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>Terminé</button>`
-    :mb('construire','🔨','Construire')+mb('frise','⭐','Progrès')+mb('marche','⚖️','Marché')+mb('commandes','📋','Commandes')
-     +mb('monument','🏛️','Monument')+mb('fete-saison','🎉','Fête')+mb('soeur','👭',esc(soeurMot))+mb('accueil','🏠','Accueil');
+    :[['construire','🔨','Construire'],['frise','⭐','Progrès'],['commandes','📋','Commandes'],['monument','🏛️','Monument'],['fete-saison','🎉','Fête'],['soeur','👭',esc(soeurMot)],['accueil','🏠','Accueil']]
+      .filter(([a])=>a==='fete-saison'?feteOuverte():aBouton(a)).map(x=>mb(...x)).join('');
   const SAIS={printemps:['🌸','Printemps'],ete:['🌻','Été'],automne:['🍂','Automne'],hiver:['❄️','Hiver']}[saisonVue()];
   const fj=MOI&&MOI.fleurDonnee&&MOI.fleurDonnee.jour===jourN();
   const aide=MOI?(fj?'🌸 Vous avez fleuri un bâtiment aujourd\'hui. Promenez-vous, et revenez demain pour fleurir encore.':'🌸 Touchez un de ses bâtiments pour le fleurir : elle produira plus, et vous gagnerez 3 ⭐. Une fois par jour.')
     :mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':'')
-    :'Touchez ce qui brille pour ramasser. Touchez ▶ pour lancer un travail. Un appui long sur un bâtiment le déplace.';
+    :'';
+  const q=!MOI&&S.fil?ici():null;
   $('#app').innerHTML=`
    <div class="carte">${dessineVillage()}</div>
    <div class="haut"><div class="res">${pills}<span class="pill saisonp"><i class="case">${SAIS[0]}</i><b>${SAIS[1]}</b></span></div><button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div>
+   ${q?`<button class="pancarte" data-a="guide" aria-label="La tâche en cours : toucher pour voir où agir"><span class="pq">📜</span><span>${q.court}</span></button>`:''}
    <div class="msg" role="status">${message}</div>
    ${mode||MOI?`<div class="aide">${aide}</div>`:''}
    <div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div>
@@ -627,16 +627,16 @@ function rendu(){
   // le message s'efface tout seul au bout de quelques secondes ; il reste à lire tant qu'on ne touche rien d'autre
   clearTimeout(window.__msgT);if(message){const m=message;window.__msgT=setTimeout(()=>{if(message===m){message='';const e=$('.msg');if(e)e.textContent=''}},6000)}
   dernierPose=null;lier();
+  document.body.classList.toggle('a-monu',aBouton('monument'));
+  if(brillent.size){const b=[...brillent];setTimeout(()=>b.forEach(a=>brillent.delete(a)),3500)}
+  if(S.fil&&!MOI&&!SCENE)setTimeout(()=>{avancerFil();annoncerFete()},40);
   if(typeVise())majFantome();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
 function feuilleHTML(){
   const f=feuille;
-  if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).filter(([k])=>debloque(k)).map(([k,B])=>
-    `<button class="choix" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
-  if(f.quoi==='marche'){const l=Object.keys(RES).filter(k=>RES[k].vend&&S.stock[k]>0);
-    return cadre('⚖️ Le marché',l.length?l.map(k=>`<div class="vente"><span class="nom">${RES[k].e} ${RES[k].nom} : <b>${S.stock[k]}</b></span><button data-vend="${k}" data-n="1">Vendre 1 · ${RES[k].vend} 🪙</button><button data-vend="${k}" data-n="${S.stock[k]}">Tout · ${RES[k].vend*S.stock[k]} 🪙</button></div>`).join('')
-      :'<p class="sous">Rien à vendre pour l\'instant.</p>')}
+  if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).filter(([k])=>debloque(k)&&montre(k)).map(([k,B])=>
+    `<button class="choix${S.fil&&ici()&&(ici().cible==='bat:'+k||(ici().id==='deco'&&k==='puits'))?' guide':''}" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
   if(f.quoi==='extension'){const prix=PRIX_EXT(S.ext);
     return cadre('🌳 Agrandir le village',`<p class="sous">Un morceau de terrain de 4 × 4 cases de plus.</p><div class="actions"><button class="big" data-a="acheter" ${S.stock.pieces>=prix?'':'disabled'}>Agrandir pour ${prix} 🪙</button></div>`)}
   if(f.quoi==='bat'){const o=S.b.find(x=>x.id===f.id);if(!o)return '';const B=BAT[o.type],ok=relies();let corps=`<p class="sous">${B.aide}</p>`;
@@ -695,8 +695,6 @@ function lier(){
   document.querySelectorAll('[data-a]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();premierGeste();action(e.dataset.a)}));
   document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;message='';
     if(k==='chemin')mode={chemins:true};else{const [i,j]=viserPres(k);mode={pose:k,i,j}}rendu()});
-  document.querySelectorAll('[data-vend]').forEach(e=>e.onclick=()=>{const k=e.dataset.vend,n=Math.min(+e.dataset.n,S.stock[k]);S.stock[k]-=n;S.stock.pieces+=n*RES[k].vend;
-    message=`Vendu ${n} ${RES[k].e} pour ${n*RES[k].vend} pièces.`;SON.piece();sauve();rendu()});
   document.querySelectorAll('[data-case]').forEach(e=>e.onclick=()=>caseFrise(e.dataset.case));
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
   document.querySelectorAll('[data-x]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();premierGeste();if(mode||VISITE)return;feuille={quoi:'extension',bloc:e.dataset.x};rendu()});
@@ -723,7 +721,7 @@ function lier(){
 function action(a){
   if(a==='fermer')feuille=null;
   else if(a==='construire')feuille={quoi:'magasin'};
-  else if(a==='marche')feuille={quoi:'marche'};
+  else if(a==='guide'){montrerOu();return}
   else if(a==='frise')feuille={quoi:'frise'};
   else if(a==='fete-ok'){fete=false;message=EPOQUES[epIdx()].phrase}
   else if(a==='monter'){const o=S.b.find(x=>x.id===feuille.id),c=o&&coutMonter(o);if(o&&(o.ep||0)<epIdx()&&assez(c)){retire(c);o.ep=(o.ep||0)+1;o.maj=Date.now();dernierPose=o.id;feuille=null;
@@ -770,7 +768,7 @@ function poser(){const k=typeVise();if(!k)return;const i=mode.i,j=mode.j;
       retire(BAT[k].cout);const t=Date.now();S.nature=S.nature||[];S.nature.push({id:uid(),i,j,t:'pousse',depuis:t,maj:t,par:S.nom});mode=null;
       message=`🌱 Planté ! Ce sera un arbre vers ${heure(t+POUSSE_H*3600000)}.`;SON.pose();sauve();rendu();return}
     if(!assez(BAT[k].cout)){message='Il manque de quoi le construire.';mode=null;rendu();return}
-    retire(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx(),maj:Date.now(),par:S.nom};if(BAT[k].sorte==='maison')o.depuis=Date.now();S.b.push(o);
+    retire(BAT[k].cout);const o={id:uid(),type:k,i,j,ep:epIdx(),maj:Date.now(),par:S.nom};if(BAT[k].sorte==='maison')o.depuis=Date.now()-(ici()&&ici().id==='maison'?3600000:0);S.b.push(o);
     dernierPose=o.id;mode=null;message=`${BAT[k].e} ${BAT[k].nom} : c'est posé !`+(BAT[k].sorte==='deco'?'':' Reliez-le à la place par un chemin.');
     sauve();rendu();apresPose(o);return}
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
@@ -788,6 +786,7 @@ function toucherObjet(id,ev){
 }
 function ramasser(o,ev){
   const B=BAT[o.type],sx=ev.clientX||innerWidth/2,sy=ev.clientY||innerHeight/2;let gains=[];
+  filSignal(B.sorte==='maison'?'pieces':o.type==='potager'?'recolte':'');
   if(B.sorte==='maison'){const g=gainMaison(o);S.stock.pieces+=g;S.stock.etoiles+=1;o.depuis=Date.now();gains=[['pieces',g],['etoiles',1]]}
   else{const d=DUREES[o.duree||0],q=Math.ceil(d.q*mult(o)*(1+bonus(o)));S.stock[B.produit]=(S.stock[B.produit]||0)+q;S.stock.etoiles+=d.et;o.fin=null;o.duree=null;gains=[[B.produit,q],['etoiles',d.et]]}
   o.maj=Date.now();
@@ -797,9 +796,9 @@ function ramasser(o,ev){
 function caseFrise(id){const c=FRISE.find(x=>x.id===id);if(!c||S.frise.includes(id)||!assez(c.cout))return;
   const avant=FRISE.slice(0,FRISE.indexOf(c));if(!avant.every(x=>S.frise.includes(x.id)))return;
   retire(c.cout);S.frise.push(id);
-  if(c.epoque){S.epoque=EPOQUES[c.epoque].id;feuille=null;fete=true;sauve();rendu();confettis();return}
+  if(c.epoque){S.epoque=EPOQUES[c.epoque].id;feuille=null;sauve();rendu();confettis();scenesEpoque(c.epoque);return}
   message=`${BAT[id].e} ${BAT[id].nom} est débloqué : il vous attend dans Construire.`;SON.lance();sauve();rendu()}
-function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.maj=Date.now();o.fin=Date.now()+DUREES[n].min*60000;feuille=null;
+function lancer(id,n){const o=S.b.find(x=>x.id===id);if(!o)return;o.duree=n;o.maj=Date.now();o.fin=Date.now()+(ici()&&ici().id==='lancer'?60000:DUREES[n].min*60000);feuille=null;filSignal('lancer');
   message=`${RES[BAT[o.type].produit].e} C'est parti : prêt vers ${heure(o.fin)}.`;SON.lance();sauve();rendu()}
 
 /* ===================== Deux villages (25/10, Florian : « elles font chacune leur village de leur côté ça fera une petite
@@ -857,13 +856,166 @@ function fleurir(id,ev){const v=S.voisine&&S.voisine.v,o=v&&(v.b||[]).find(x=>x.
   message=`🌸 ${BAT[o.type].nom} de ${esc(S.voisine.nom)} est fleuri : +3 ⭐ pour vous, et elle produira plus jusqu'à demain.`;
   sauve();rendu();const sx=ev&&ev.clientX||innerWidth/2,sy=ev&&ev.clientY||innerHeight/2;etincelles(sx,sy);voler(sx,sy,'etoiles',3)}
 
+/* ===================== Le fil (25/10, Florian : « trop d'onglets […] les commandes sont présentées trop tôt et l'absence
+   d'évolution narrative ou logique fait qu'on s'y perd ») =====
+   Comme au début de Forge of Empires : un guide, une seule tâche à la fois, rappelée sur une pancarte en haut à gauche.
+   Une tâche finie donne sa récompense, puis la suivante arrive. Les boutons arrivent quand ils servent, chacun présenté
+   par une courte scène. État : S.fil = {n, evts, vu}, S.boutons = les boutons mérités. */
+const NOMS={marcel:'Marcel',lucie:'Lucie',chloe:'Chloé',hugo:'Hugo',pierre:'Pierre'};
+const compte=k=>S.b.filter(o=>o.type===k).length;
+// une tâche « construire » dont le bâtiment est d'une autre époque se débloque d'abord dans Progrès
+const batir=(k,qui,dit)=>({id:k,qui,court:BAT[k].nom,dit,fait:()=>compte(k)>=1,cible:'bat:'+k});
+const FIL=[
+ {id:'maison',qui:'marcel',court:'Construire une maison',dit:'Commençons par une maison. Touchez « Construire », puis « Maison de bois », et posez-la où vous voulez.',
+  fait:()=>compte('maison')>=1,cible:'bat:maison',ouvre:['maison'],gain:{pieces:50,etoiles:1},bravo:'Une jolie maison ! Quelqu\'un va pouvoir y vivre.'},
+ {id:'chemin',qui:'marcel',court:'Relier la maison à la place',dit:'Une maison doit être reliée à la place du village. Posez des chemins de la maison jusqu\'à la place.',
+  fait:()=>{const ok=relies();return S.b.some(o=>o.type==='maison'&&estRelie(o,ok))},cible:'bat:chemin',ouvre:['chemin'],gain:{pieces:20,etoiles:1},bravo:'Voilà, on peut aller de chez vous à la place.'},
+ {id:'pieces',qui:'marcel',court:'Ramasser les pièces',dit:'La maison donne des pièces chaque heure. La première fois, elles sont déjà là : touchez la pièce qui brille au-dessus.',
+  evt:'pieces',cible:'obj:maison',gain:{pieces:30,etoiles:1},bravo:'Les pièces servent à construire. Les maisons en redonnent toutes seules.'},
+ {id:'potager',qui:'marcel',court:'Construire un potager',dit:'Plantons un potager, pour avoir des légumes.',
+  fait:()=>compte('potager')>=1,cible:'bat:potager',ouvre:['potager'],gain:{pieces:20,etoiles:1},bravo:'Un beau carré de terre bien noire.'},
+ {id:'lancer',qui:'marcel',court:'Lancer une récolte',dit:'Touchez le potager, puis « Petit ». La toute première récolte pousse en une minute.',
+  evt:'lancer',cible:'obj:potager',gain:{etoiles:1},bravo:'Les graines sont semées. Regardez-les pousser !'},
+ {id:'recolte',qui:'marcel',court:'Ramasser les légumes',dit:'Quand les légumes sont mûrs, une bulle brille au-dessus du potager : touchez-la.',
+  evt:'recolte',cible:'obj:potager',gain:{pieces:40,etoiles:1},bravo:'De bons légumes ! Ils serviront à construire et à faire plaisir.'},
+ {id:'couper',qui:'marcel',court:'Couper un arbre',dit:'Il nous faut du bois. Touchez un grand arbre pour le couper.',
+  evt:'couper',cible:'nat:arbre',ouvre:['arbre'],gain:{pieces:20,etoiles:1},bravo:'Du bon bois ! La souche partira toute seule. Vous pouvez aussi planter de jeunes arbres.'},
+ {id:'miner',qui:'marcel',court:'Miner un rocher',dit:'Et de la pierre ! Touchez un rocher pour le miner, ou une butte pour la creuser.',
+  evt:'miner',cible:'nat:rocher',gain:{pieces:20,etoiles:1},bravo:'La pierre servira plus tard, pour les beaux bâtiments.'},
+ {id:'bucheron',qui:'marcel',court:'Construire le bûcheron',dit:'Construisez la cabane du bûcheron : elle donnera du bois sans couper toute la forêt.',
+  fait:()=>compte('bucheron')>=1,cible:'bat:bucheron',ouvre:['bucheron'],gain:{pieces:40,etoiles:2},bravo:'Le bûcheron est là. N\'oubliez pas de le relier à la place, et de lancer son travail.'},
+ {id:'poulailler',qui:'marcel',court:'Construire le poulailler',dit:'Un poulailler, et vous aurez des œufs !',
+  fait:()=>compte('poulailler')>=1,cible:'bat:poulailler',ouvre:['poulailler'],gain:{pieces:60,etoiles:2},bravo:'Écoutez-les caqueter !'},
+ {id:'terrain',qui:'marcel',court:'Agrandir le terrain',dit:'Le hameau est à l\'étroit. Touchez un « + » au bord du terrain pour l\'agrandir.',
+  fait:()=>(S.ext||0)>=1,cible:'plus',gain:{pieces:60,etoiles:2},bravo:'Que de place ! Le hameau respire.'},
+ {id:'deco',qui:'marcel',court:'Poser un puits ou des fleurs',dit:'Une décoration fait produire plus les bâtiments tout autour. Posez un puits ou un massif de fleurs, près de vos bâtiments.',
+  fait:()=>compte('puits')+compte('massif')>=1,cible:'bat:massif',ouvre:['puits','massif'],gain:{pieces:50,etoiles:2},bravo:'C\'est beau, et c\'est utile.'},
+ {id:'etoiles',qui:'marcel',court:'Réunir 15 ⭐',dit:'Le hameau grandit ! Réunissez 15 étoiles : chaque récolte et chaque tâche en donne. Avec 15 étoiles, il pourra devenir un village.',
+  fait:()=>(S.stock.etoiles||0)>=15||epIdx()>=1,cible:'pill:etoiles',gain:{pieces:120},bravo:'15 étoiles ! Le hameau est prêt à devenir un village.',bouton:'frise'},
+ {id:'ep-village',qui:'marcel',court:'Devenir un village',dit:'Touchez « Progrès », puis « Époque Village ». Une famille attend pour s\'installer !',
+  fait:()=>epIdx()>=1,cible:'btn:frise'},
+ // le Village : Chloé et Hugo
+ {id:'commande',qui:'hugo',court:'Donner une commande',dit:'Ouvrez « Commandes » et donnez ce qu\'on vous demande. Chaque commande rapporte des étoiles et un cœur.',
+  evt:'commande',cible:'btn:commandes',gain:{pieces:60},bravo:'Merci ! Les voisins vont adorer.'},
+ batir('boulangerie','hugo','Mon rêve : une boulangerie ! Débloquez-la dans « Progrès », puis construisez-la.'),
+ batir('fleuriste','chloe','Et ma boutique de fleurs ? Débloquez-la dans « Progrès », puis construisez-la.'),
+ batir('verger','chloe','Un verger, pour des pommes et des poires ! Débloquez-le dans « Progrès », puis construisez-le.'),
+ batir('moulin','hugo','Pour le pain, il faut de la farine : un moulin ! Débloquez-le dans « Progrès », puis construisez-le.'),
+ {id:'ep-bourg',qui:'hugo',court:'Devenir un bourg',dit:'Pierre, le bricoleur, voudrait ouvrir son atelier ici. Passez à l\'époque Bourg dans « Progrès » !',fait:()=>epIdx()>=2,cible:'btn:frise'},
+ // le Bourg : Pierre et le monument
+ {id:'monument',qui:'pierre',court:'Le monument au niveau 1',dit:'Ouvrez « Monument » et donnez ce qu\'il faut pour le premier niveau.',fait:()=>S.monument&&S.monument.niveau>=1,cible:'btn:monument',gain:{pieces:100},bravo:'Le premier étage tient debout !'},
+ batir('atelier','pierre','Mon atelier ! Débloquez-le dans « Progrès », puis construisez-le.'),
+ batir('marche','pierre','Un marché couvert donne beaucoup de pièces. Débloquez-le dans « Progrès », puis construisez-le.'),
+ batir('fontaine','pierre','Une fontaine, pour la place ! Débloquez-la dans « Progrès », puis construisez-la.'),
+ {id:'ep-ville',qui:'chloe',court:'La fête de la mairie',dit:'On veut fêter une mairie ! Passez à l\'époque Ville fleurie dans « Progrès ».',fait:()=>epIdx()>=3,cible:'btn:frise'},
+ batir('mairie','chloe','Voici le moment : construisez la mairie ! Débloquez-la dans « Progrès ».'),
+ batir('kiosque','chloe','Un kiosque à musique pour les bals du dimanche ! Débloquez-le dans « Progrès ».'),
+ batir('serre','chloe','Une serre, pour des fleurs toute l\'année. Débloquez-la dans « Progrès ».')];
+FIL.forEach(q=>{if(!q.gain)q.gain={pieces:80,etoiles:3};if(!q.bravo)q.bravo='Bravo ! Le village est de plus en plus beau.'});
+const ici=()=>S.fil&&FIL[S.fil.n]||null;
+// les bâtiments du Hameau se montrent dans Construire à mesure que le fil les présente
+const OUVRE_FIL=k=>FIL.findIndex(q=>(q.ouvre||[]).includes(k));
+const montre=k=>{const B=BAT[k];if(B.ep>0)return S.frise.includes(k);const i=OUVRE_FIL(k);return i<0||!S.fil||i<=S.fil.n||compte(k)>0};
+const BASE=['construire','soeur','accueil'];
+const aBouton=a=>BASE.includes(a)||(S.boutons||[]).includes(a);
+let brillent=new Set();
+function donnerBouton(a){S.boutons=S.boutons||[];if(!S.boutons.includes(a)){S.boutons.push(a);brillent.add(a)}}
+window.filSignal=function(e){if(!S||!S.fil||MOI)return;const q=ici();if(q&&q.evt===e){S.fil.evts[e]=1;setTimeout(avancerFil,700)}};
+function debutFil(){S.fil.vu.intro=1;scene('marcel',[`Bienvenue, ${esc(S.nom)} ! Je suis Marcel, le doyen du hameau.`,
+  'Ici, il n\'y a encore que la place et un peu de forêt. Ensemble, on va en faire un vrai village.',
+  'Je vous donnerai une chose à faire à la fois. Elle reste écrite sur la pancarte, en haut à gauche : touchez-la pour voir où agir.'],annoncer)}
+function nouveauFil(){return {n:0,evts:{},vu:{}}}
+// une sauvegarde d'avant le fil reprend à la bonne tâche : ce qui est déjà fait ne se redemande pas
+function reprendreFil(){const f=nouveauFil();
+  while(f.n<FIL.length){const q=FIL[f.n];if(q.evt?true:q.fait())f.n++;else break}
+  f.vu={intro:1};S.fil=f;S.boutons=S.boutons||[];
+  const fini=id=>FIL.findIndex(q=>q.id===id)<f.n;
+  if(fini('etoiles')||epIdx()>=1||(S.frise||[]).length)S.boutons.push('frise');
+  if(epIdx()>=1){S.boutons.push('commandes');f.vu.village=1;f.vu.commandes=1}
+  if(epIdx()>=2){S.boutons.push('monument');f.vu.bourg=1;f.vu.monument=1}
+  if(epIdx()>=3)f.vu.ville=1}
+// un arbre et un rocher sur le terrain du départ, pour les tâches 7 et 8
+function garantirNature(){semerNature();const mien=n=>possede(n.i,n.j);
+  if(!S.nature.some(n=>n.t==='arbre'&&mien(n)))S.nature.push({id:uid(),i:17,j:22,t:'arbre',n:1,depuis:Date.now()-POUSSE_H*3600000,maj:Date.now()});
+  if(!S.nature.some(n=>(n.t==='rocher'||n.t==='butte')&&mien(n)))S.nature.push({id:uid(),i:22,j:22,t:'rocher',n:1,depuis:Date.now(),maj:Date.now()});
+  S.nature=S.nature.filter((n,k,l)=>l.findIndex(x=>x.i===n.i&&x.j===n.j)===k)}
+
+/* Les scènes : quelques bulles d'un habitant, l'une après l'autre ; à la dernière, « D'accord ». */
+const SCENES=[];let SCENE=null;
+function scene(qui,l,fin){SCENES.push({qui,l,k:0,fin});if(!SCENE)sceneSuivante()}
+function sceneSuivante(){SCENE=SCENES.shift()||null;montrerScene()}
+function montrerScene(){let el=document.getElementById('guide');
+  if(!SCENE){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='guide';el.className='voile';document.body.appendChild(el)}
+  const s=SCENE,der=s.k>=s.l.length-1,p=window.HAB_PORTRAIT?HAB_PORTRAIT(s.qui,96):'';
+  el.innerHTML=`<div class="feuille guide"><div class="h-tete"><div class="h-portrait">${p}</div><h2>${NOMS[s.qui]||''}</h2></div>
+    <div class="h-bulle">${s.l[s.k]}</div>${s.l.length>1?`<p class="h-note" style="text-align:right">${s.k+1} / ${s.l.length}</p>`:''}
+    <div class="actions"><button class="big" data-g="suite"><span class="e">${der?'👍':'▶'}</span>${der?'D\'accord !':'La suite'}</button></div></div>`;
+  el.querySelector('[data-g]').onclick=ev=>{ev.stopPropagation();premierGeste();
+    if(!der){s.k++;try{sonParleG()}catch{}montrerScene();return}
+    const f=s.fin;sceneSuivante();if(f)f();sauve();rendu()}}
+function sonParleG(){note(660,0,.08,'triangle',.05);note(880,.07,.09,'triangle',.05)}
+const txtGain=g=>Object.entries(g||{}).map(([k,v])=>v+' '+RES[k].e).join(' et ');
+// la tâche suivante : la phrase du guide, en scène
+function annoncer(){const q=ici();if(!q){scene('marcel',['Vous avez fait grandir un hameau jusqu\'à une ville fleurie. Je suis fier de vous !','Continuez à votre rythme : le village est à vous.']);return}
+  if(q.evt?S.fil.evts[q.evt]:q.fait())return;scene(q.qui,[q.dit])}
+function avancerFil(){if(!S||!S.fil||MOI||VISITE||SCENE)return;const q=ici();if(!q)return;
+  if(!(q.evt?S.fil.evts[q.evt]:q.fait()))return;
+  Object.entries(q.gain||{}).forEach(([k,v])=>S.stock[k]=(S.stock[k]||0)+v);
+  S.fil.n++;const g=txtGain(q.gain);
+  try{confettis()}catch{}
+  scene(q.qui,[q.bravo+(g?` En récompense : ${g}.`:'')],()=>{if(q.bouton)presenterBouton(q.bouton);else if(!enAttente())annoncer()});
+  sauve();rendu()}
+// une montée d'époque ou une présentation en cours : la tâche suivante attend la fin des scènes
+const enAttente=()=>SCENES.length>0;
+const PRESENTE={
+ frise:['marcel',['Voici un nouveau bouton : « Progrès ».','C\'est là qu\'on fait grandir le village : une nouvelle époque, puis de nouveaux bâtiments, en échange d\'étoiles et de pièces.','Les étoiles se gagnent en ramassant, en finissant les tâches et en jouant aux cartes.']],
+ commandes:['hugo',['Bonjour ! Moi, c\'est Hugo, le boulanger.','Les voisins ont parfois besoin de choses : des légumes, des œufs… Tout est dans le nouveau bouton « Commandes ».','Chaque commande donnée rapporte des étoiles, et un cœur de la personne qui l\'a demandée. Rien ne presse, elles attendent.']],
+ monument:['pierre',['Le village mérite un beau monument, sur la place.','Avec le bouton « Monument », on y apporte des légumes, du bois, des œufs et de la pierre, petit à petit.','Une jauge montre ce qu\'il manque pour l\'étage suivant. Chaque étage fait produire tout le village 5 % de plus, pour toujours.']]};
+function presenterBouton(a){const p=PRESENTE[a];if(!p){donnerBouton(a);annoncer();return}
+  S.fil.vu[a]=1;scene(p[0],p[1],()=>{donnerBouton(a);annoncer()})}
+// chaque époque s'ouvre sur une courte scène qui dit ce qui change
+function scenesEpoque(e){
+  if(e===1){S.fil.vu.village=1;scene('chloe',['Bonjour ! Je suis Chloé, et voici Hugo, mon frère.','Toute la famille s\'installe ici : le hameau devient un village !','Les toits se font de chaume, et de nouveaux bâtiments vous attendent dans « Progrès ».'],()=>presenterBouton('commandes'))}
+  else if(e===2){S.fil.vu.bourg=1;scene('pierre',['Bonjour, moi c\'est Pierre, le bricoleur.','J\'ouvre mon atelier ici : le village devient un bourg, avec des pavés et une vraie place.'],()=>presenterBouton('monument'))}
+  else if(e===3){S.fil.vu.ville=1;scene('chloe',['Quelle fête pour la mairie !','Le bourg est devenu une ville fleurie. On dirait une carte postale.'],annoncer)}}
+/* La fête de la saison, à partir du Village : Chloé l'annonce quelques jours avant la fin de la semaine (jeudi), avec la
+   liste de ce qu'il faut réunir et la récompense. Le bouton « Fête » reste jusqu'à dimanche. */
+const DECO_SAISON={printemps:'un cerisier en fleurs',ete:'des tournesols',automne:'des citrouilles',hiver:'un bonhomme de neige'};
+const feteOuverte=()=>S.saison&&epIdx()>=1&&S.fil&&S.fil.fete===S.saison.semaine;
+function annoncerFete(){if(!S.saison||epIdx()<1||!S.fil||S.fil.fete===S.saison.semaine||SCENE||feuille||mode)return;
+  const d=new Date().getDay();if(!(d===0||d>=4))return;
+  S.fil.fete=S.saison.semaine;const sa=window.SAISONS_VILLAGE?SAISONS_VILLAGE.saison():'';
+  const liste=Object.entries(S.saison.commande||{}).filter(([k])=>RES[k]).map(([k,v])=>v+' '+RES[k].e).join(', ');
+  scene('chloe',['La saison se termine dimanche : faisons une fête !',`Il faut réunir : ${liste}. Chacune donne quand elle veut, avec le nouveau bouton « Fête ».`,
+    `Si on y arrive, le village gagne ${DECO_SAISON[sa]||'une décoration de saison'} sur la place, et vous 10 ⭐.`],()=>{brillent.add('fete-saison')});sauve()}
+// la pancarte : un toucher montre où agir
+function cibleEl(q){const c=q.cible||'',[t,k]=c.split(':');
+  if(t==='btn')return aBouton(k)?$(`.mb[data-a="${k}"]`):null;
+  if(t==='pill')return $(`.pill[data-res="${k}"]`);
+  if(t==='bat'){if(BAT[k].ep>0&&!S.frise.includes(k))return $('.mb[data-a="frise"]');
+    return feuille&&feuille.quoi==='magasin'?$(`[data-pose="${k}"]`):$('.mb[data-a="construire"]')}
+  return null}
+function cibleCarte(q){const c=q.cible||'',[t,k]=c.split(':');
+  if(t==='obj'){const o=S.b.find(x=>x.type===k);return o&&{i:o.i+BAT[k].t/2,j:o.j+BAT[k].t/2,sel:`g[data-o="${o.id}"]`}}
+  if(t==='nat'){const n=(S.nature||[]).find(x=>possede(x.i,x.j)&&(k==='arbre'?stade(x)==='arbre':['rocher','butte'].includes(x.t)));return n&&{i:n.i+.5,j:n.j+.5,sel:`g[data-n="${n.id}"]`}}
+  if(t==='plus'){const g=$('g[data-x]');if(!g)return null;const [a,c2]=g.dataset.x.split(',').map(Number);return {i:a*BLOC+2,j:c2*BLOC+2,sel:`g[data-x="${g.dataset.x}"]`}}
+  if(t==='bat'&&k==='chemin'&&compte('chemin')===0&&!mode)return null;
+  return null}
+function montrerOu(){const q=ici();if(!q)return;premierGeste();
+  const m=cibleCarte(q);if(m){CAM.i=m.i;CAM.j=m.j;if(CAM.z<1.6)CAM.z=2;rendu();halo($(m.sel));return}
+  halo(cibleEl(q))}
+function halo(el){document.querySelectorAll('.halo').forEach(x=>x.remove());if(!el)return;const r=el.getBoundingClientRect();
+  const h=document.createElement('div');h.className='halo';h.style.cssText=`left:${r.left-10}px;top:${r.top-10}px;width:${r.width+20}px;height:${r.height+20}px`;
+  h.innerHTML='<span>👇</span>';document.body.appendChild(h);setTimeout(()=>h.remove(),4200)}
+
 /* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
 function encaisser(){
   let c=0;try{c=+(localStorage.getItem('village:caisse')||0)}catch{}
   if(c>0&&S){S.stock.pieces+=c;S.stock.etoiles+=Math.ceil(c/10);try{localStorage.setItem('village:caisse','0')}catch{}
     message=`🃏 Vos parties de cartes ont rapporté ${c} pièces et ${Math.ceil(c/10)} ⭐ !`;sauve()}
 }
-if(S){natureVivante();encaisser()}
+if(S){natureVivante();encaisser();if(!S.fil){reprendreFil();sauve()}}
 rendu();
 if(S&&lien())lancerLien();
 document.addEventListener('pointerdown',premierGeste,{once:true});
@@ -1019,6 +1171,22 @@ html body .aide.gonfle{animation:gonfle .45s}
 #chien .court .f1{animation:altA .36s steps(1) infinite}#chien .court .f2{animation:altB .36s steps(1) infinite}
 @keyframes pattes{to{transform:translateX(1px)}}
 body.cache .carte *{animation-play-state:paused!important}
+/* le fil : la pancarte de la tâche, les scènes du guide, le halo qui montre où agir, le bouton neuf qui brille */
+html body .pancarte{position:absolute;z-index:3;left:8px;top:calc(62px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;max-width:min(46vw,380px);
+  background:var(--bois);border:3px solid #4A2A12;border-radius:10px;padding:6px 14px 6px 6px;color:#FFF4D6;font-family:var(--f-titre);font-size:19px;font-weight:600;text-align:left;
+  box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 #3A2010;cursor:pointer;line-height:1.15;text-shadow:0 1px 0 #3A2010}
+html body .pancarte .pq{flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#F6E5BC;border:3px solid #4A2A12;border-radius:6px}
+html body .pancarte:active{transform:translateY(2px)}
+#guide{z-index:8}
+html body #guide .feuille.guide{max-width:640px}
+.halo{position:fixed;z-index:12;pointer-events:none;border:5px solid #FFD86B;border-radius:18px;box-shadow:0 0 0 4px rgba(74,42,18,.6),0 0 24px #FFD86B;animation:halo 1s ease-in-out infinite}
+.halo span{position:absolute;left:50%;top:-46px;transform:translateX(-50%);font-size:38px;animation:fleche .8s ease-in-out infinite alternate}
+@keyframes halo{50%{transform:scale(1.06);opacity:.75}}
+@keyframes fleche{to{top:-34px}}
+html body .mb.neuf{animation:neuf 1.1s ease-in-out 3}
+@keyframes neuf{50%{transform:scale(1.18);filter:brightness(1.35) drop-shadow(0 0 12px #FFD86B)}}
+html body .choix.guide{outline:5px solid #FFD86B;outline-offset:2px;animation:halo 1s ease-in-out infinite}
+body:not(.a-monu) [data-s-ouvre="monument"]{display:none}
 /* deux villages : en visite, ni mes habitants ni mon chien ; le tableau côte à côte */
 body.visite #h-couche,body.visite #chien{display:none}
 html body .tableau{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 14px;align-items:center;background:var(--bois);border:4px solid #4A2A12;border-radius:12px;

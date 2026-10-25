@@ -102,6 +102,7 @@ function perso(H){
   return H.taille?`<g transform="scale(${H.taille})">${s}</g>`:s;
 }
 const portrait=(H,px)=>`<svg viewBox="-16 -48 32 50" width="${px}" height="${Math.round(px*50/32)}" aria-hidden="true">${perso(H)}</svg>`;
+window.HAB_PORTRAIT=(id,px)=>{const H=hab(id);return H?portrait(H,px):''};   // pour les scènes du guide (village.html)
 
 /* ===================== La marche sur les chemins ===================== */
 const VITESSE=.65;                   // cases par seconde : un pas tranquille
@@ -213,7 +214,7 @@ function poserBon(k){
   const B=BAT[bon.type];
   Object.entries(B.cout).forEach(([r,v])=>S.stock[r]=(S.stock[r]||0)+v);
   h.pose={k,type:bon.type,avant:S.b.filter(o=>o.type===bon.type).length,cout:B.cout};
-  fermer();feuille=null;mode={pose:bon.type};message=`🎁 C'est un cadeau : touchez une case claire pour poser ${B.nom}.`;sauve();rendu();
+  fermer();feuille=null;{const [i,j]=viserPres(bon.type);mode={pose:bon.type,i,j}}message=`🎁 C'est un cadeau : glissez ${B.nom} où vous voulez, puis « Poser ici ».`;sauve();rendu();
 }
 function finPose(){
   const h=E();if(!h.pose||mode)return;
@@ -305,7 +306,7 @@ function agir(a,el){
     if(r.vol)voler(r.sx,r.sy,r.vol[0],r.vol[1]);return}
   if(a==='donner'){const c=h.commandes.find(x=>x.id===el.dataset.hId);if(!c||(S.stock[c.res]||0)<c.n)return;
     const [sx,sy]=(()=>{const r=el.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})();
-    S.stock[c.res]-=c.n;S.stock.etoiles=(S.stock.etoiles||0)+c.et;gagnerCoeur(c.qui,1);
+    S.stock[c.res]-=c.n;S.stock.etoiles=(S.stock.etoiles||0)+c.et;gagnerCoeur(c.qui,1);try{window.filSignal&&filSignal('commande')}catch{}
     h.commandes=h.commandes.filter(x=>x!==c);remplirCommandes();sauve();
     const H=hab(c.qui);message=`📋 ${H.nom} vous remercie : ${c.et} ⭐ et un cœur !`;
     SON.ramasse();ouvrir(vue);rendu();etincelles(sx,sy);coeursVolent(sx,sy);voler(sx,sy,'etoiles',c.et);
@@ -331,8 +332,6 @@ function arrivees(){
   if(fete||feuille)return;
   const h=E(),neufs=presents().filter(H=>!h.arrives.includes(H.id));if(!neufs.length)return;
   neufs.forEach(H=>h.arrives.push(H.id));
-  if(h.arrives.length>neufs.length){message=`🎉 ${neufs.map(H=>H.nom).join(' et ')} ${neufs.length>1?'s\'installent':'s\'installe'} au village ! Touchez-${neufs.length>1?'les':'le'} pour dire bonjour.`;
-    const m=document.querySelector('.msg');if(m)m.textContent=message}
   remplirCommandes();sauve();
 }
 
