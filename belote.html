@@ -547,7 +547,11 @@ function layout(v){
 }
 const arrived=new Set(), parted=new Set();
 /* Le chemin d'une carte entre le pli et une place (pour les deux glissements). */
-function vecteur(pos){ const a=innerWidth*0.32, b=innerHeight*0.32; return {bas:[0,b],haut:[0,-b],gauche:[-a,0],droite:[a,0]}[pos]; }
+let lastL=null;
+function vecteur(pos){
+  if(pos==='bas'||!lastL) return pos==='bas'?[0,Math.round(innerHeight-lastL?.cy-lastL?.Wp)||innerHeight*0.32]:[0,0];
+  const [x,y]=lastL.seat[pos]; return [Math.round(x-innerWidth/2),Math.round(y-lastL.cy)];
+}
 function helpText(v,info){
   const me=v.you, P=v.players, who=k=>esc(P[k].name);
   if(v.phase==='bid'){
@@ -580,7 +584,7 @@ function renderGame(pan){
   const playing=v.phase==='play'&&myTurn&&v.trick.length<v.n;
   const info=v.phase==='play'?legalInfo(hand,v.trick,v.trump,v.n,me):{ok:[],why:null};
   const okSet=new Set(playing?info.ok:[]);
-  const L=layout(v), W=L.W, step=L.step, Wp=L.Wp, vh=innerHeight;
+  const L=lastL=layout(v), W=L.W, step=L.step, Wp=L.Wp, vh=innerHeight;
   const win=v.phase==='play'&&v.trick.length===v.n?trickWinner(v.trick,v.trump).seat:null;
   const away=role==='host'?new Set(P.map((p,k)=>!p.bot&&p.cid!==cid&&!(conns.get(p.cid)?.open)?k:-1)):new Set();
   // les autres joueurs : leur prénom et leur main, retournée, au bord du tapis
