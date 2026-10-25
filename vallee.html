@@ -153,7 +153,7 @@ const FRISE=[
  {id:'mairie',cout:{etoiles:50,pieces:800}},{id:'kiosque',cout:{etoiles:40,pieces:600}},{id:'serre',cout:{etoiles:40,pieces:600}}];
 const epIdx=()=>Math.max(0,EPOQUES.findIndex(e=>e.id===S.epoque));
 const debloque=k=>BAT[k].ep===0||S.frise.includes(k);
-const mult=o=>(1+.5*(o.ep||0))*(BAT[o.type].mult||1)*(1+(window.BONUS_MONUMENT||0))*(S.fleuris&&S.fleuris[o.id]>Date.now()?1.5:1);   // la fleur de la sœur : +50 %   // le monument (saisons.js) : +5 % par niveau
+const mult=o=>(1+.5*(o.ep||0))*(BAT[o.type].mult||1)*(1+(window.BONUS_MONUMENT||0)+bonusCoffre())*(S.fleuris&&S.fleuris[o.id]>Date.now()?1.5:1);   // la fleur de la sœur : +50 %   // le monument (saisons.js) : +5 % par niveau
 const coutMonter=o=>({pieces:60*((o.ep||0)+1)*BAT[o.type].t*BAT[o.type].t});
 /* Images d'époque : img/v3/<type>-<époque>.webp si elle existe ; sinon une image plus ancienne ; sinon le dessin. */
 const IMGS={}, ANCIENNES={maison:'maison-1',boulangerie:'boulangerie',fleuriste:'fleuriste',atelier:'garage',mairie:'mairie'};
@@ -183,7 +183,7 @@ function neuf(nom){
   // rien encore que la place et la forêt : Pierre guide la première maison (le fil)
   b.forEach(o=>{o.maj=t;o.par=nom});
   return {v:3,monde:40,nom,blocs:DEPART(),ext:0,b,
-    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1,v3:1,v4:1},boutons:[],terre:[],graines:{},v4:{marche:0,boutique:false,labour:false}};
+    stock:{pieces:150,etoiles:0,legumes:0,bois:10,oeufs:0},musique:true,epoque:'hameau',frise:[],fil:{n:0,evts:{},vu:{},v2:1,v3:1,v4:1,v5:1},boutons:[],terre:[],graines:{},v4:{marche:0,boutique:false,labour:false}};
 }
 let S=null;
 try{S=JSON.parse(ls.get(CLE))}catch{}
@@ -708,7 +708,7 @@ function rendu(){
   dernierPose=null;lier();
   document.body.classList.toggle('a-monu',aBouton('monument'));
   if(brillent.size){const b=[...brillent];setTimeout(()=>b.forEach(a=>brillent.delete(a)),3500)}
-  if(S.fil&&!MOI&&!SCENE)setTimeout(()=>{avancerFil();annoncerFete();if(S.v4){faner();motChamps();preavis();motEco();distribuerLettres()}},40);
+  if(S.fil&&!MOI&&!SCENE)setTimeout(()=>{avancerFil();annoncerFete();if(S.v4){faner();motChamps();preavis();motEco();majCoffre();distribuerLettres()}},40);
   if(typeVise())majFantome();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
@@ -717,6 +717,7 @@ function feuilleHTML(){
   if(f.quoi==='boutique')return boutiqueHTML();
   if(f.quoi==='semer')return semerHTML();
   if(f.quoi==='bocal')return bocalHTML();
+  if(f.quoi==='coffre')return coffreHTML();
   if(f.quoi==='magasin')return cadre('🔨 Construire',`<p class="sous">Touchez un bâtiment, puis une case du village.</p><div class="grille">${Object.entries(BAT).filter(([k])=>debloque(k)&&montre(k)).map(([k,B])=>
     k==='chemin'?SORTES_CHEMIN.map(([so,nom,e])=>`<button class="choix" data-pose="chemin" data-sorte="${so}" ${assez(B.cout)?'':'disabled'}><span class="e">${e}</span>Chemin : ${nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join(''):
     `<button class="choix${S.fil&&ici()&&(ici().cible==='bat:'+k||(ici().id==='deco'&&k==='puits'))?' guide':''}" data-pose="${k}" ${assez(B.cout)?'':'disabled'}><span class="e">${B.e}</span>${B.nom}<small>${B.aide}<br>${txt(B.cout)}</small></button>`).join('')}</div>`);
@@ -759,7 +760,7 @@ function feuilleHTML(){
 }
 // le tableau des deux villages, côte à côte ; la plus avancée sur chaque ligne a sa couronne
 function tableauDeux(){const a=resume(),b=S.voisine&&S.voisine.r,ep=r=>Math.max(0,EPOQUES.findIndex(e=>e.id===r.epoque));
-  const L=[['Époque',r=>ep(r),r=>EPOQUES[ep(r)].nom],['🏠 Bâtiments',r=>r.bats],['⭐ Étoiles',r=>r.etoiles],['🏛️ Monument',r=>r.monument,r=>'niveau '+r.monument],['❤️ Cœurs',r=>r.coeurs]];
+  const L=[['Époque',r=>ep(r),r=>EPOQUES[ep(r)].nom],['🏠 Bâtiments',r=>r.bats],['⭐ Étoiles',r=>r.etoiles],['🎁 Coffre',r=>r.coffre||0,r=>(r.coffre||0)+' lot'+((r.coffre||0)>1?'s':'')],['🏛️ Monument',r=>r.monument,r=>'niveau '+r.monument],['❤️ Cœurs',r=>r.coeurs]];
   const c=(r,o,f,t)=>{if(!r)return '<span>—</span>';const v=f(r),w=o?f(o):-1;return `<span class="${o&&v>w?'devant':''}">${t?t(r):v}${o&&v>w?' 👑':''}</span>`};
   return `<div class="tableau"><span class="lib"></span><b>${esc(a.nom)}</b><b>${b?esc(b.nom):'Ma sœur'}</b>${L.map(([n,f,t])=>`<span class="lib">${n}</span>${c(a,b,f,t)}${c(b,a,f,t)}`).join('')}</div>`}
 function feteHTML(){const E=EPOQUES[epIdx()];
@@ -785,6 +786,7 @@ function lier(){
   document.querySelectorAll('[data-graine]').forEach(e=>e.onclick=ev=>{const k=e.dataset.graine,n=+e.dataset.n,c=prixGraine(k)*n;if(S.stock.pieces<c)return;
     S.stock.pieces-=c;S.graines[k]=(S.graines[k]||0)+n;message=`🌱 ${n} graine${n>1?'s':''} de ${CULTURES[k].nom.toLowerCase()} : touchez un champ pour planter.`;SON.piece();sauve();rendu()});
   document.querySelectorAll('[data-outil]').forEach(e=>e.onclick=()=>acheterOutil(e.dataset.outil));
+  document.querySelectorAll('[data-don]').forEach(e=>e.onclick=ev=>donner(...e.dataset.don.split(':'),ev));
   document.querySelectorAll('[data-bocal]').forEach(e=>e.onclick=()=>remplirBocal(e.dataset.bocal));
   document.querySelectorAll('[data-couleur]').forEach(e=>e.onclick=()=>{const o=feuille&&S.b.find(x=>x.id===feuille.id);if(!o)return;o.c=+e.dataset.couleur||0;o.maj=Date.now();SON.tac();sauve();rendu()});
   document.querySelectorAll('[data-lance]').forEach(e=>e.onclick=()=>lancer(feuille.id,+e.dataset.lance));
@@ -882,6 +884,7 @@ function toucherObjet(id,ev){
   if(o.type==='caisse'){vendre(ev);return}
   if(o.type==='etal'){feuille={quoi:'boutique'};SON.lance();rendu();return}
   if(o.type==='bocal'){toucherBocal(o,ev);return}
+  if(o.type==='coffre'){feuille={quoi:'coffre'};SON.lance();rendu();return}
   if(o.type==='arroseur'){message='💦 L\'arroseur arrose tout seul les huit cases qui l\'entourent.';rendu();return}
   feuille={quoi:'bat',id};rendu();
 }
@@ -913,7 +916,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 // ce que l'autre reçoit : de quoi dessiner mon village, et le résumé du tableau
 const copieVillage=()=>({b:S.b,terre:S.terre||[],nature:S.nature||[],blocs:S.blocs,ext:S.ext,epoque:S.epoque,frise:S.frise,monument:S.monument||null,saison:S.saison||null});
 const resume=()=>({nom:S.nom,epoque:S.epoque,bats:S.b.filter(o=>BAT[o.type].sorte!=='chemin').length,etoiles:S.stock.etoiles||0,
-  monument:(S.monument&&S.monument.niveau)||0,coeurs:Object.values((S.habitants&&S.habitants.coeurs)||{}).reduce((a,b)=>a+(+b||0),0)});
+  monument:(S.monument&&S.monument.niveau)||0,coffre:S.coffre?lotsFaits():0,coeurs:Object.values((S.habitants&&S.habitants.coeurs)||{}).reduce((a,b)=>a+(+b||0),0)});
 const ID_SOEUR=c=>'villagemamie51-'+c;
 function majSoeur(){if(!glisse&&(!feuille||feuille.quoi==='soeur')&&!mode&&!fete)rendu()}
 function chargerPeer(suite){if(window.Peer)return suite();const sc=document.createElement('script');sc.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
@@ -1006,13 +1009,15 @@ const FIL=[
  // le Village : Chloé et Hugo
  {id:'commande',qui:'hugo',court:'Donner une commande',dit:'Ouvrez « Commandes » et donnez ce qu\'on vous demande. Chaque commande rapporte des étoiles et un cœur.',
   evt:'commande',cible:'btn:commandes',gain:{pieces:60},bravo:'Merci ! Les voisins vont adorer.'},
+ {id:'coffre',qui:'chloe',court:'Un lot du coffre',dit:'Regardez, près de la place : le coffre de la Vallée ! Il demande des lots de produits. Pour chaque lot, on choisit 3 produits parmi 5. Touchez-le pour voir.',
+  fait:()=>lotsFaits()>=1,cible:'obj:coffre',gain:{pieces:80,etoiles:3},bravo:'Le premier lot est rempli ! Quand les deux lots d\'une salle le sont, tout le village produit plus, et une surprise arrive par le courrier.'},
  batir('boulangerie','hugo','Mon rêve : une boulangerie ! Débloquez-la dans « Progrès », puis construisez-la.'),
  batir('fleuriste','chloe','Et ma boutique de fleurs ? Débloquez-la dans « Progrès », puis construisez-la.'),
  batir('verger','chloe','Un verger, pour des pommes et des poires ! Débloquez-le dans « Progrès », puis construisez-le.'),
  batir('moulin','hugo','Pour le pain, il faut de la farine : un moulin ! Débloquez-le dans « Progrès », puis construisez-le.'),
  {id:'ep-bourg',qui:'hugo',court:'Devenir un bourg',dit:'Pierre voudrait ouvrir son atelier de mécano. Passez à l\'époque Bourg dans « Progrès » !',fait:()=>epIdx()>=2,cible:'btn:frise'},
  // le Bourg : Pierre et le monument
- {id:'monument',qui:'pierre',court:'Le monument au niveau 1',dit:'Ouvrez « Monument » et donnez ce qu\'il faut pour le premier niveau.',fait:()=>S.monument&&S.monument.niveau>=1,cible:'btn:monument',gain:{pieces:100},bravo:'Le premier étage tient debout !'},
+ {id:'monument',qui:'pierre',court:'Une salle du coffre',dit:'Remplissez les deux lots d\'une salle du coffre de la Vallée : tout le village produira 5 % de plus, pour toujours.',fait:()=>sallesFaites()>=1||!!(S.monument&&S.monument.niveau>=1),cible:'obj:coffre',gain:{pieces:100},bravo:'Une salle pleine ! La vallée saura vous remercier.'},   // V4 : le coffre remplace le monument
  batir('atelier','pierre','Mon atelier ! Débloquez-le dans « Progrès », puis construisez-le.'),
  batir('marche','pierre','Un marché couvert donne beaucoup de pièces. Débloquez-le dans « Progrès », puis construisez-le.'),
  batir('fontaine','pierre','Une fontaine, pour la place ! Débloquez-la dans « Progrès », puis construisez-la.'),
@@ -1088,7 +1093,7 @@ function presenterBouton(a){const p=PRESENTE[a];if(!p){donnerBouton(a);annoncer(
 // chaque époque s'ouvre sur une courte scène qui dit ce qui change
 function scenesEpoque(e){
   if(e===1){S.fil.vu.village=1;scene('chloe',['Le hameau devient un village ! Les toits se font de chaume.','Hugo et moi, on va enfin pouvoir ouvrir nos boutiques : sa boulangerie et mes fleurs. Elles vous attendent dans « Progrès ».'],()=>presenterBouton('commandes'))}
-  else if(e===2){S.fil.vu.bourg=1;scene('pierre',['Le village devient un bourg, avec des pavés et une vraie place.','Et moi, j\'ouvre enfin mon atelier de mécano !'],()=>presenterBouton('monument'))}
+  else if(e===2){S.fil.vu.bourg=1;scene('pierre',['Le village devient un bourg, avec des pavés et une vraie place.','Et moi, j\'ouvre enfin mon atelier de mécano !'],annoncer)}   // V4 : plus de bouton Monument, le coffre le remplace
   else if(e===3){S.fil.vu.ville=1;scene('chloe',['Quelle fête pour la mairie !','Le bourg est devenu une ville fleurie. On dirait une carte postale.'],annoncer)}}
 /* La fête de la saison, à partir du Village : Chloé l'annonce quelques jours avant la fin de la semaine (jeudi), avec la
    liste de ce qu'il faut réunir et la récompense. Le bouton « Fête » reste jusqu'à dimanche. */
@@ -1447,7 +1452,7 @@ function monteeSF(n){message=`🌾 Savoir-faire : niveau ${n} ! Les belles réco
   if(n>=4&&!S.v4.lBocal){S.v4.lBocal=1;lettre('pierre',[`Chère ${esc(S.nom)},`,'Avec votre savoir-faire, vous pouvez faire des confitures ! Un bocal transforme un fruit (fraise, melon ou mûres) en confiture, qui vaut deux fois plus, et même un peu mieux.','Les bocaux sont dans « Construire ».','Pierre'])}
   sauve()}
 /* Les lettres : elles arrivent comme une scène, sous une enveloppe ; S.v4.lettres garde celles qui attendent leur jour */
-function lettre(qui,l,jour){S.v4.lettres=S.v4.lettres||[];S.v4.lettres.push({qui,l,j:jour||0});sauve()}
+function lettre(qui,l,jour,don){S.v4.lettres=S.v4.lettres||[];S.v4.lettres.push({qui,l,j:jour||0,don:don||null});sauve()}
 function distribuerLettres(){const L=S.v4&&S.v4.lettres;if(!L||!L.length||SCENE||feuille||mode)return;
   const k=L.findIndex(x=>(x.j||0)<=jourN());if(k<0)return;const x=L.splice(k,1)[0];sauve();
   if(x.don)Object.entries(x.don).forEach(([r,v])=>S.stock[r]=(S.stock[r]||0)+v);
@@ -1506,6 +1511,75 @@ function acheterOutil(k){const o=OUTILS[k];if(!o||aOutil(k)||S.stock.pieces<o.pr
 function savoirHTML(){if(!qualOuverte())return '';const n=niveauSF(),x=S.v4.xp||0,bas=n?NIVEAUX[n-1]:0,haut=NIVEAUX[n];
   return `<p class="sous">🌾 Votre savoir-faire : <b>niveau ${n}</b>${haut?` · ${Math.floor(x)} / ${haut}`:''}. Belle récolte : ${Math.round((.01+.019*n)*100)} % de chances si c'est arrosé.</p>${haut?`<div class="jauge-sf"><i style="width:${Math.round(100*(x-bas)/(haut-bas))}%"></i></div>`:''}`}
 
+/* ===================== V4, étape 4 : le coffre de la Vallée (CONCEPTION-V4, section 2 ; le centre communautaire du vrai jeu) =====
+   Il remplace les dons du monument. Un grand coffre près de la place, posé à sa marche du fil. Il a trois salles de deux lots ;
+   chaque lot propose 5 produits et il en faut 3, au choix, pour ne jamais rester bloquée (dans chaque lot, trois produits au moins
+   se trouvent en toute saison). Une salle remplie fait produire tout le village 5 % de plus, pour toujours, et sa récompense
+   arrive le lendemain par le courrier. Chacune remplit le coffre de son village ; le tableau des deux villages compare les lots.
+   S.coffre = {dons:{lot:{produit:1}}, salles:{salle:1}, vu}. */
+const SALLES=[
+ {id:'cellier',nom:'Le cellier',don:{pieces:500,etoiles:10},lots:[
+   {id:'potager',nom:'Le lot du potager',choix:{radis:5,legumes:10,champignon:2,tomate:1,poireau:1}},
+   {id:'cueillette',nom:'Le lot de la cueillette',choix:{mures:3,fleurschamps:3,champignon:3,fraise:2,potiron:1}}]},
+ {id:'atelier',nom:"L'atelier",don:{pieces:1000,etoiles:15},lots:[
+   {id:'foret',nom:'Le lot de la forêt',choix:{bois:30,fibre:10,pierre:20,boisdur:2,legumes:15}},
+   {id:'ferme',nom:'Le lot de la ferme',choix:{oeufs:10,legumes:20,bois:20,farine:5,fleurs:5}}]},
+ {id:'gardemanger',nom:'Le garde-manger',don:{pieces:2000,etoiles:25},lots:[
+   {id:'douceurs',nom:'Le lot des douceurs',choix:{oeufs:15,mures:5,'confiture-mures':1,'confiture-fraise':1,pain:5}},
+   {id:'marche',nom:'Le lot du marché',choix:{radis:10,champignon:5,melon:1,betterave:2,chou:2}}]}];
+const LOTS=SALLES.flatMap(s=>s.lots.map(l=>Object.assign(l,{salle:s.id})));
+const coffre=()=>S.coffre=S.coffre||{dons:{},salles:{}};
+const donnes=l=>Object.keys((coffre().dons[l.id])||{}).length;
+const lotFait=l=>donnes(l)>=3;
+const lotsFaits=()=>LOTS.filter(lotFait).length;
+const salleFaite=s=>s.lots.every(lotFait);
+const sallesFaites=()=>SALLES.filter(s=>coffre().salles[s.id]).length;
+function bonusCoffre(){return S&&S.coffre?.05*sallesFaites():0}   // comme un étage du monument : +5 % par salle remplie
+const peutDonner=(l,k)=>!lotFait(l)&&!(coffre().dons[l.id]||{})[k]&&(S.stock[k]||0)>=l.choix[k];
+const salleEnCours=()=>SALLES.find(s=>!coffre().salles[s.id]);
+const donnable=()=>{const s=salleEnCours();return !!s&&s.lots.some(l=>Object.keys(l.choix).some(k=>peutDonner(l,k)))};
+const nomRes=k=>RES[k]?RES[k].nom:k;
+// « 1 tomate », « 2 tomates » : au singulier quand il n'en faut qu'un
+const combien=(q,k)=>{const n=nomRes(k);return q+' '+(q===1&&/s$/.test(n)&&!/ /.test(n)&&!['radis','maïs'].includes(n)?n.slice(0,-1):n)};
+BAT.coffre={nom:'Le coffre de la Vallée',e:`<svg viewBox="-26 -46 52 54" width="1.15em" height="1.15em" aria-hidden="true" style="vertical-align:-.2em">${dessinCoffre(0,0,true)}</svg>`,sorte:'fixe',t:1,ep:0,cout:{},aide:'Des lots de produits à remplir.'};
+// le coffre : un grand coffre de bois cerclé de laiton, une feuille dorée sur le couvercle ; « ! » quand on peut y donner quelque chose
+function dessinCoffre(x,y,nu){const b='#9A6236',f='#7A4A26',d='#4A2A12',l='#E2B447';
+  let h=`<ellipse cx="${x}" cy="${y+4}" rx="26" ry="9" fill="#00000030"/>
+  <path d="M${x-22} ${y-8}L${x} ${y+3}L${x} ${y-15}L${x-22} ${y-26}Z" fill="${b}" stroke="${d}" stroke-width="1.3"/>
+  <path d="M${x} ${y+3}L${x+22} ${y-8}L${x+22} ${y-26}L${x} ${y-15}Z" fill="${f}" stroke="${d}" stroke-width="1.3"/>
+  <path d="M${x-22} ${y-26}L${x} ${y-15}L${x+22} ${y-26}L${x+20} ${y-38}Q${x} ${y-46} ${x-20} ${y-38}Z" fill="#B47A44" stroke="${d}" stroke-width="1.3"/>
+  <path d="M${x-22} ${y-26}L${x} ${y-15}L${x+22} ${y-26}" fill="none" stroke="${d}" stroke-width="1.3"/>
+  ${[-14,14].map(a=>`<path d="M${x+a} ${y-38+Math.abs(a)*.1}L${x+a} ${y-22+(a<0?-3:-3)}" stroke="${l}" stroke-width="3"/><path d="M${x+a} ${y-21}L${x+a} ${y-5+(a<0?-1:-1)}" stroke="${l}" stroke-width="3"/>`).join('')}
+  <rect x="${x-4}" y="${y-19}" width="8" height="9" rx="1.5" fill="${l}" stroke="${d}" stroke-width="1"/><circle cx="${x}" cy="${y-15.5}" r="1.3" fill="${d}"/>
+  <path d="M${x-6} ${y-36}q6-7 12 0q-6 5-12 0z" fill="#7BB661" stroke="#3E6E2A" stroke-width="1"/><path d="M${x-6} ${y-36}h12" stroke="#3E6E2A" stroke-width=".8"/>`;
+  if(!nu&&S&&!MOI&&donnable())h+=`<g class="brille" style="transform-box:fill-box"><circle cx="${x}" cy="${y-66}" r="17" fill="#FFE27A" stroke="#C99A22" stroke-width="3"/><text x="${x}" y="${y-58}" font-size="22" font-weight="700" text-anchor="middle" fill="#7A4A12">!</text></g>`;
+  return h}
+// la feuille du coffre : les salles finies en une ligne, la salle en cours avec ses lots ; chaque produit se donne d'un toucher
+function coffreHTML(){const s=salleEnCours();
+  const finies=SALLES.filter(x=>coffre().salles[x.id]).map(x=>`<p class="sous">✅ <b>${x.nom}</b> est rempli : tout le village produit 5 % de plus.</p>`).join('');
+  const corps=s?`<h3 class="sous-titre">${s.nom}</h3><p class="sous">Pour chaque lot, donnez 3 produits parmi les 5, ceux que vous voulez. Quand les deux lots sont pleins, une surprise arrive par le courrier.</p>`+
+    s.lots.map(l=>{const d=coffre().dons[l.id]||{},n=donnes(l);
+      return `<div class="lot${lotFait(l)?' fait':''}"><div class="lot-tete"><b>${l.nom}</b><span>${lotFait(l)?'✅ rempli':n+' / 3'}</span></div><div class="lot-choix">${Object.entries(l.choix).map(([k,q])=>{const ok=peutDonner(l,k),a=S.stock[k]||0;
+        return `<div class="don${d[k]?' donne':''}"><span class="e">${RES[k]?RES[k].e:''}</span><b>${combien(q,k)}</b><small>${d[k]?'✓ donné':'vous en avez '+a}</small>${d[k]||lotFait(l)?'':`<button data-don="${l.id}:${k}" ${ok?'':'disabled'}>Donner</button>`}</div>`}).join('')}</div></div>`}).join('')
+    :`<p>Toutes les salles sont remplies : le coffre de la Vallée est plein. Bravo !</p>`;
+  return cadre(`${BAT.coffre.e} Le coffre de la Vallée`,finies+corps)}
+function donner(lid,k,ev){const l=LOTS.find(x=>x.id===lid);if(!l||!peutDonner(l,k))return;const c=coffre();
+  prendre(k,l.choix[k]);(c.dons[l.id]=c.dons[l.id]||{})[k]=1;SON.pose();
+  message=`🎁 ${combien(l.choix[k],k)} dans le coffre.`;
+  if(lotFait(l)){message=`🎁 ${l.nom} est rempli : +3 ⭐ !`;try{confettis()}catch{}S.stock.etoiles=(S.stock.etoiles||0)+3}
+  const s=SALLES.find(x=>x.id===l.salle);
+  if(salleFaite(s)&&!c.salles[s.id]){c.salles[s.id]=1;
+    message=`📬 ${s.nom} est rempli ! Dès aujourd'hui, tout le village produit 5 % de plus. Une surprise arrivera demain par le courrier.`;
+    lettre('lettre',[`Chère ${esc(S.nom)},`,`Grâce à vous, ${s.nom.charAt(0).toLowerCase()+s.nom.slice(1)} du coffre est plein ! La vallée vous remercie, et vous envoie ${txtGain(s.don)}.`,
+      'Tout le village produit maintenant 5 % de plus, pour toujours.','Hugo, Chloé et Pierre'],jourN()+1,s.don)}
+  sauve();rendu();const sx=ev&&ev.clientX||innerWidth/2,sy=ev&&ev.clientY||innerHeight/2;etincelles(sx,sy)}
+// le coffre se pose à sa marche du fil ; une partie déjà plus loin l'apprend une fois, par Chloé
+function majCoffre(){if(!S.fil||!passe('coffre'))return;
+  if(!S.b.some(o=>o.type==='coffre')){poserFixe('coffre',PLACE.i-1,PLACE.j-1,true);sauve();rendu()}
+  const c=coffre();if(c.vu)return;if(ici()&&ici().id==='coffre'){c.vu=1;sauve();return}   // sa tâche le présente déjà
+  if(SCENE)return;c.vu=1;sauve();
+  scene('chloe',['Regardez, près de la place : le coffre de la Vallée ! Il remplace les dons du monument.','Il demande des lots de produits. Pour chaque lot, on choisit 3 produits parmi 5. Chaque salle remplie fait produire tout le village 5 % de plus, et une surprise arrive par le courrier.'])}
+
 /* Les parties de cartes versent leurs pièces dans la caisse (même tablette) ; elles rapportent aussi des étoiles. */
 function encaisser(){
   let c=0;try{c=+(localStorage.getItem('village:caisse')||0)}catch{}
@@ -1520,6 +1594,8 @@ if(S){natureVivante();encaisser();if(!S.fil){reprendreFil();S.fil.v2=1;sauve()}
   if(!S.fil.v3){if(S.fil.n>=11)S.fil.n++;S.fil.v3=1;sauve()}
   // V4 étape 3 : « une belle récolte » avant les 15 étoiles, « la hache de cuivre » après le Village ; une partie plus avancée garde sa place
   if(!S.fil.v4){const n=S.fil.n;S.fil.n+=(n>=14)+(n>=16);S.fil.v4=1;sauve()}
+  // V4 étape 4 : « un lot du coffre » après la première commande
+  if(!S.fil.v5){if(S.fil.n>=19)S.fil.n++;S.fil.v5=1;sauve()}
   if(S.fil.n>FIL.findIndex(q=>q.id==='deco')&&!aBouton('arranger')){S.boutons=S.boutons||[];S.boutons.push('arranger');sauve()}}
 rendu();
 if(S&&lien())lancerLien();
@@ -1693,6 +1769,13 @@ html body .acheter button{font-size:17px;font-weight:700;min-height:48px;padding
 html body .acheter button[disabled]{opacity:.45}
 html body .choix.graine .e.outil svg{width:52px;height:52px}
 html body .lettre p{margin:0 0 10px;font-style:italic}html body .lettre p:first-child{font-style:normal}html body .lettre p:last-child{margin:0;text-align:right}
+html body .lot{border:3px solid #C9A46A;border-radius:14px;padding:10px;margin:0 0 12px;background:#FFF9EA}html body .lot.fait{opacity:.75;background:#EEF6E2}
+html body .lot-tete{display:flex;justify-content:space-between;font-size:20px;margin:0 0 8px}
+html body .lot-choix{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+html body .don{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:6px 4px;border-radius:10px;background:#FFFDF6;border:2px solid #E2CFA6}
+html body .don .e{font-size:30px;line-height:1}html body .don .e svg{width:34px;height:34px}html body .don b{font-size:15px;line-height:1.15}html body .don small{font-size:13px}
+html body .don.donne{background:#E4F2D6;border-color:#7BB661}
+html body .don button{font-size:16px;font-weight:700;min-height:44px;width:100%;border-radius:10px;border:3px solid #4A2A12;background:var(--bois);color:#FFF4D6}html body .don button[disabled]{opacity:.4}
 html body .sous-titre{font-family:var(--f-titre);font-size:24px;margin:18px 0 8px}
 html body .jauge-sf{height:12px;border-radius:6px;background:#EADFC6;border:2px solid #8A5A2E;overflow:hidden;margin:-4px 0 12px}
 html body .jauge-sf i{display:block;height:100%;background:#7BB661}
