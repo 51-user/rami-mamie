@@ -370,8 +370,9 @@ function dessinObjet(o,ok){
   return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
 /* ===================== La caméra ===================== */
-const CAM={i:PLACE.i+1,j:PLACE.j+1,z:1.25};let aspect=.62, glisse=null, avaleClic=false;
-function vueBox(){const w=1100/CAM.z,h=w*aspect,[cx,cy]=P(CAM.i,CAM.j);return [cx-w/2,cy-h/2,w,h]}
+const CAM={i:PLACE.i+1,j:PLACE.j+1,z:2};let aspect=.62, glisse=null, avaleClic=false;
+// en portrait, une largeur vue plus étroite garde les bâtiments aussi grands
+function vueBox(){const w=(aspect>1?720:1100)/CAM.z,h=w*aspect,[cx,cy]=P(CAM.i,CAM.j);return [cx-w/2,cy-h/2,w,h]}
 function versCase(x,y){const u=(x-OX)/TW,v=(y-OY)/TH;return [(u+v)/2,(v-u)/2]}
 /* ===================== Le sol et la nature, en style Vallée ===================== */
 const tuile=(nom,i,j)=>{const [x,y]=P(i,j);return `<image href="img/v3/${nom}.webp" x="${x-TW}" y="${y}" width="${2*TW}" height="${2*TH}" pointer-events="none"/>`};
@@ -461,19 +462,27 @@ function rendu(){
   document.body.classList.toggle('nuit',nuit());
   const vus=['pieces','etoiles',...Object.keys(RES).filter(k=>k!=='pieces'&&k!=='etoiles'&&((S.stock[k]||0)>0||S.b.some(o=>BAT[o.type].produit===k)))];
   const pills=vus.map(k=>`<span class="pill" data-res="${k}" title="${RES[k].nom}"><i class="case">${RES[k].e}</i><b>${S.stock[k]||0}</b></span>`).join('');
-  const bas=mode?`<button class="big vert" data-a="fini"><span class="e">✅</span>${mode.chemins?'Terminé':'Annuler'}</button>`
-    :`<button class="big" data-a="construire"><span class="e">🔨</span>Construire</button>
-     <button class="big alt" data-a="frise"><span class="e">⭐</span>Progrès</button>
-     <button class="big alt" data-a="marche"><span class="e">⚖️</span>Marché</button>
-     <button class="big alt" data-a="accueil"><span class="e">🏠</span>Accueil</button>`;
+  /* 25/10, Florian : « que les ressources menus fassent parti de la carte et qu'on accorde plus de place au jeu ».
+     La carte prend tout l'écran ; compteurs, menus et messages flottent par-dessus. */
+  const mb=(a,e,mot)=>`<button class="mb" data-a="${a}"><span>${e}</span><small>${mot}</small></button>`;
+  const soeurMot=SOEUR.etat==='ensemble'?(S.soeur||'Ma sœur')+' ✓':'Ma sœur';
+  const bas=mode?`<button class="big vert fini" data-a="fini"><span class="e">✅</span>${mode.chemins?'Terminé':'Annuler'}</button>`
+    :mb('construire','🔨','Construire')+mb('frise','⭐','Progrès')+mb('marche','⚖️','Marché')+mb('commandes','📋','Commandes')
+     +mb('monument','🏛️','Monument')+mb('fete-saison','🎉','Fête')+mb('soeur','👭',esc(soeurMot))+mb('accueil','🏠','Accueil');
+  const SAIS={printemps:['🌸','Printemps'],ete:['🌻','Été'],automne:['🍂','Automne'],hiver:['❄️','Hiver']}[saisonVue()];
   const aide=mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':
       mode.deplace?'Touchez la case où le poser.':`Touchez une case claire pour poser : ${BAT[mode.pose].nom}.`)
     :'Touchez ce qui brille pour ramasser. Touchez ▶ pour lancer un travail. Un appui long sur un bâtiment le déplace.';
   $('#app').innerHTML=`
-   <div class="haut"><h1>Le village de ${esc(S.nom)}</h1><div class="res">${pills}<button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div></div>
-   <div class="milieu"><div class="carte">${dessineVillage()}<div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div></div>
-     <div class="cote"><button class="big alt" data-a="soeur" style="min-height:64px;font-size:21px"><span class="e">👭</span>${SOEUR.etat==='ensemble'?'Avec '+esc(S.soeur||'ma sœur')+' ✓':lien()?'Ma sœur : '+({attente:'pas encore là',hors:'hors connexion',seul:'connexion…'}[SOEUR.etat]):'Jouer avec ma sœur'}</button><div class="aide">${aide}</div><div class="msg" role="status">${message||(EPOQUES[epIdx()].nom+' : '+['la première époque.','les toits de chaume.','les pavés et la place.','les fleurs partout.'][epIdx()])}</div></div></div>
-   <div class="bas">${bas}</div>${feuille?feuilleHTML():''}${fete?feteHTML():''}`;
+   <div class="carte">${dessineVillage()}</div>
+   <div class="haut"><div class="res">${pills}<span class="pill saisonp"><i class="case">${SAIS[0]}</i><b>${SAIS[1]}</b></span></div><button class="son" data-a="son" aria-label="${S.musique?'Couper la musique':'Remettre la musique'}">${S.musique?'🔊':'🔇'}</button></div>
+   <div class="msg" role="status">${message}</div>
+   ${mode?`<div class="aide">${aide}</div>`:''}
+   <div class="zoom"><button class="son" data-a="zoom-plus" aria-label="Voir de plus près">＋</button><button class="son" data-a="zoom-moins" aria-label="Voir de plus loin">－</button><button class="son" data-a="centre" aria-label="Revenir au centre du village">⌂</button></div>
+   <div class="bas">${bas}</div>
+   <div class="cote" aria-hidden="true"></div>${feuille?feuilleHTML():''}${fete?feteHTML():''}`;
+  // le message s'efface tout seul au bout de quelques secondes ; il reste à lire tant qu'on ne touche rien d'autre
+  clearTimeout(window.__msgT);if(message){const m=message;window.__msgT=setTimeout(()=>{if(message===m){message='';const e=$('.msg');if(e)e.textContent=''}},6000)}
   dernierPose=null;lier();
 }
 function cadre(titre,corps){return `<div class="voile" data-a="fermer"><div class="feuille" data-stop><button class="fermer" data-a="fermer">Fermer</button><h2>${titre}</h2>${corps}</div></div>`}
@@ -562,6 +571,10 @@ function action(a){
   else if(a==='fini'){mode=null;message=''}
   else if(a==='son'){S.musique=!S.musique;musique(S.musique)}
   else if(a==='soeur')feuille={quoi:'soeur'};
+  // Commandes (habitants.js), Monument et Fête (saisons.js) : leurs boutons vivent dans la colonne cachée, on les touche pour elle
+  else if(a==='commandes'||a==='monument'||a==='fete-saison'){
+    const cible=document.querySelector(a==='commandes'?'[data-h-a="commandes"]':a==='monument'?'[data-s-ouvre="monument"]':'[data-s-ouvre="fete"]');
+    if(cible)cible.dispatchEvent(new MouseEvent('click',{bubbles:true}));return}   // le monument peut être un dessin SVG : un vrai clic, pas .click()
   else if(a==='soeur-creer'){const A='ABCDEFGHJKMNPRSTUVWXYZ';let c='';for(let k=0;k<4;k++)c+=A[Math.floor(Math.random()*A.length)];
     ls.set(LIEN,JSON.stringify({code:c,role:'hote'}));lancerLien()}
   else if(a==='soeur-rejoindre'){const c=(($('#code-soeur')||{}).value||'').toUpperCase().replace(/[^A-Z]/g,'');
@@ -569,7 +582,7 @@ function action(a){
   else if(a==='soeur-oublier'){couperLien();try{localStorage.removeItem(LIEN)}catch{}SOEUR.etat='seul';message='Le lien est oublié. Votre village reste tel quel.'}
   else if(a==='zoom-plus'){CAM.z=Math.min(2.2,CAM.z*1.3);rendu();return}
   else if(a==='zoom-moins'){CAM.z=Math.max(.45,CAM.z/1.3);rendu();return}
-  else if(a==='centre'){CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=1.25;rendu();return}
+  else if(a==='centre'){CAM.i=PLACE.i+1;CAM.j=PLACE.j+1;CAM.z=2;rendu();return}
   else if(a==='deplacer'){mode={deplace:feuille.id};feuille=null;message='Touchez la case où le poser.'}
   else if(a==='acheter'){const prix=PRIX_EXT(S.ext);if(S.stock.pieces>=prix){S.stock.pieces-=prix;S.blocs.push(feuille.bloc);S.ext++;feuille=null;
     message='🌳 Le village s\'agrandit !';SON.pose();setTimeout(()=>etincelles(innerWidth/2,innerHeight/2),50)}}
@@ -775,6 +788,33 @@ html body .s-bouton.alt{background:var(--bois-clair);border:4px solid #4A2A12}
 html body .s-bouton small{display:block;font-family:var(--f-body);font-size:16px;font-weight:700;color:#FFE9B8;text-shadow:0 1px 0 #3A2010}
 html body .s-titre{flex-wrap:wrap;white-space:normal;color:#FFF1CC}
 html body .s-titre small{font-family:var(--f-body);font-size:15px;color:var(--ink-dim);-webkit-text-stroke:0;text-shadow:none;font-weight:700}
+/* ===== La carte prend tout l'écran (25/10) : compteurs, menus, bulles et zoom flottent par-dessus ===== */
+html body #app{position:fixed;inset:0;padding:0;display:block;height:auto}
+html body .carte{position:absolute;inset:0;height:auto;flex:none}
+html body .carte svg{width:100%;height:100%;max-height:none}
+html body .cote{display:none!important}
+html body .haut{position:absolute;top:calc(6px + env(safe-area-inset-top,0px));left:8px;right:8px;display:flex;align-items:flex-start;gap:6px;pointer-events:none;z-index:3}
+html body .haut .res{margin-left:0;gap:5px;pointer-events:auto}
+html body .pill{min-height:32px;padding:2px 9px 2px 2px;gap:5px;border-width:2px;border-radius:8px;
+  background:linear-gradient(rgba(201,144,96,.86),rgba(154,99,52,.86));box-shadow:inset 0 1px 0 rgba(255,230,180,.4),0 2px 0 rgba(58,32,16,.8)}
+html body .pill .case{width:26px;height:26px;font-size:16px;border-width:2px;border-radius:5px}
+html body .pill b{font-size:18px;-webkit-text-stroke:3px #3A2010}
+html body .haut .son{margin-left:auto;pointer-events:auto;min-width:44px;min-height:40px;font-size:20px;border-width:3px}
+html body .msg{position:absolute;top:calc(48px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:max-content;max-width:min(560px,86vw);
+  min-height:0;font-size:17px;font-weight:700;padding:7px 14px;z-index:3;pointer-events:none;border-width:3px;opacity:.96}
+html body .msg:empty{display:none}
+html body .aide{position:absolute;top:calc(92px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:max-content;max-width:min(560px,86vw);
+  font-size:17px;padding:7px 14px;z-index:3;pointer-events:none;border-width:3px}
+html body .zoom{position:absolute;left:10px;right:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;z-index:3}
+html body .zoom .son{width:46px;height:46px;min-width:0;min-height:0;font-size:22px;border-width:3px}
+html body .bas{position:absolute;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));margin:0;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 80px);z-index:3}
+html body .mb{width:66px;height:60px;padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  background:var(--bois);border:3px solid #4A2A12;border-radius:11px;color:#FFF4D6;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 #3A2010;transition:transform .08s,filter .12s}
+html body .mb span{font-size:25px;line-height:1.1}
+html body .mb small{font-family:var(--f-titre);font-size:10.5px;font-weight:700;line-height:1.05;text-shadow:0 1px 0 #3A2010;white-space:nowrap;max-width:62px;overflow:hidden;text-overflow:ellipsis}
+html body .mb:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),0 1px 0 #3A2010;filter:brightness(1.18) sepia(.2)}
+html body .bas .fini{flex:none;min-width:0;min-height:56px;font-size:20px;padding:0 18px}
+@media (max-width:900px){html body .bas{left:66px;right:8px;justify-content:center;max-width:none}}
 html body .champ{background:#FBF0D2;border:4px solid #5A3418;color:var(--ink);border-radius:10px}
 </style>
 </body>
