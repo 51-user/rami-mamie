@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mots mêlés</title>
+<meta name="theme-color" content="#1A4A33">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="stylesheet" href="cartes-vallee.css">
+<style>
+/* ===== Mots mêlés du bac à sable (25/10, Florian : « Prépare aussi un jeu de mots mêlés pour le bac à sable »).
+   Même habit que le village et les cartes : bois chaud, parchemin, Fredoka, fond de la Vallée. LE JEU D'ABORD :
+   la grille prend toute la place ; la liste des mots et trois petits boutons tiennent sur le côté (paysage) ou en bas (portrait). ===== */
+:root{--bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
+  --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
+  --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);--brun:#3E2410;--brun-doux:#6B4A2C;--cadre:#5A3418;--bord:#4A2A12;--lueur:#FFD86B;
+  --f:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;color-scheme:light}
+html,body{height:100%;margin:0}
+body{background:#5B4A2A url('cartes/fond-vallee.webp') center/cover fixed;font-family:var(--f);color:var(--brun);overflow:hidden;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+body::after{content:"";position:fixed;inset:0;background:rgba(30,18,6,.28);pointer-events:none;z-index:0}
+button{font-family:var(--f);cursor:pointer;color:inherit}
+button:focus{outline:none}button:focus-visible{box-shadow:0 0 0 4px var(--lueur)}
+#jeu{position:fixed;inset:0;z-index:1}
+/* la grille : un grand parchemin, les lettres en grosses majuscules */
+.grille{position:absolute;background:var(--parchemin);border:3px solid var(--cadre);border-radius:12px;box-shadow:0 4px 0 #3A2010,0 8px 20px rgba(0,0,0,.35);touch-action:none}
+.grille svg.traits{position:absolute;inset:0;pointer-events:none}
+.lettre{position:absolute;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--brun);line-height:1;pointer-events:none}
+.lettre.depart{color:#B3122A}
+.lettre.indice{animation:brille 1s ease-in-out 6;background:radial-gradient(circle,#FFE38A 0 40%,rgba(255,216,107,.45) 55%,transparent 70%);color:#A0281A}
+@keyframes brille{50%{color:#C27A00;transform:scale(1.35);text-shadow:0 0 12px var(--lueur),0 0 4px var(--lueur)}}
+/* la liste des mots et les boutons : fins, sur le côté ou en bas */
+.cote{position:absolute;display:flex;flex-direction:column;gap:8px;z-index:2}
+.theme{font-size:16px;font-weight:600;color:#FFF1CC;text-shadow:0 1px 2px rgba(0,0,0,.7);text-align:center}
+.mots{background:rgba(251,240,210,.94);border:2px solid var(--cadre);border-radius:10px;padding:8px 10px;display:grid;gap:2px 14px;align-content:start;box-shadow:0 3px 0 #3A2010}
+.mot{font-size:var(--fm,22px);font-weight:600;white-space:nowrap;position:relative;color:var(--brun)}
+.mot.trouve{color:#8C7A60;text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:rgba(107,74,44,.75)}
+.boutons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{background:var(--bois);color:#FFF4D6;border:3px solid var(--bord);border-radius:10px;font-size:18px;font-weight:700;min-height:50px;padding:0 14px;
+  text-shadow:0 1px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 #3A2010}
+.btn.clair{background:var(--bois-clair)}
+.btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),0 0 0 #3A2010;filter:brightness(1.15)}
+/* les fenêtres : fines */
+.voile{position:fixed;inset:0;background:rgba(40,22,8,.45);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
+.fen{background:var(--parchemin);border:3px solid var(--cadre);border-radius:14px;box-shadow:0 4px 0 #3A2010;padding:18px 22px;max-width:640px;width:100%;
+  max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;text-align:center}
+.fen h2{margin:0;font-size:26px;color:#FFF1CC;-webkit-text-stroke:4px #4A2A12;paint-order:stroke fill;text-shadow:0 2px 0 #4A2A12}
+.fen p{margin:0;font-size:20px}
+.themes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.themes .btn{min-height:64px;font-size:21px}
+.niveaux{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.niveaux .btn[aria-pressed="true"]{box-shadow:0 0 0 4px var(--lueur),0 0 12px var(--lueur),0 3px 0 #3A2010}
+.etincelle{position:fixed;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle,#FFF6C8,#FFD86B 60%,transparent 70%);pointer-events:none;z-index:9;
+  animation:etincelle .9s ease-out forwards}
+@keyframes etincelle{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+@media (prefers-reduced-motion: reduce){.lettre.indice{animation:none;color:#C27A00}.etincelle{display:none}}
+</style>
+</head>
+<body>
+<div id="jeu"></div>
+<script>
+/* =====================================================================
+   MOTS MÊLÉS — RÈGLES RETENUES
+   - Une grille de lettres majuscules sans accents ; à côté, la liste des mots à trouver (8 à 12, d'un même thème).
+   - Niveau 1 : grille de 10 × 10, mots à l'endroit seulement (de gauche à droite, de haut en bas, en diagonale vers le bas).
+   - Niveau 2 : grille de 12 × 12, les mots peuvent aussi se lire à l'envers et dans toutes les directions.
+   - On trouve un mot en glissant le doigt de sa première à sa dernière lettre, ou en touchant la première puis la dernière.
+   - Un mot trouvé se surligne d'une couleur douce et se barre dans la liste. Aucun chronomètre, rien ne se perd.
+   - « Un indice » fait briller la première lettre d'un mot pas encore trouvé.
+   - Une grille terminée verse des pièces dans la caisse du village (qui ajoute des étoiles), une seule fois par grille.
+   ===================================================================== */
+const THEMES={
+  jardin:{nom:'Le jardin',e:'🌱',mots:['bêche','râteau','arrosoir','graine','potager','tomate','salade','radis','brouette','carotte','serre','pelle','haricot']},
+  cuisine:{nom:'La cuisine',e:'🍲',mots:['casserole','poêle','four','farine','beurre','œuf','sucre','tarte','crêpe','louche','soupe','gâteau','confiture']},
+  village:{nom:'Le village',e:'🏡',mots:['Hugo','Chloé','Pierre','fleuriste','boulanger','maison','place','moulin','verger','fontaine','mairie','kiosque','marché','boulangerie']},
+  saisons:{nom:'Les saisons',e:'🍂',mots:['printemps','été','automne','hiver','neige','soleil','pluie','feuille','vent','givre','récolte','bourgeon']},
+  ferme:{nom:'La ferme',e:'🐄',mots:['vache','cochon','poule','lapin','canard','cheval','mouton','chèvre','oie','dinde','veau','agneau','âne']},
+  mer:{nom:'La mer',e:'🌊',mots:['vague','plage','sable','bateau','phare','mouette','crabe','coquillage','port','marée','poisson','voile']},
+  fleurs:{nom:'Les fleurs',e:'🌷',mots:['rose','tulipe','lilas','muguet','iris','pensée','orchidée','jonquille','violette','dahlia','pivoine','bleuet','marguerite']}
+};
+const NIVEAUX={1:{n:10,dirs:[[1,0],[0,1],[1,1]]},2:{n:12,dirs:[[1,0],[0,1],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]]}};
+const COULEURS=['#F6B8A8','#B9DDA0','#A9CFEA','#F5D98B','#D9B8E8','#F2B5CF','#A8E0D4','#F7C99A','#C9D7A0','#B8C4EE','#EBC0A0','#BFE3B5','#E9C8E0','#D4E3A0'];
+const LETTRES='EEEEEEAAAAASSSSIIIINNNNRRRRTTTTUUULLLOOOODDCCMMPPGBVHFQJXYZK';
+const enGrille=m=>m.replace(/œ/gi,'oe').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
+
+/* Mémoire de la tablette : même profil que les cartes (?profil=b pour les essais à deux onglets). */
+const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
+const K='motsmeles'+(PROFIL?'-'+PROFIL:'')+':partie';
+/* Comme le rami et la belote : la grille terminée verse dans la caisse du village ; la clé évite de payer deux fois. */
+function versVillage(n,cle){
+  try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
+    localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
+}
+const GAIN={1:30,2:45};
+
+/* ---------- Le son : quelques notes synthétisées, comme au village (aucun fichier) ---------- */
+let AC=null;
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch{AC=null}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function note(f,t0,dur,type,vol){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,a.currentTime+t0);g.gain.linearRampToValueAtTime(vol||.12,a.currentTime+t0+.01);
+  g.gain.exponentialRampToValueAtTime(.0005,a.currentTime+t0+dur);o.connect(g).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+dur+.05)}
+const SON={trouve(){note(988,0,.18,'sine',.14);note(1319,.08,.25,'sine',.12);note(1760,.16,.3,'triangle',.06)},
+  tac(){note(988,0,.05,'triangle',.04)},
+  fini(){[523,659,784,1047].forEach((f,k)=>note(f,k*.12,.35,'triangle',.09))}};
+
+/* ---------- Une grille ---------- */
+function melange(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function nouvelleGrille(theme,niveau){
+  const L=NIVEAUX[niveau], n=L.n;
+  for(let essai=0;essai<60;essai++){
+    const g=Array.from({length:n},()=>Array(n).fill('')), places=[];
+    const cand=melange(THEMES[theme].mots.filter(m=>enGrille(m).length<=n&&enGrille(m).length>=3)).slice(0,12);
+    const voulu=Math.min(cand.length,niveau===1?10:12);
+    for(const m of cand.sort((a,b)=>enGrille(b).length-enGrille(a).length)){
+      if(places.length>=voulu) break;
+      const w=enGrille(m); let ok=false;
+      for(let t=0;t<200&&!ok;t++){
+        const [dx,dy]=L.dirs[Math.floor(Math.random()*L.dirs.length)], x=Math.floor(Math.random()*n), y=Math.floor(Math.random()*n);
+        const ex=x+dx*(w.length-1), ey=y+dy*(w.length-1);
+        if(ex<0||ey<0||ex>=n||ey>=n) continue;
+        let bon=true; for(let k=0;k<w.length;k++){const c=g[y+dy*k][x+dx*k]; if(c&&c!==w[k]){bon=false;break}}
+        if(!bon) continue;
+        for(let k=0;k<w.length;k++) g[y+dy*k][x+dx*k]=w[k];
+        places.push({mot:m,w,a:[x,y],b:[ex,ey],trouve:false}); ok=true;
+      }
+    }
+    if(places.length<8) continue;
+    for(let y=0;y<n;y++) for(let x=0;x<n;x++) if(!g[y][x]) g[y][x]=LETTRES[Math.floor(Math.random()*LETTRES.length)];
+    places.sort((a,b)=>a.w.localeCompare(b.w));
+    return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),theme,niveau,n,g,mots:places,paye:false};
+  }
+  return null;
+}
+
+/* ---------- État ---------- */
+let P=null, choix=false, depart=null, tire=null, indiceMot=null, indiceT=null;
+function sauve(){try{localStorage.setItem(K,JSON.stringify(P))}catch{}}
+try{P=JSON.parse(localStorage.getItem(K)||'null')}catch{P=null}
+let niveauChoisi=P?P.niveau:1;
+const jeu=document.getElementById('jeu');
+
+/* ---------- Dessin : tout est mesuré sur l'écran réel ---------- */
+function mesure(){
+  const vw=innerWidth, vh=innerHeight, portrait=vh>vw, m=12, n=P.n;
+  if(!portrait){
+    const sw=Math.max(200,Math.min(280,vw*0.21));
+    let W=vw-sw-m*3, H=vh-m*2; if(W/n>H/n*1.35) W=H*1.35; if(H/n>W/n*1.2) H=W*1.2;
+    return {portrait,x:m,y:(vh-H)/2,W,H,cote:{left:m*2+W,top:m,width:vw-W-m*3,height:vh-m*2}};
+  }
+  const bas=Math.max(170,vh*0.17);
+  let W=vw-m*2, H=vh-bas-m*3; if(H/n>W/n*1.35) H=W*1.35;
+  return {portrait,x:m,y:m,W,H,cote:{left:m,top:m*2+H,width:vw-m*2,height:vh-H-m*3}};
+}
+function rendu(){
+  if(!P){ choix=true; jeu.innerHTML=''; afficherChoix(); return; }
+  const M=mesure(), n=P.n, cw=M.W/n, ch=M.H/n, fs=Math.round(Math.min(cw,ch)*0.62);
+  const lettres=[];
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+    const dep=depart&&depart[0]===x&&depart[1]===y, ind=indiceMot&&indiceMot.a[0]===x&&indiceMot.a[1]===y;
+    lettres.push(`<div class="lettre${dep?' depart':''}${ind?' indice':''}" style="left:${x*cw}px;top:${y*ch}px;width:${cw}px;height:${ch}px;font-size:${fs}px">${P.g[y][x]}</div>`);
+  }
+  const trait=(a,b,c,op)=>`<line x1="${(a[0]+.5)*cw}" y1="${(a[1]+.5)*ch}" x2="${(b[0]+.5)*cw}" y2="${(b[1]+.5)*ch}" stroke="${c}" stroke-opacity="${op}" stroke-width="${Math.min(cw,ch)*0.78}" stroke-linecap="round"/>`;
+  let traits=P.mots.map((m,k)=>m.trouve?trait(m.a,m.b,COULEURS[k%COULEURS.length],.85):'').join('');
+  if(tire) traits+=trait(tire.a,tire.b,'#FFD86B',.6);
+  else if(depart) traits+=trait(depart,depart,'#FFD86B',.6);
+  const th=THEMES[P.theme], restants=P.mots.filter(m=>!m.trouve).length;
+  const cols=M.portrait?(P.mots.length>9?4:3):1;
+  const fm=M.portrait?Math.min(22,Math.floor(M.cote.width/cols/9)):Math.min(24,Math.floor((M.cote.height-150)/P.mots.length/1.25));
+  const liste=P.mots.map(m=>`<span class="mot${m.trouve?' trouve':''}">${m.mot}</span>`).join('');
+  jeu.innerHTML=`<div class="grille" id="grille" style="left:${M.x}px;top:${M.y}px;width:${M.W}px;height:${M.H}px">
+      <svg class="traits" width="${M.W}" height="${M.H}">${traits}</svg>${lettres.join('')}</div>
+    <div class="cote" style="left:${M.cote.left}px;top:${M.cote.top}px;width:${M.cote.width}px;height:${M.cote.height}px">
+      <div class="theme">${th.e} ${th.nom} · ${restants?`encore ${restants} mot${restants>1?'s':''}`:'tout est trouvé !'}</div>
+      <div class="mots" style="--fm:${fm}px;grid-template-columns:repeat(${cols},auto);${M.portrait?'':'flex:1'}">${liste}</div>
+      <div class="boutons"><button class="btn" data-a="indice">💡 Un indice</button><button class="btn clair" data-a="nouvelle">Nouvelle grille</button><button class="btn clair" data-a="accueil" aria-label="Retour à l'accueil">⌂</button></div>
+    </div>${choix?'':P.mots.every(m=>m.trouve)?finHTML():''}`;
+  jeu.dataset.cw=cw; jeu.dataset.ch=ch;
+  if(choix) afficherChoix();
+}
+function finHTML(){
+  const g=GAIN[P.niveau];
+  if(!P.paye){ versVillage(g,'mots-'+P.id); P.paye=true; sauve(); }
+  return `<div class="voile"><div class="fen" role="dialog" aria-label="Grille terminée"><h2>Bravo, tout est trouvé !</h2>
+    <p>🏡 +${g} pièces et des étoiles pour votre village.</p>
+    <div class="boutons"><button class="btn" data-a="nouvelle" style="min-height:64px;font-size:22px">Une nouvelle grille</button><button class="btn clair" data-a="accueil">Retour à l'accueil</button></div></div></div>`;
+}
+function afficherChoix(){
+  const t=Object.entries(THEMES).map(([k,v])=>`<button class="btn" data-a="theme" data-t="${k}">${v.e} ${v.nom}</button>`).join('');
+  const nv=[1,2].map(k=>`<button class="btn clair" data-a="niveau" data-n="${k}" aria-pressed="${niveauChoisi===k}">${niveauChoisi===k?'✓ ':''}Niveau ${k} · ${NIVEAUX[k].n} × ${NIVEAUX[k].n}${k===2?', à l\'envers aussi':''}</button>`).join('');
+  jeu.insertAdjacentHTML('beforeend',`<div class="voile"><div class="fen" role="dialog" aria-label="Choisir une grille"><h2>Une nouvelle grille</h2>
+    <p>Choisissez un thème.</p><div class="themes">${t}<button class="btn clair" data-a="theme" data-t="hasard">🎲 Au hasard</button></div>
+    <div class="niveaux">${nv}</div>
+    <div class="boutons">${P?'<button class="btn clair" data-a="fermer">Continuer ma grille</button>':''}<button class="btn clair" data-a="accueil">Retour à l'accueil</button></div></div></div>`);
+}
+
+/* ---------- Trouver un mot : glisser de la première à la dernière lettre, ou toucher l'une puis l'autre ---------- */
+function caseSous(e){
+  const gr=document.getElementById('grille'); if(!gr) return null;
+  const r=gr.getBoundingClientRect(), cw=r.width/P.n, ch=r.height/P.n;
+  const x=Math.floor((e.clientX-r.left)/cw), y=Math.floor((e.clientY-r.top)/ch);
+  return x>=0&&y>=0&&x<P.n&&y<P.n?[x,y]:null;
+}
+const meme=(a,b)=>a&&b&&a[0]===b[0]&&a[1]===b[1];
+/* une ligne droite seulement : horizontale, verticale ou diagonale ; sinon on garde la direction la plus proche */
+function aligne(a,c){
+  const dx=c[0]-a[0], dy=c[1]-a[1], ax=Math.abs(dx), ay=Math.abs(dy);
+  if(ax>ay*2) return [c[0],a[1]];
+  if(ay>ax*2) return [a[0],c[1]];
+  const d=Math.max(ax,ay), b=[a[0]+Math.sign(dx)*d,a[1]+Math.sign(dy)*d];
+  return b[0]>=0&&b[1]>=0&&b[0]<P.n&&b[1]<P.n?b:[a[0]+Math.sign(dx)*Math.min(ax,ay),a[1]+Math.sign(dy)*Math.min(ax,ay)];
+}
+function essaie(a,b){
+  const k=P.mots.findIndex(m=>!m.trouve&&((meme(m.a,a)&&meme(m.b,b))||(meme(m.a,b)&&meme(m.b,a))));
+  if(k<0) return false;
+  P.mots[k].trouve=true; if(indiceMot===P.mots[k]){indiceMot=null}
+  sauve(); SON.trouve();
+  const gr=document.getElementById('grille').getBoundingClientRect(), cw=gr.width/P.n, ch=gr.height/P.n;
+  etincelles(gr.left+((a[0]+b[0])/2+.5)*cw, gr.top+((a[1]+b[1])/2+.5)*ch);
+  if(P.mots.every(m=>m.trouve)) setTimeout(()=>SON.fini(),350);
+  return true;
+}
+function etincelles(x,y){
+  for(let k=0;k<14;k++){const s=document.createElement('span');s.className='etincelle';const ang=k/14*Math.PI*2,d=40+Math.random()*50;
+    s.style.left=x+'px';s.style.top=y+'px';s.style.setProperty('--dx',Math.cos(ang)*d+'px');s.style.setProperty('--dy',Math.sin(ang)*d+'px');
+    document.body.appendChild(s);setTimeout(()=>s.remove(),1000)}
+}
+let geste=null;
+jeu.addEventListener('pointerdown',e=>{
+  if(!P||choix||P.mots.every(m=>m.trouve)) return;
+  const c=caseSous(e); if(!c) return;
+  audio();
+  geste={a:c,b:c,bouge:false};
+  try{document.getElementById('grille').setPointerCapture(e.pointerId)}catch{}
+});
+jeu.addEventListener('pointermove',e=>{
+  if(!geste) return; const c=caseSous(e); if(!c) return;
+  const b=aligne(geste.a,c);
+  if(!meme(b,geste.b)){ geste.b=b; geste.bouge=geste.bouge||!meme(b,geste.a); tire=geste.bouge?{a:geste.a,b}:null; if(geste.bouge){depart=null} rendu(); }
+});
+function finGeste(annule){
+  if(!geste) return; const g=geste; geste=null; tire=null;
+  if(annule){ rendu(); return; }
+  if(g.bouge&&!meme(g.a,g.b)){ depart=null; essaie(g.a,g.b); rendu(); return; }
+  // un toucher : la première lettre, puis la dernière
+  // si ce n'était pas un mot, la lettre touchée devient le nouveau départ (elle s'était peut-être trompée de première lettre)
+  if(depart&&!meme(depart,g.a)){ const b=aligne(depart,g.a), a=depart; depart=essaie(a,b)?null:g.a; if(depart) SON.tac(); rendu(); return; }
+  depart=meme(depart,g.a)?null:g.a; SON.tac(); rendu();
+}
+jeu.addEventListener('pointerup',()=>finGeste(false));
+jeu.addEventListener('pointercancel',()=>finGeste(true));
+
+jeu.addEventListener('click',e=>{
+  const t=e.target.closest('[data-a]'); if(!t) return;
+  const a=t.dataset.a;
+  if(a==='indice'){ const reste=P.mots.filter(m=>!m.trouve); if(!reste.length) return;
+    indiceMot=reste[Math.floor(Math.random()*reste.length)]; clearTimeout(indiceT); indiceT=setTimeout(()=>{indiceMot=null;rendu()},6200); rendu(); }
+  if(a==='nouvelle'){ choix=true; depart=null; rendu(); }
+  if(a==='fermer'){ choix=false; rendu(); }
+  if(a==='niveau'){ niveauChoisi=+t.dataset.n; rendu(); }
+  if(a==='theme'){ let th=t.dataset.t; if(th==='hasard'){const l=Object.keys(THEMES);th=l[Math.floor(Math.random()*l.length)]}
+    const g=nouvelleGrille(th,niveauChoisi); if(g){ P=g; sauve(); choix=false; depart=null; indiceMot=null; rendu(); } }
+  if(a==='accueil'){ location.href='index.html'+location.search; }
+});
+let rt; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(rendu,120)});
+
+// Accès pour la vérification automatisée (lecture de la grille) : sans effet pour les joueuses.
+window.__mots={get P(){return P}, nouvelleGrille, enGrille, THEMES};
+rendu();
+</script>
+</body>
+</html>
