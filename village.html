@@ -28,7 +28,7 @@ body.nuit{background:linear-gradient(180deg,#22314F,#3C4A63) fixed}
 body.nuit .haut h1{color:#FFF3D6}
 button{font-family:inherit;color:inherit;cursor:pointer}
 button:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
-#app{min-height:100%;display:flex;flex-direction:column;box-sizing:border-box;
+#app{height:100%;display:flex;flex-direction:column;box-sizing:border-box;
   padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .haut{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 h1{font-family:var(--f-display);font-size:28px;margin:0 8px 0 0}
@@ -40,9 +40,9 @@ h1{font-family:var(--f-display);font-size:28px;margin:0 8px 0 0}
 .milieu{flex:1;display:flex;gap:14px;min-height:0;margin-top:8px}
 .carte{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
 .carte svg{width:100%;height:100%;max-height:calc(100vh - 190px);touch-action:manipulation}
-.cote{width:290px;display:flex;flex-direction:column;gap:10px}
-@media (max-width:900px){.milieu{flex-direction:column}.cote{width:auto}.carte svg{max-height:62vh}}
-.aide{background:#FFF4CC;border:3px solid var(--gold);border-radius:18px;padding:12px 16px;font-size:22px;font-weight:700;line-height:1.35}
+.cote{width:290px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0}
+@media (max-width:900px){.milieu{flex-direction:column}.cote{width:auto;flex:1}.carte{flex:0 0 auto;height:52vh}.carte svg{max-height:52vh}}
+.aide{background:#FFF4CC;border:3px solid var(--gold);border-radius:18px;padding:10px 14px;font-size:20px;font-weight:700;line-height:1.35}
 .msg{background:#FFFDF6;border:2px solid var(--line);border-radius:18px;padding:12px 16px;font-size:20px;min-height:56px}
 .bas{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
 .big{flex:1;min-width:150px;font-size:24px;font-weight:700;min-height:76px;border-radius:18px;border:0;
@@ -139,7 +139,14 @@ const coutMonter=o=>({pieces:60*((o.ep||0)+1)*BAT[o.type].t*BAT[o.type].t});
 const IMGS={}, ANCIENNES={maison:'maison-1',boulangerie:'boulangerie',fleuriste:'fleuriste',atelier:'garage',mairie:'mairie'};
 let attenteImg=null;
 // La liste des images réellement déposées dans img/v3 (remplie à l'assemblage) : aucune requête à l'aveugle, aucune erreur 404.
-const IMAGES_V3=[];
+const IMAGES_V3=['atelier-bourg','boulangerie-village','bucheron-hameau','fleuriste-village','fontaine-bourg','kiosque-ville','maison-hameau','marche-bourg','massif-hameau','poulailler-hameau','puits-hameau','serre-ville'];
+/* Calage mesuré sur chaque image : [x gauche, y gauche, x droite, y droite, largeur, hauteur] de la face du dessus de son bloc.
+   Cette face tombe pile sur le losange de l'emprise ; le reste est coupé en prisme (voir imageCalee). */
+const CALAGE={'v3/atelier-bourg':[46,194,352,193,400,391],'v3/boulangerie-village':[43,191,356,189,400,391],'v3/bucheron-hameau':[39,197,360,196,400,391],
+ 'v3/fleuriste-village':[46,191,352,189,400,391],'v3/fontaine-bourg':[38,193,361,195,400,391],'v3/kiosque-ville':[40,192,358,189,400,391],
+ 'v3/maison-hameau':[46,190,352,185,400,391],'v3/marche-bourg':[42,196,357,192,400,391],'v3/massif-hameau':[26,169,372,168,400,391],
+ 'v3/poulailler-hameau':[43,191,355,190,400,391],'v3/puits-hameau':[32,183,366,184,400,391],'v3/serre-ville':[44,208,355,207,400,391],
+ 'maison-1':[0,199,399,186,400,391],'mairie':[0,145,385,150,386,400],'garage':[0,201,382,210,383,400],'fleuriste':[0,217,386,209,387,400],'boulangerie':[0,188,393,188,394,400]};
 IMAGES_V3.forEach(cle=>{const im=new Image();
   im.onload=()=>{IMGS[cle]=true;clearTimeout(attenteImg);attenteImg=setTimeout(()=>{if(S&&!feuille)rendu()},300)};im.src='img/v3/'+cle+'.webp'});
 function imageDe(o){for(let e=o.ep||0;e>=0;e--){const cle=o.type+'-'+EPOQUES[e].id;if(IMGS[cle])return 'v3/'+cle}return ANCIENNES[o.type]||null}
@@ -263,14 +270,18 @@ function boite(o,mur,toit){const t=BAT[o.type].t,A=P(o.i,o.j),B=P(o.i+t,o.j),C=P
   h+=`<circle cx="${ap[0]}" cy="${ap[1]+28}" r="15" fill="#FFF9E8" stroke="#00000044"/><text x="${ap[0]}" y="${ap[1]+36}" font-size="19" text-anchor="middle">${BAT[o.type].e}</text>`;
   return {h,top:ap[1]};
 }
-function imageBat(nom,o,larg){const t=BAT[o.type].t,[x,yb]=P(o.i+t,o.j+t),w=2*TW*t*larg,h=w*.98;
-  return {h:`<image href="img/${nom}.webp" x="${x-w/2}" y="${yb-h*.72}" width="${w}" height="${h}"/>`,top:yb-h*.72+10}}
+function imageCalee(nom,o){const t=BAT[o.type].t,c=CALAGE[nom]||[0,195,400,195,400,391];
+  const L=P(o.i,o.j+t),R=P(o.i+t,o.j),B=P(o.i+t,o.j+t),[mx,my]=P(o.i+t/2,o.j+t/2);
+  const k=(R[0]-L[0])/(c[2]-c[0]),w=c[4]*k,h=c[5]*k,x=mx-k*(c[0]+c[2])/2,y=my-k*(c[1]+c[3])/2,haut=y-40;
+  const id='coupe-'+o.id;
+  return {h:`<clipPath id="${id}"><polygon points="${L[0]},${haut} ${L[0]},${L[1]} ${B[0]},${B[1]} ${R[0]},${R[1]} ${R[0]},${haut}"/></clipPath>
+    <image href="img/${nom}.webp" x="${x}" y="${y}" width="${w}" height="${h}" clip-path="url(#${id})"/>`,top:Math.max(y+10,my-TH*t*3.2)}}
 function dessinObjet(o,ok){
   const B=BAT[o.type],t=B.t,[cx,cy]=P(o.i+t/2,o.j+t/2);let h='',top=cy-20;
-  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin;return poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}"`)}
+  if(o.type==='chemin'){const c=EPOQUES[epIdx()].chemin;return poly(los(o.i,o.j),c[0],c[1],`data-o="${o.id}" style="fill:url(#terre)"`)}
   const im=imageDe(o);
-  if(im&&(o.type!=='potager'||im.startsWith('v3/'))){const r=imageBat(im,o,.9);h=r.h;top=r.top;
-    if(nuit())h+=`<circle cx="${cx-6}" cy="${cy-30}" r="22" fill="#FFD86B" opacity=".25"/>`}
+  if(im&&o.type!=='potager'){const r=imageCalee(im,o);h=r.h;top=r.top;
+}
   else if(o.type==='potager'){const L=los(o.i,o.j,2);h=poly(L,'#8A5A3B','#5E3A22');
     for(let r=1;r<6;r++){const a=[L[0][0]+(L[3][0]-L[0][0])*r/6,L[0][1]+(L[3][1]-L[0][1])*r/6],b=[L[1][0]+(L[2][0]-L[1][0])*r/6,L[1][1]+(L[2][1]-L[1][1])*r/6];
       h+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#6B4329" stroke-width="2" stroke-linecap="round"/>`}
@@ -299,31 +310,69 @@ function dessinObjet(o,ok){
   const st=mode?'pointer-events:none;opacity:.5':'cursor:pointer';
   return `<g data-o="${o.id}" class="${cls}" style="${st}">${h}${bulle}</g>`;
 }
+/* ===================== Le sol et la nature, en style Vallée ===================== */
+const hasard=(i,j,n)=>{const x=Math.sin(i*127.1+j*311.7+n*74.7)*43758.5453;return x-Math.floor(x)};
+function saisonVue(){const b=getComputedStyle(document.body).getPropertyValue('--s-bord').trim().toUpperCase();
+  return {'#F48FB1':'printemps','#F0C04A':'ete','#E0892E':'automne','#90CAF9':'hiver'}[b]||'ete'}
+const SOLS={printemps:['#93CF6C','#72AF4E','#F7A8C4'],ete:['#8CC24C','#6E9E36','#FFE066'],automne:['#A9B65A','#879341','#E8843A'],hiver:['#EEF4F7','#CBD9E1','#FFFFFF']};
+function motifs(sa){const [b,t,f]=SOLS[sa],c=EPOQUES[epIdx()].chemin;
+  const touffes=(col,dense)=>[[6,5],[22,3],[31,13],[13,15],[38,8],[26,17]].slice(0,dense).map(([x,y])=>`<path d="M${x} ${y}l-2 -4M${x} ${y}l0 -5M${x} ${y}l2 -4" stroke="${col}" stroke-width="1.3" stroke-linecap="round"/>`).join('');
+  return `<defs>
+  <pattern id="herbe" width="44" height="22" patternUnits="userSpaceOnUse"><rect width="44" height="22" fill="${b}"/>${touffes(t,4)}<circle cx="34" cy="18" r="1.4" fill="${f}"/><circle cx="9" cy="12" r="1" fill="#ffffff" opacity=".6"/></pattern>
+  <pattern id="herbe-vise" width="44" height="22" patternUnits="userSpaceOnUse"><rect width="44" height="22" fill="${b}"/><rect width="44" height="22" fill="#FFFFFF" opacity=".35"/>${touffes(t,3)}</pattern>
+  <pattern id="sauvage" width="44" height="22" patternUnits="userSpaceOnUse"><rect width="44" height="22" fill="${t}"/>${touffes(b,6)}<circle cx="18" cy="9" r="1.6" fill="${f}"/><circle cx="40" cy="16" r="1.3" fill="#FFFFFF" opacity=".7"/></pattern>
+  <pattern id="terre" width="40" height="20" patternUnits="userSpaceOnUse"><rect width="40" height="20" fill="${c[0]}"/><ellipse cx="9" cy="6" rx="3" ry="1.6" fill="${c[1]}"/><ellipse cx="28" cy="14" rx="2.4" ry="1.3" fill="${c[1]}"/><circle cx="20" cy="4" r="1" fill="#FFFFFF" opacity=".5"/><circle cx="34" cy="7" r="1.2" fill="${c[1]}"/></pattern>
+  <pattern id="paves" width="24" height="12" patternUnits="userSpaceOnUse"><rect width="24" height="12" fill="${EPOQUES[epIdx()].place}"/><path d="M0 6h24M12 0v6M0 6v6M24 6v6" stroke="#A79F8A" stroke-width="1"/></pattern>
+  <pattern id="eau" width="48" height="24" patternUnits="userSpaceOnUse"><rect width="48" height="24" fill="${sa==='hiver'?'#BFDCEB':'#4D9BD6'}"/><path d="M4 8q6 -4 12 0M26 18q6 -4 12 0" stroke="#FFFFFF" stroke-width="1.5" fill="none" opacity=".55"/></pattern>
+  <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C2"/><stop offset="1" stop-color="#E9D3A6"/></linearGradient></defs>`}
+function arbre(x,y,sa,taille){const k=taille||1,f={printemps:'#4F9A3A',ete:'#3E8E2F',automne:['#D9772B','#C2412E','#E0A93A'][Math.floor(x*7+y)%3],hiver:'#2F6B3A'}[sa];
+  const pin=sa==='hiver'||(Math.floor(x+y)%4===0);
+  if(pin)return `<ellipse cx="${x}" cy="${y}" rx="${11*k}" ry="${5*k}" fill="#00000022"/><rect x="${x-2.5*k}" y="${y-12*k}" width="${5*k}" height="${12*k}" fill="#6D4C41"/><polygon points="${x},${y-50*k} ${x-16*k},${y-10*k} ${x+16*k},${y-10*k}" fill="#2E6B3A" stroke="#1F4E2A"/>${sa==='hiver'?`<polygon points="${x},${y-50*k} ${x-8*k},${y-32*k} ${x+8*k},${y-32*k}" fill="#FFFFFF"/>`:''}`;
+  return `<ellipse cx="${x}" cy="${y}" rx="${12*k}" ry="${5*k}" fill="#00000022"/><rect x="${x-3*k}" y="${y-16*k}" width="${6*k}" height="${16*k}" fill="#7A4E2D"/><circle cx="${x}" cy="${y-28*k}" r="${15*k}" fill="${f}" stroke="#00000033"/><circle cx="${x-9*k}" cy="${y-20*k}" r="${9*k}" fill="${f}"/><circle cx="${x+9*k}" cy="${y-21*k}" r="${9*k}" fill="${f}"/>`}
+const rocher=(x,y)=>`<ellipse cx="${x}" cy="${y-3}" rx="9" ry="6" fill="#A1A1A1" stroke="#6E6E6E"/><ellipse cx="${x-2}" cy="${y-5}" rx="4" ry="2" fill="#C8C8C8"/>`;
+const fleurs=(x,y,sa)=>sa==='hiver'?'':[['#F06292',-6,0],['#FFD54F',0,-3],['#BA68C8',6,0],['#FFFFFF',2,3]].map(([c,a,b])=>`<circle cx="${x+a}" cy="${y+b-2}" r="2.6" fill="${c}"/>`).join('');
 function dessineVillage(){
-  const ok=relies();let h='';const n=nuit();
-  // le sol : cases possédées unies ; blocs voisins à acheter, plus sombres, avec leur panneau
+  const ok=relies();let h='';const n=nuit(),sa=saisonVue();
   const achetables=new Set();
   S.blocs.forEach(k=>{const [a,c]=k.split(',').map(Number);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,y])=>{const bk=(a+x)+','+(c+y);
     if(a+x>=0&&c+y>=0&&a+x<MONDE/BLOC&&c+y<MONDE/BLOC&&!S.blocs.includes(bk))achetables.add(bk)})});
-  // le cadre suit le terrain : ce qu'on possède et ce qu'on peut acheter, rien d'autre
+  // le cadre : le terrain, ce qu'on peut acheter, et deux rangs de nature tout autour
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const borne=(i,j)=>los(i,j).forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
+  let i0=99,i1=-99,j0=99,j1=-99;
   for(let i=0;i<MONDE;i++)for(let j=0;j<MONDE;j++){const bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC);
-    if(possede(i,j)||achetables.has(bk))borne(i,j);
-    if(possede(i,j)){const vise=mode&&!occupe(i,j)&&!surPlace(i,j);
-      h+=poly(los(i,j),vise?'#B9E59A':'#A3D27C','#8CBC66',`data-c="${i},${j}"`)}
-    else if(achetables.has(bk))h+=poly(los(i,j),'#7FA35F','#6E9152',`data-x="${bk}"`)}
+    if(possede(i,j)){i0=Math.min(i0,i);i1=Math.max(i1,i);j0=Math.min(j0,j);j1=Math.max(j1,j)}}
+  const [oi0,oi1,oj0,oj1]=[i0,i1,j0,j1];i0-=4;j0-=4;i1+=4;j1+=4;
+  const nature=[];   // arbres, rochers, fleurs : triés avec les bâtiments pour passer devant ou derrière
+  for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){borne(i,j);
+    const dans=i>=0&&j>=0&&i<MONDE&&j<MONDE,bk=Math.floor(i/BLOC)+','+Math.floor(j/BLOC),[cx,cy]=P(i+.5,j+.5),r=hasard(i,j,1);
+    if(dans&&possede(i,j)){const vise=mode&&!occupe(i,j)&&!surPlace(i,j);
+      h+=poly(los(i,j),'#A3D27C','#00000014',`data-c="${i},${j}" style="fill:url(#${vise?'herbe-vise':'herbe'})"`)}
+    else if(j>=MONDE||(j-oj1-2)*(j-oj1-2)/2+(i-oi0-1)*(i-oi0-1)/9<1.2&&j>oj1){h+=poly(los(i,j),'#4D9BD6','#3F86BD',`style="fill:url(#eau)"`)}   // l'étang en contrebas, la rivière au bord du monde
+    else{h+=poly(los(i,j),'#7FA35F','#00000010',(dans&&achetables.has(bk)?`data-x="${bk}" `:'')+`style="fill:url(#sauvage)"`);
+      const d=Math.max(oi0-i,i-oi1,oj0-j,j-oj1),hors=!dans, dens=d>=3?.7:d===2?.35:.08;
+      if(r<dens)nature.push({o:i+j+1,svg:arbre(cx+(hasard(i,j,2)-.5)*14,cy+4,sa,hors?1.15:.95)});
+      else if(r<dens+.06)nature.push({o:i+j+.5,svg:rocher(cx,cy+3)});
+      else if(r<dens+.16)h+=fleurs(cx,cy,sa)}}
+  // une clôture de bois le long du terrain possédé
+  for(let i=0;i<MONDE;i++)for(let j=0;j<MONDE;j++){if(!possede(i,j))continue;
+    [[0,-1,[P(i,j),P(i+1,j)]],[-1,0,[P(i,j),P(i,j+1)]],[1,0,[P(i+1,j),P(i+1,j+1)]],[0,1,[P(i,j+1),P(i+1,j+1)]]].forEach(([di,dj,[A,B]])=>{
+      if(possede(i+di,j+dj))return;
+      nature.push({o:i+j+(di+dj>0?1.4:-.1),svg:`<g stroke="#8D6E4F" stroke-width="2.4" stroke-linecap="round"><line x1="${A[0]}" y1="${A[1]-9}" x2="${B[0]}" y2="${B[1]-9}"/><line x1="${A[0]}" y1="${A[1]-4}" x2="${B[0]}" y2="${B[1]-4}"/><line x1="${A[0]}" y1="${A[1]}" x2="${A[0]}" y2="${A[1]-12}"/></g>`})})}
   achetables.forEach(bk=>{const [a,c]=bk.split(',').map(Number),[x,y]=P(a*BLOC+2,c*BLOC+2);
-    h+=`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+8}" font-size="24" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`});
-  // la place du village
-  h+=poly(los(PLACE.i,PLACE.j,2),EPOQUES[epIdx()].place,'#A79F8A');
-  for(let a=0;a<2;a++)for(let c=0;c<2;c++)h+=poly(los(PLACE.i+a,PLACE.j+c),'none','#BFB6A0');
+    nature.push({o:999,svg:`<g data-x="${bk}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="#FFF9E8" stroke="#8A6A3E" stroke-width="3"/><text x="${x}" y="${y+8}" font-size="24" text-anchor="middle" font-weight="700" fill="#5A4630">+</text></g>`})});
+  // la place du village, pavée
+  h+=poly(los(PLACE.i,PLACE.j,2),EPOQUES[epIdx()].place,'#A79F8A','style="fill:url(#paves)"');
   const [px,py]=P(PLACE.i+1,PLACE.j+1);h+=`<rect x="${px-2}" y="${py-48}" width="4" height="48" fill="#6D4C41"/><polygon points="${px+2},${py-48} ${px+28},${py-40} ${px+2},${py-32}" fill="#E53935"/>`;
   h+=`<text x="${px}" y="${py+30}" font-size="15" font-weight="700" text-anchor="middle" fill="#3A3226" stroke="#FFFDF6" stroke-width="4" paint-order="stroke">La place</text>`;
   S.b.filter(o=>o.type==='chemin').forEach(o=>h+=dessinObjet(o,ok));
-  S.b.filter(o=>o.type!=='chemin').sort((a,b)=>(a.i+a.j+BAT[a.type].t)-(b.i+b.j+BAT[b.type].t)).forEach(o=>h+=dessinObjet(o,ok));
-  const vb=[x0-20,y0-110,x1-x0+40,y1-y0+140];
+  const tout=nature.filter(x=>x.o<999);
+  S.b.filter(o=>o.type!=='chemin').forEach(o=>tout.push({o:o.i+o.j+BAT[o.type].t,svg:dessinObjet(o,ok)}));
+  tout.sort((a,b)=>a.o-b.o).forEach(x=>h+=x.svg);
+  nature.filter(x=>x.o===999).forEach(x=>h+=x.svg);
+  const vb=[x0+90,y0+10,x1-x0-180,y1-y0-40];
+  const fond=`<rect x="${vb[0]-500}" y="${vb[1]-500}" width="${vb[2]+1000}" height="${vb[3]+1000}" fill="url(#ciel)"/>`;
   if(n)h+=`<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#1A2A55" opacity=".28" pointer-events="none"/>`;
-  return `<svg viewBox="${vb.join(' ')}" role="img" aria-label="Le village vu de biais"><title>Le village</title>${h}</svg>`;
+  return `<svg viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Le village vu de biais"><title>Le village</title>${motifs(sa)}${fond}${h}</svg>`;
 }
 
 /* ===================== Écran ===================== */
