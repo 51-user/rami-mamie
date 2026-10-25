@@ -228,7 +228,7 @@ function finPose(){
   else Object.entries(p.cout).forEach(([r,v])=>S.stock[r]=Math.max(0,(S.stock[r]||0)-v));
   h.pose=null;sauve();
   const m=document.querySelector('.msg');if(m&&n>p.avant)m.textContent=message;
-  const pills=document.querySelectorAll('.pill[data-res]');pills.forEach(el=>{const r=el.dataset.res;if(RES[r])el.textContent=RES[r].e+' '+(S.stock[r]||0)});
+  const pills=document.querySelectorAll('.pill[data-res]');pills.forEach(el=>{const r=el.dataset.res;if(RES[r])el.innerHTML=RES[r].e+' '+(S.stock[r]||0)});   // les récoltes de la V4 ont une petite image
 }
 
 /* ===================== Les fenêtres des habitants ===================== */

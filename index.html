@@ -621,7 +621,7 @@ function render(force){
     app.innerHTML=`<div class="center">
       <h1>Bonjour ${esc(myName())} !</h1>
       <div class="choice">
-        <button class="big" data-act="village">🏡 Le village<small>bâtir, produire, ramasser</small></button>
+        <button class="big" data-act="village">🏡 La Vallée<small>planter, bâtir, récolter</small></button>
         <button class="big alt" data-act="rami">🃏 Rami à deux<small>avec votre partenaire, à distance</small></button>
         <button class="big alt" data-act="solo">🂡 Solitaire<small>toute seule, sans connexion</small></button>
         <button class="big alt" data-act="belote">♣️ Belote<small>à trois ou quatre, en famille ou avec le village</small></button>
@@ -1024,7 +1024,7 @@ app.addEventListener('click',e=>{
   switch(a){
     case 'rami': mode='rami'; ls.set('mode','rami'); flash=''; render(true); break;
     case 'solo': mode='solo'; ls.set('mode','solo'); soloLoad(); render(true); break;
-    case 'village': location.href='village.html'+location.search; break;
+    case 'village': location.href='vallee.html'+location.search; break;
     case 'belote': location.href='belote.html'+location.search; break;
     case 'motsmeles': location.href='motsmeles.html'+location.search; break;
     case 'briques': location.href='briques.html'+location.search; break;
