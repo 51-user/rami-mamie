@@ -1114,7 +1114,10 @@ function halo(el){document.querySelectorAll('.halo').forEach(x=>x.remove());if(!
    visibles et en temps réel ; arroser fait pousser plus vite, une culture oubliée attend sans mourir ; quand la saison tourne, les
    cultures fanent, et Pierre prévient deux jours avant. Le jeu s'ouvre peu à peu : une partie neuve n'a d'abord qu'un carré de terre
    et une graine de radis. État : S.terre (les cases labourées), S.graines, S.v4 = {marche, boutique, labour, preavis, fane}. */
-const FACTEUR_GRAINE=.5;   // prix d'une graine = valeur de la récolte × ce facteur (la conception dit « le double » : question posée à Florian)
+// prix d'une graine, rapports du vrai jeu (CONCEPTION-V4 corrigée, 25/10) : récolte unique de 46 à 64 % de sa vente (panais 20 → 35) ;
+// une culture qui repousse coûte plus que sa première récolte (haricot 60 → 40) et devient rentable dès la deuxième
+const FACTEUR_GRAINE=.55;
+const FACTEUR_REPOUSSE=1.5;
 const ARROSE_MS=2*3600000, ARROSE_X=1.5;   // une culture arrosée pousse une fois et demie plus vite, pendant deux heures
 const SUITE_SAISON={printemps:'ete',ete:'automne',automne:'hiver',hiver:'printemps'};
 const NOM_SAISON={printemps:'le printemps',ete:"l'été",automne:"l'automne",hiver:"l'hiver"};
@@ -1131,7 +1134,7 @@ const CULTURES={
  chou:{nom:'Chou',min:90,val:90,s:['automne'],feuille:'#7DB8AE',fleur:'#F5E37A'},
  poireau:{nom:'Poireau',min:60,val:70,s:['hiver'],feuille:'#7DB06A',fleur:'#F2F2F2'},
  betterave:{nom:'Betteraves',min:120,val:110,s:['hiver'],feuille:'#6E9E3A',fleur:'#E8A0B8'}};
-const prixGraine=k=>Math.max(1,Math.round(CULTURES[k].val*FACTEUR_GRAINE));
+const prixGraine=k=>Math.max(1,Math.round(CULTURES[k].val*(CULTURES[k].rep?FACTEUR_REPOUSSE:FACTEUR_GRAINE)));
 /* Les dessins : 4 étapes (pousse, feuilles, fleur, fruit), posées au pied de la case (0,0). */
 function feuil(x,y,l,a,c){const cx=x+Math.cos(a)*l/2,cy=y+Math.sin(a)*l/2,deg=(a*180/Math.PI).toFixed(1);   // une feuille pleine, avec sa nervure claire
   return `<ellipse cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="${(l/2).toFixed(2)}" ry="${(l*.21).toFixed(2)}" transform="rotate(${deg} ${cx.toFixed(2)} ${cy.toFixed(2)})" fill="${c}" stroke="#2F5A1E" stroke-width=".55"/><path d="M${x} ${y}L${(x+Math.cos(a)*l*.85).toFixed(2)} ${(y+Math.sin(a)*l*.85).toFixed(2)}" stroke="#FFFFFF" stroke-opacity=".4" stroke-width=".5"/>`}
