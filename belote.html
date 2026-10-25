@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Belote en famille</title>
+<meta name="theme-color" content="#1A4A33">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<style>
+/* Les mêmes jetons et la même mise en page que le rami (index.html), puis l'habit bois et parchemin
+   de cartes-vallee.css. Ensuite, ce qui est propre à la belote : quatre places autour d'un tapis. */
+:root{
+  --gold:#F0C04A; --gold-deep:#C99A22; --gold-ink:#2B1F00;
+  --paper:#FBF5E6; --ink:#151515; --alert:#FFE3A3;
+  --f-display:"Libre Baskerville", Georgia, "Times New Roman", serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme:dark;
+  --bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
+  --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
+  --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);
+}
+html,body{height:100%}
+body{margin:0;color:var(--txt);font-family:var(--f-body);font-size:22px;line-height:1.35;background:#2E6A3C;
+  -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none}
+#app{min-height:100%;display:flex;flex-direction:column;box-sizing:border-box;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-top:calc(14px + env(safe-area-inset-top, 0px));padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.big{font-size:30px;font-weight:700;min-height:80px;padding:0 36px;border-radius:18px;border:0;text-wrap:balance}
+.small{font-size:19px;min-height:54px;padding:0 18px;border-radius:12px}
+h1{font-size:52px;line-height:1.1;margin:0;text-wrap:balance}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;padding-block:20px}
+.lead{font-size:26px;max-width:28em;margin:0;text-wrap:balance}
+.boxed{border-radius:20px;padding:22px 26px}
+.field{font-size:38px;font-family:var(--f-body);font-weight:700;padding:14px 22px;width:min(520px,100%);box-sizing:border-box;text-align:center}
+.err{font-size:24px;font-weight:700;min-height:1.4em;margin:0}
+.fan{display:flex;justify-content:center}
+.fan svg{margin-left:-38px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+.fan svg:first-child{margin-left:0}
+.homebtns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.help{font-size:25px;font-weight:700;padding:10px 18px;border-radius:14px;text-wrap:balance;margin:0;text-align:center}
+.help.wait{font-weight:400}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+.panel{padding:28px 30px;max-width:820px;width:100%;max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:36px;margin:0;text-wrap:balance}
+.panel h3{font-size:24px;margin:6px 0 0}
+.panel p,.panel li{font-size:22px;margin:0}
+.panel ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:8px}
+.choice{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+.choice .big{font-size:36px;min-height:150px;width:min(360px,100%);padding:0 26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.choice .big small{font-size:21px;font-weight:400}
+html body *{-webkit-tap-highlight-color:transparent}
+html body *:focus,html body button:focus-visible,html body input:focus-visible{outline:none}
+html body button:focus-visible,html body input:focus-visible{box-shadow:0 0 0 4px #FFD86B,0 0 14px #FFD86B}
+html body h1,html body .panel h2{font-family:var(--f-titre);color:#FFF1CC;-webkit-text-stroke:6px #4A2A12;paint-order:stroke fill;text-shadow:0 3px 0 #4A2A12}
+html body .big,html body .small{background:var(--bois);color:#FFF4D6;border:4px solid #4A2A12;border-radius:10px;font-family:var(--f-titre);
+  text-shadow:0 2px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -4px 0 rgba(0,0,0,.25),0 5px 0 #3A2010;transition:filter .12s,transform .08s}
+html body .big.alt,html body .small{background:var(--bois-clair);color:#FFF4D6}
+html body .big small{color:#FFE9B8;font-family:var(--f-body)}
+html body .big:active,html body .small:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),inset 0 -2px 0 rgba(0,0,0,.25),0 1px 0 #3A2010;filter:brightness(1.18) sepia(.2)}
+html body .boxed{background:var(--parchemin);color:#3E2410;border:5px solid #5A3418;border-radius:12px;box-shadow:inset 0 0 0 3px #C9A36A,0 4px 0 #3A2010}
+html body .panel{background:var(--parchemin);color:#3E2410;border:6px solid #5A3418;border-radius:14px;box-shadow:inset 0 0 0 4px #C9A36A,0 6px 0 #3A2010}
+html body .field{background:#FBF0D2;color:#3E2410;border:4px solid #5A3418;border-radius:10px}
+html body label.lead,html body .lead b{color:#FFF1CC;-webkit-text-stroke:4px #4A2A12;paint-order:stroke fill;font-family:var(--f-titre)}
+</style>
+<link rel="stylesheet" href="cartes-vallee.css">
+<style>
+/* ---------- Belote : bandeau, atout en grand, quatre places, le pli au milieu, la main en bas ---------- */
+.top .titre{font-family:var(--f-titre);font-size:28px;color:var(--brun);flex:0 0 auto}
+.scores{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 auto;min-width:0}
+.plaque{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 14px;min-height:58px;box-sizing:border-box;
+  background:var(--plaque);color:#FFF4D6;font-family:var(--f-titre);border:3px solid var(--bord);border-radius:9px;text-shadow:0 1px 0 var(--bord-fonce);
+  box-shadow:inset 0 1px 0 rgba(255,230,180,.45),inset 0 -2px 0 rgba(0,0,0,.25),0 2px 0 var(--bord-fonce);line-height:1.05}
+.plaque small{font-size:16px;font-weight:600;opacity:.95;white-space:nowrap}
+.plaque b{font-size:32px;font-variant-numeric:tabular-nums}
+.plaque.moi{background:linear-gradient(#5E8A3A,#3E6A24);border-color:#24400F}
+.atout{display:flex;align-items:center;gap:10px;padding:4px 16px 4px 10px;min-height:66px;box-sizing:border-box;border-radius:12px;
+  background:linear-gradient(#FFF8DE,#F3DCA4);border:4px solid var(--bord);box-shadow:inset 0 0 0 2px #E3C07E,0 3px 0 var(--bord-fonce),0 0 14px rgba(255,216,107,.7);color:var(--brun)}
+.atout .mot{display:flex;flex-direction:column;line-height:1.05;font-family:var(--f-titre)}
+.atout .mot small{font-size:17px}
+.atout .mot b{font-size:30px}
+.atout.attente{box-shadow:inset 0 0 0 2px #E3C07E,0 3px 0 var(--bord-fonce)}
+.tablejeu{flex:1;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:auto 1fr;gap:8px 12px;padding-block:10px;min-height:0;align-items:center}
+.place{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.place.haut{grid-column:2;grid-row:1}
+.place.gauche{grid-column:1;grid-row:2;justify-self:start}
+.place.droite{grid-column:3;grid-row:2;justify-self:end}
+.nom{font-family:var(--f-titre);font-size:24px;font-weight:700;padding:4px 14px;border-radius:10px;background:var(--parchemin);color:var(--brun);
+  border:4px solid var(--cadre);box-shadow:inset 0 0 0 2px var(--liseré),0 3px 0 var(--bord-fonce);white-space:nowrap;text-align:center}
+.nom small{display:block;font-size:16px;font-weight:600;color:var(--brun-doux)}
+.place.tour .nom{box-shadow:inset 0 0 0 3px var(--lueur),0 3px 0 var(--bord-fonce),0 0 18px rgba(255,216,107,.95)}
+.dos{display:flex;height:44px}.dos svg{margin-left:-20px}.dos svg:first-child{margin-left:0}
+.bulle{position:relative;background:#FFFDF2;color:#3E2410;border:3px solid var(--cadre);border-radius:16px;padding:4px 14px;font-size:22px;font-weight:700;
+  font-family:var(--f-titre);white-space:nowrap;box-shadow:0 3px 0 var(--bord-fonce)}
+.bulle:empty{visibility:hidden}
+.pli{grid-column:2;grid-row:2;position:relative;width:var(--pw);height:var(--ph)}
+.pli .pc{position:absolute;display:flex;flex-direction:column;align-items:center}
+.pli .pc svg{filter:drop-shadow(-2px 3px 4px rgba(0,0,0,.4))}
+.pli .s-bas{left:50%;bottom:0;transform:translateX(-50%)}
+.pli .s-haut{left:50%;top:0;transform:translateX(-50%)}
+.pli .s-gauche{left:0;top:50%;transform:translateY(-50%)}
+.pli .s-droite{right:0;top:50%;transform:translateY(-50%)}
+.pli .gagne svg{filter:drop-shadow(0 0 8px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
+.retournee{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.retournee span{font-family:var(--f-titre);font-size:20px;background:var(--parchemin);color:var(--brun);border:3px solid var(--cadre);border-radius:9px;padding:0 10px}
+.mabulle{position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);z-index:3}
+.actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;padding-top:10px;min-height:0}
+.actions:empty{display:none}
+.actions .big{min-height:76px;font-size:28px;padding:0 26px;display:inline-flex;align-items:center;gap:10px}
+.main{display:flex;justify-content:center;padding-top:22px;position:relative}
+.carte{background:none;border:0;padding:0;position:relative;transition:transform .15s ease,filter .15s}
+.carte svg{display:block;filter:drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
+.carte.ok{transform:translateY(-18px)}
+.carte.ok svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 5px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
+.carte.non svg{filter:grayscale(.75) brightness(.62) drop-shadow(-3px 2px 4px rgba(0,0,0,.35))}
+.aide{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--hh,200px) + 34px);z-index:12;max-width:min(680px,92vw);
+  background:#FFFDF2;color:#3E2410;border:4px solid var(--cadre);border-radius:18px;padding:12px 20px;font-size:26px;font-weight:700;text-align:center;text-wrap:balance;
+  box-shadow:inset 0 0 0 2px var(--liseré),0 4px 0 var(--bord-fonce),0 0 22px rgba(255,216,107,.85)}
+.aide::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:14px solid transparent;border-top-color:var(--cadre)}
+.choixn{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.choixn .big{min-width:240px}
+.choixn .big[aria-pressed="true"]{box-shadow:inset 0 2px 0 rgba(255,230,180,.45),0 0 0 5px var(--lueur),0 0 18px var(--lueur),0 5px 0 #3A2010}
+.sieges{display:flex;flex-direction:column;gap:8px;width:min(560px,100%)}
+.lobby{gap:12px;padding-block:4px}
+.lobby h1{font-size:40px}
+.lobby .lead{font-size:23px}
+.lobby .choixn .big{min-height:70px;font-size:26px;min-width:200px}
+.sieges div{display:flex;justify-content:space-between;gap:12px;font-size:22px;padding:5px 16px;border-radius:10px;background:linear-gradient(#FBF0D2,#EFD9A6);border:3px solid #6B4022;color:var(--brun)}
+.compte{display:grid;grid-template-columns:1fr repeat(var(--nc),auto);gap:6px 22px;font-size:22px;font-variant-numeric:tabular-nums;align-items:baseline;
+  background:linear-gradient(#FBF0D2,#EFD9A6);border:4px solid #6B4022;border-radius:10px;padding:12px 18px;box-shadow:inset 0 0 0 2px #D9B67E,0 4px 0 var(--bord-fonce);color:var(--brun)}
+.compte .h{font-family:var(--f-titre);font-size:20px;text-align:right}
+.compte b{text-align:right;font-family:var(--f-titre);font-size:24px}
+.compte .tot b{font-size:30px}
+.verdict{font-family:var(--f-titre);font-size:30px;color:var(--brun)}
+@media (max-width:820px){ .top .titre{display:none} }
+@media (orientation:portrait){
+  .tablejeu{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto 1fr}
+  .place.haut{grid-column:1 / span 2;grid-row:1}
+  .place.gauche{grid-column:1;grid-row:2;justify-self:center}
+  .place.droite{grid-column:2;grid-row:2;justify-self:center}
+  .pli{grid-column:1 / span 2;grid-row:3;justify-self:center}
+}
+@media (prefers-reduced-motion: reduce){.carte{transition:none}}
+</style>
+</head>
+<body data-tapis="vert">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="fleurs" width="22" height="22" patternUnits="userSpaceOnUse">
+      <rect width="22" height="22" fill="#EED9DC"/>
+      <g fill="#C2546B"><circle cx="6" cy="3.6" r="2"/><circle cx="8.4" cy="5.4" r="2"/><circle cx="7.5" cy="8.2" r="2"/><circle cx="4.5" cy="8.2" r="2"/><circle cx="3.6" cy="5.4" r="2"/></g>
+      <circle cx="6" cy="6" r="1.4" fill="#F3C14B"/>
+      <g fill="#7E9C5B"><ellipse cx="15" cy="15" rx="2.4" ry="1.1" transform="rotate(-35 15 15)"/><ellipse cx="18.5" cy="18" rx="2.4" ry="1.1" transform="rotate(35 18.5 18)"/></g>
+      <g fill="#E58FA0"><circle cx="17" cy="9" r="1.2"/><circle cx="18.6" cy="10.2" r="1.2"/><circle cx="17.9" cy="12" r="1.2"/><circle cx="16.1" cy="12" r="1.2"/><circle cx="15.4" cy="10.2" r="1.2"/></g>
+      <circle cx="17" cy="10.8" r=".8" fill="#FFF3C4"/>
+    </pattern>
+    <clipPath id="medaillon"><ellipse cx="50" cy="58" rx="27" ry="35"/></clipPath>
+  </defs>
+</svg>
+
+<div id="app"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="belote.js"></script>
+<script>
+/* Les règles retenues sont écrites en tête de belote.js. Ici : l'écran, la liaison et les récompenses. */
+
+/* ---------- Mémoire de la tablette (même prénom et même tapis que le rami) ---------- */
+const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
+const K=k=>'belote'+(PROFIL?'-'+PROFIL:'')+':'+k;
+const KR=k=>'rami'+(PROFIL?'-'+PROFIL:'')+':'+k;
+const ls={get(k){try{return localStorage.getItem(K(k))}catch{return null}},
+  set(k,v){try{v==null?localStorage.removeItem(K(k)):localStorage.setItem(K(k),v)}catch{}}};
+const myName=()=>{try{return localStorage.getItem(KR('nom'))||''}catch{return ''}};
+const backName=()=>{try{return localStorage.getItem(KR('dos-prenom'))||myName()}catch{return ''}};
+function applyTapis(){ let t=null; try{t=localStorage.getItem(KR('tapis'))}catch{} document.body.dataset.tapis=['vert','carreaux','bois'].includes(t)?t:'vert'; }
+applyTapis();
+let cid=ls.get('cid'); if(!cid){ cid=Math.random().toString(36).slice(2,10); ls.set('cid',cid); }
+
+/* Comme le rami : chaque partie finie verse des pièces dans la caisse du village (même tablette) ;
+   le village les ramasse et y ajoute des étoiles. La clé évite de payer deux fois la même partie. */
+function versVillage(n,cle){
+  try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
+    localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
+}
+
+/* ---------- Dessin des cartes : les mêmes faces que le rami (SVG, viewBox 100 × 140) ---------- */
+const SHAPE=[
+  '<path d="M50 4C64 26 96 40 96 62C96 77 84 85 72 85C63 85 57 80 54 74C55 84 59 91 68 96H32C41 91 45 84 46 74C43 80 37 85 28 85C16 85 4 77 4 62C4 40 36 26 50 4Z"/>',
+  '<path d="M50 92C20 68 4 50 4 31C4 15 16 5 30 5C40 5 47 11 50 19C53 11 60 5 70 5C84 5 96 15 96 31C96 50 80 68 50 92Z"/>',
+  '<path d="M50 3L89 50L50 97L11 50Z"/>',
+  '<circle cx="50" cy="27" r="21"/><circle cx="27" cy="58" r="21"/><circle cx="73" cy="58" r="21"/><path d="M45 48H55C55 74 60 87 70 96H30C40 87 45 74 45 48Z"/>'
+];
+function pip(s,x,y,size,flip){
+  const k=size/100;
+  return `<g transform="translate(${x-size/2} ${y-size/2}) scale(${k})${flip?' rotate(180 50 50)':''}">${SHAPE[s]}</g>`;
+}
+const PIPS={
+  7:[[33,32],[67,32],[50,51],[33,70],[67,70],[33,108],[67,108]],
+  8:[[33,32],[67,32],[50,51],[33,70],[67,70],[50,89],[33,108],[67,108]],
+  9:[[33,32],[67,32],[33,57],[67,57],[50,70],[33,83],[67,83],[33,108],[67,108]],
+  10:[[33,32],[67,32],[50,45],[33,57],[67,57],[33,83],[67,83],[50,95],[33,108],[67,108]]
+};
+const FONT='Libre Baskerville, Georgia, serif';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function backSVG(w, name){
+  const h=Math.round(w*1.4), n=name===undefined?backName():name, tiny=w<50;
+  const flower=`<g transform="translate(50 56)"><g fill="#C2546B">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-11" rx="7" ry="10" transform="rotate(${a})"/>`).join('')}</g><circle r="6" fill="#F3C14B"/></g>`;
+  const len=n.length, fs=len>9?11:13;
+  const ribbon=tiny||!n?'':`<rect x="14" y="101" width="72" height="22" rx="5" fill="#FFF8EE" stroke="#B8875A" stroke-width="1.5"/>
+    <text x="50" y="116.5" font-size="${fs}" text-anchor="middle" font-family="${FONT}" font-style="italic" fill="#7A2E3E" ${len>11?'textLength="66" lengthAdjust="spacingAndGlyphs"':''}>${esc(n)}</text>`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 100 140" role="img" aria-label="dos de carte">
+    <rect x="1" y="1" width="98" height="138" rx="9" fill="#FFFDF7" stroke="#A79F8A" stroke-width="1.5"/>
+    <rect x="6" y="6" width="88" height="128" rx="6" fill="url(#fleurs)" stroke="#B8875A" stroke-width="2"/>
+    ${tiny?'':`<ellipse cx="50" cy="58" rx="29" ry="37" fill="#FFF8EE" stroke="#B8875A" stroke-width="2"/>${flower}`}${ribbon}</svg>`;
+}
+function cardSVG(id,w){
+  const h=Math.round(w*1.4);
+  if(id==null) return backSVG(w);
+  const open=`<svg width="${w}" height="${h}" viewBox="0 0 100 140" role="img"`;
+  const base=`<rect x="1" y="1" width="98" height="138" rx="9" fill="#FFFDF7" stroke="#A79F8A" stroke-width="1.5"/>`;
+  const s=suitOf(id), r=rankOf(id), col=SUIT_RED[s]?'#B3122A':'#151515', L=label(r);
+  const fs=L==='10'?25:31;
+  const corner=`<text x="14" y="31" font-size="${fs}" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="${col}" ${L==='10'?'textLength="24" lengthAdjust="spacingAndGlyphs"':''}>${L}</text>${pip(s,14,45,17)}`;
+  let mid='';
+  if(r===1) mid=pip(s,50,70,52);
+  else if(r<=10) mid=PIPS[r].map(([x,y])=>pip(s,x,y,19,y>72)).join('');
+  else {
+    const tint=SUIT_RED[s]?'#FBE6E3':'#E8ECF4';
+    const crown=r===13?`<path d="M36 44L39 30L45 38L50 26L55 38L61 30L64 44Z" fill="#E0A82E" stroke="${col}" stroke-width="1.5"/>`
+      :r===12?`<path d="M40 44Q50 30 60 44Z" fill="#E0A82E" stroke="${col}" stroke-width="1.5"/><circle cx="50" cy="33" r="3" fill="${col}"/>`
+      :`<rect x="42" y="36" width="16" height="8" rx="2" fill="#E0A82E" stroke="${col}" stroke-width="1.5"/>`;
+    mid=`<rect x="27" y="20" width="46" height="100" rx="5" fill="${tint}" stroke="${col}" stroke-width="1.6"/>${crown}
+      <text x="50" y="86" font-size="40" text-anchor="middle" font-family="${FONT}" font-weight="700" fill="${col}">${L}</text>${pip(s,50,104,17)}`;
+  }
+  return `${open} aria-label="${cardName(id)}">${base}<g fill="${col}">${corner}<g transform="rotate(180 50 70)">${corner}</g>${mid}</g></svg>`;
+}
+const suitIcon=(s,w)=>`<svg width="${w}" height="${w}" viewBox="0 0 100 100" aria-hidden="true" fill="${SUIT_RED[s]?'#B3122A':'#2E1A0C'}">${SHAPE[s]}</svg>`;
+
+/* ---------- État de l'écran ---------- */
+let mode=null;          // null (accueil), 'seul' (avec les automates, sans connexion), 'salle' (en famille, à distance)
+let S=null;             // la partie complète : seulement chez l'hôte, ou en jeu seul
+let V=null;             // ce que cette tablette a le droit de voir
+let mySeat=null, word='', flash='', aide='', aideT=null, panel=null, setup={n:4,target:1000};
+let peer=null, conn=null, role=null, linked=false, netMsg='', timers=[], conns=new Map(), pumpT=null;
+const app=document.getElementById('app');
+const roomId=w=>'belotefamille51-'+w;
+const later=(f,ms)=>timers.push(setTimeout(f,ms));
+const authority=()=>mode==='seul'||role==='host';
+
+function save(){ if(!S) return; if(mode==='seul') ls.set('seul',JSON.stringify(S)); else if(role==='host') ls.set('partie:'+word,JSON.stringify(S)); }
+function load(k){ try{ return JSON.parse(ls.get(k)||'null'); }catch{ return null; } }
+function refreshView(){ if(!S) return; V=S.phase==='lobby'?{...S,you:mySeat}:viewFor(S,mySeat); }
+
+/* L'hôte (ou le jeu seul) applique un coup, garde la partie et prévient les autres tablettes. */
+function commit(st){
+  st.rev=(S?.rev||0)+1; S=st; save(); refreshView(); render(); broadcast(); pump();
+}
+function broadcast(){
+  if(role!=='host'||!S) return;
+  for(const [id,c] of conns){
+    if(!c.open) continue;
+    if(S.phase==='lobby'){ const k=S.humans.findIndex(h=>h.cid===id); try{ c.send({t:'view',v:{...S,you:k}}); }catch{} continue; }
+    const k=S.players.findIndex(p=>p.cid===id);
+    try{ c.send({t:'view',v:k>=0?viewFor(S,k):{phase:'full'}}); }catch{}
+  }
+}
+/* Le rythme de la table : les automates jouent un peu lentement, le pli reste visible avant d'être ramassé. */
+function pump(){
+  clearTimeout(pumpT); if(!authority()||!S) return;
+  const rev=S.rev, go=(ms,f)=>{ pumpT=setTimeout(()=>{ if(S&&S.rev===rev) f(); },ms); };
+  if(S.phase==='play'&&S.trick.length===S.n) go(1900,()=>{ const r=apply(S,null,{type:'collect'}); if(r.st) commit(r.st); });
+  else if(S.phase==='nobid') go(2600,()=>{ const r=apply(S,null,{type:'redeal'}); if(r.st) commit(r.st); });
+  else if((S.phase==='bid'||S.phase==='play')&&S.players[S.turn].bot)
+    go(S.phase==='bid'?1500:1250,()=>{ const r=apply(S,S.turn,botMove(S)); if(r.st) commit(r.st); else console.warn(r.error); });
+}
+function act(a){
+  if(role==='guest'){
+    if(!linked){ say('La liaison est coupée. Un instant, le jeu se reconnecte.'); return; }
+    send({t:'act',a}); return;
+  }
+  const r=apply(S,mySeat,a);
+  if(r.error){ say(r.error); return; }
+  aide=''; commit(r.st);
+}
+/* La bulle d'aide : une phrase courte, qui s'efface toute seule. */
+function say(msg){ aide=msg; clearTimeout(aideT); aideT=setTimeout(()=>{ aide=''; render(); },6000); render(); }
+
+/* ---------- Liaison entre tablettes (la même façon de faire que le rami) ---------- */
+function send(m){ if(conn&&conn.open){ try{ conn.send(m); }catch{} } }
+function stopNet(){
+  timers.forEach(clearTimeout); timers=[];
+  try{ conn&&conn.close(); }catch{} conn=null; linked=false;
+  for(const c of conns.values()) try{ c.close(); }catch{}
+  conns.clear();
+  try{ peer&&peer.destroy(); }catch{} peer=null; role=null;
+}
+function netProblem(){
+  netMsg="La connexion internet ne répond pas. Le jeu réessaie tout seul dans quelques secondes.";
+  render(); stopNet(); later(startNet,6000);
+}
+function startNet(){
+  if(!word) return;
+  if(typeof Peer==='undefined'){ netMsg="Le jeu n'a pas pu se charger. Vérifiez internet, puis rouvrez le jeu."; render(); return; }
+  const r=ls.get('role:'+word);
+  if(r==='guest') joinAsGuest(); else tryHost(r==='host');
+  render();
+}
+function tryHost(isMine){
+  const p=new Peer(roomId(word),{debug:0}); peer=p;
+  p.on('open',()=>{
+    role='host'; mySeat=0; ls.set('role:'+word,'host'); netMsg='';
+    S=load('partie:'+word)||{v:1,rev:1,phase:'lobby',n:4,target:1000,ensemble:true,humans:[{name:myName(),cid}]};
+    if(S.phase==='lobby') S.humans[0]={name:myName(),cid};
+    else mySeat=Math.max(0,S.players.findIndex(x=>x.cid===cid));
+    save(); refreshView(); render(); pump();
+  });
+  p.on('connection',c=>wireHost(c));
+  p.on('error',e=>{
+    if(e.type==='unavailable-id'){
+      try{p.destroy()}catch{} peer=null;
+      if(isMine){ netMsg='Reconnexion à votre salle…'; render(); later(()=>tryHost(true),4000); }
+      else joinAsGuest();
+      return;
+    }
+    if(['network','server-error','socket-error','socket-closed','browser-incompatible'].includes(e.type)) netProblem();
+  });
+  p.on('disconnected',()=>later(()=>{ if(peer===p&&!p.destroyed) try{p.reconnect()}catch{} },2000));
+}
+function wireHost(c){
+  let id=null;
+  c.on('data',m=>{
+    if(!m||typeof m!=='object') return;
+    if(m.t==='hello'){
+      id=String(m.cid||'').slice(0,20); const name=String(m.name||'Invitée').slice(0,20);
+      const old=conns.get(id); if(old&&old!==c) try{old.close()}catch{}
+      conns.set(id,c);
+      if(S.phase==='lobby'){
+        const k=S.humans.findIndex(h=>h.cid===id);
+        if(k<0&&S.humans.length<S.n){ const st=clone(S); st.humans.push({name,cid:id}); commit(st); return; }
+        if(k>=0&&S.humans[k].name!==name){ const st=clone(S); st.humans[k].name=name; commit(st); return; }
+      }
+      broadcast(); render(); return;
+    }
+    if(m.t==='act'&&id&&S.phase!=='lobby'){
+      const k=S.players.findIndex(p=>p.cid===id); if(k<0) return;
+      const r=apply(S,k,m.a);
+      if(r.error){ try{ c.send({t:'err',msg:r.error}); }catch{} return; }
+      commit(r.st);
+    }
+  });
+  c.on('close',()=>{ if(id&&conns.get(id)===c) conns.delete(id); render(); });
+  c.on('error',()=>{});
+}
+function joinAsGuest(){
+  role='guest';
+  const p=new Peer({debug:0}); peer=p;
+  p.on('open',connectHost);
+  p.on('error',e=>{
+    if(e.type==='peer-unavailable'){ linked=false; if(!V) netMsg='On attend la tablette qui a ouvert la salle : elle doit être allumée, avec la belote ouverte.'; render(); later(connectHost,5000); return; }
+    if(['network','server-error','socket-error','socket-closed','browser-incompatible'].includes(e.type)) netProblem();
+  });
+  p.on('disconnected',()=>later(()=>{ if(peer===p&&!p.destroyed) try{p.reconnect()}catch{} },2000));
+}
+function connectHost(){
+  if(!peer||peer.destroyed||role!=='guest') return;
+  if(conn&&conn.open) return;
+  const c=peer.connect(roomId(word),{reliable:true}); conn=c;
+  c.on('open',()=>{ linked=true; c.send({t:'hello',name:myName(),cid}); render(); });
+  c.on('data',m=>{
+    if(!m||typeof m!=='object') return;
+    if(m.t==='view'&&m.v){ V=m.v; mySeat=V.you; ls.set('role:'+word,'guest'); netMsg=''; render(); }
+    if(m.t==='err') say(m.msg);
+  });
+  c.on('close',()=>{ if(conn!==c) return; linked=false; render(); later(connectHost,3000); });
+  c.on('error',()=>{});
+  later(()=>{ if(conn===c&&!c.open){ try{c.close()}catch{} connectHost(); } },9000);
+}
+function cleanWord(w){ return w.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+function enterRoom(raw){
+  const w=cleanWord(raw);
+  if(!w){ flash='Tapez un mot, par exemple « jardin ».'; render(); return; }
+  stopNet(); word=w; S=null; V=null; mySeat=null; flash=''; netMsg='Connexion à la salle…';
+  ls.set('mot',raw.trim()); ls.set('salle',w);
+  startNet();
+}
+function leave(){ stopNet(); clearTimeout(pumpT); ls.set('salle',null); ls.set('mode',null); word=''; S=null; V=null; mySeat=null; netMsg=''; mode=null; panel=null; aide=''; render(); }
+
+/* ---------- Partie avec les automates (sur cette tablette seule) ---------- */
+function startSolo(){
+  const pl=[{name:myName()||'Moi',cid}];
+  for(let k=1;k<setup.n;k++) pl.push({name:BOTS[k-1],bot:true});
+  mode='seul'; ls.set('mode','seul'); mySeat=0; S=null;
+  commit(newGame(pl,setup.n,setup.target));
+}
+/* L'hôte place les humaines (ensemble face à face, ou l'une contre l'autre) et complète avec les automates. */
+function startHosted(){
+  const H=S.humans.slice(0,S.n), seats=Array(S.n).fill(null);
+  const order=S.n===4&&H.length===2?(S.ensemble?[0,2]:[0,1]):[0,1,2,3].slice(0,S.n);
+  H.forEach((h,k)=>seats[order[k]]={name:h.name,cid:h.cid});
+  let b=0; for(let k=0;k<S.n;k++) if(!seats[k]) seats[k]={name:BOTS[b++],bot:true};
+  mySeat=0; commit(newGame(seats,S.n,S.target));
+}
+
+/* ---------- Affichage ---------- */
+function screen(){
+  if(!myName()) return 'prenom';
+  if(mode==='seul') return S?'game':'setup';
+  if(mode!=='salle') return 'accueil';
+  if(!word) return 'mot';
+  if(!V) return 'connect';
+  if(V.phase==='lobby') return 'lobby';
+  if(V.phase==='full') return 'full';
+  return 'game';
+}
+function render(){
+  const sc=screen();
+  const f=flash?`<p class="err" role="alert">${esc(flash)}</p>`:'<p class="err"></p>';
+  const pan=panel==='regles'?rulesHTML():'';
+  const fan=`<div class="fan">${[null,10,24,38,51].map(i=>cardSVG(i,110)).join('')}</div>`;
+  if(sc==='prenom'){
+    app.innerHTML=`<div class="center">${fan}<h1>Belote en famille</h1>
+      <form id="fPrenom" class="center" style="padding:0;gap:16px">
+        <label for="prenom" class="lead"><b>Votre prénom</b></label>
+        <input id="prenom" class="field" autocomplete="off" placeholder="Jeanne">
+        <button class="big" type="submit">C'est moi</button>${f}</form></div>`;
+    return;
+  }
+  if(sc==='accueil'){
+    app.innerHTML=`<div class="center">${fan}<h1>Belote en famille</h1>
+      <div class="choice">
+        <button class="big" data-act="seul">🃏 Avec Marcel, Odette et Lucien<small>des joueurs du village, sans connexion</small></button>
+        <button class="big alt" data-act="salle">👵 En famille<small>à distance, avec un mot de salle</small></button>
+      </div>
+      <div class="homebtns"><button class="small" data-act="regles">Les règles</button><button class="small" data-act="maison">Retour à l'accueil</button></div></div>${pan}`;
+    return;
+  }
+  if(sc==='setup'){
+    app.innerHTML=`<div class="center"><h1>Une belote avec le village</h1>
+      <p class="lead boxed">À quatre, vous jouez avec ${BOTS[1]} en face de vous, contre ${BOTS[0]} et ${BOTS[2]}. À trois, chacun joue pour soi.</p>
+      ${choixHTML(setup.n,setup.target)}
+      <div class="homebtns"><button class="big" data-act="go-seul">Commencer</button>${load('seul')?.phase&&load('seul').phase!=='over'?'<button class="big alt" data-act="reprendre">Reprendre la partie en cours</button>':''}</div>
+      <div class="homebtns"><button class="small" data-act="maison-belote">Retour</button></div></div>`;
+    return;
+  }
+  if(sc==='mot'){
+    app.innerHTML=`<div class="center">${fan}<h1>Belote en famille</h1>
+      <p class="lead boxed">Choisissez un mot ensemble, par exemple « jardin ». La première qui le tape ouvre la table ; les autres tapent le même mot pour s'y asseoir.</p>
+      <form id="fMot" class="center" style="padding:0;gap:16px">
+        <label for="mot" class="lead"><b>Le mot de la salle</b></label>
+        <input id="mot" class="field" autocomplete="off" autocapitalize="none" value="${esc(ls.get('mot')||'')}" placeholder="jardin">
+        <button class="big" type="submit">Entrer</button>${f}</form>
+      <div class="homebtns"><button class="small" data-act="maison-belote">Retour</button></div></div>`;
+    return;
+  }
+  if(sc==='connect'||sc==='full'){
+    app.innerHTML=`<div class="center"><div class="fan">${[null,null,null].map(i=>cardSVG(i,100)).join('')}</div>
+      <h1>Salle « ${esc(word)} »</h1>
+      <p class="lead boxed">${sc==='full'?'Cette table est déjà complète : la partie a commencé sans vous. Choisissez un autre mot, ou attendez la fin de la partie.':esc(netMsg||'Connexion à la salle…')}</p>
+      <button class="small" data-act="leave">Changer de salle</button></div>`;
+    return;
+  }
+  if(sc==='lobby'){ renderLobby(f); return; }
+  renderGame(pan);
+}
+function choixHTML(n,target,host=true){
+  const b=(act,val,cur,txt,sm)=>`<button class="big alt" data-act="${act}" data-v="${val}" aria-pressed="${cur===val}" ${host?'':'disabled'}>${cur===val?'✓ ':''}${txt}${sm?`<small style="display:block">${sm}</small>`:''}</button>`;
+  if(!host) return `<p class="lead boxed">${n===4?'À quatre, deux équipes':'À trois, chacun pour soi'} · partie en ${target} points.</p>`;
+  return `<div class="choixn">${b('n',4,n,'À quatre','deux équipes')}${b('n',3,n,'À trois','chacun pour soi')}
+    ${b('target',500,target,'Partie courte','en 500 points')}${b('target',1000,target,'Partie classique','en 1000 points')}</div>`;
+}
+function renderLobby(f){
+  const host=role==='host', L=V, H=L.humans;
+  const rows=Array.from({length:L.n},(_,k)=>{
+    const h=H[k]; return `<div><span>Place ${k+1}</span><b>${h?esc(h.name)+(k===L.you?' (vous)':''):'un joueur du village'}</b></div>`;
+  }).join('');
+  const ens=L.n===4&&H.length===2&&!host?`<p class="lead boxed">${L.ensemble?'Vous jouez ensemble, face à face.':'Vous jouez l\'une contre l\'autre.'}</p>`
+    :L.n===4&&H.length===2?`<div class="choixn">
+      <button class="big alt" data-act="ens" data-v="1" aria-pressed="${!!L.ensemble}" ${host?'':'disabled'}>${L.ensemble?'✓ ':''}Ensemble<small style="display:block">face à face, même équipe</small></button>
+      <button class="big alt" data-act="ens" data-v="0" aria-pressed="${!L.ensemble}" ${host?'':'disabled'}>${!L.ensemble?'✓ ':''}L'une contre l'autre<small style="display:block">chacune avec un joueur du village</small></button></div>`:'';
+  app.innerHTML=`<div class="center lobby"><h1>Salle « ${esc(word)} »</h1>
+    <p class="lead boxed">${host?`Donnez le mot <b>« ${esc(word)} »</b> à votre famille. Les places vides seront tenues par Marcel, Odette et Lucien. Touchez « Commencer » quand tout le monde est là.`:`Vous êtes à la table de ${esc(H[0]?.name||'')}. La partie commencera quand elle touchera « Commencer ».`}</p>
+    <div class="sieges">${rows}</div>
+    ${choixHTML(L.n,L.target,host)}${ens}
+    <div class="homebtns" style="align-items:center">${host?'<button class="big" data-act="go-salle">Commencer</button>':''}
+    <button class="small" data-act="leave">Changer de salle</button></div>${f}</div>`;
+}
+
+/* Position d'une place autour du tapis, vue depuis sa propre tablette (on tourne vers la droite). */
+function posOf(v,seat){
+  const r=(seat-v.you+v.n)%v.n;
+  if(r===0) return 'bas';
+  if(v.n===4) return ['bas','droite','haut','gauche'][r];
+  return r===1?'droite':'gauche';
+}
+function teamLabel(v,t){
+  if(v.n===3) return t===teamOf(v,v.you)?'Vous':v.players[t].name;
+  return t===teamOf(v,v.you)?'Nous':'Eux';
+}
+function scoresHTML(v){
+  const me=teamOf(v,v.you), T=nTeams(v);
+  return Array.from({length:T},(_,t)=>{
+    const sub=v.n===4?v.players.filter((p,k)=>teamOf(v,k)===t).map(p=>p.name).join(' et '):'';
+    return `<span class="plaque${t===me?' moi':''}"><small>${esc(teamLabel(v,t))}${sub?' · '+esc(sub):''}</small><b>${v.scores[t]}</b></span>`;
+  }).join('')+`<span class="plaque"><small>Partie en</small><b>${v.target}</b></span>`;
+}
+function atoutHTML(v){
+  if(v.trump!=null) return `<div class="atout">${suitIcon(v.trump,50)}<span class="mot"><small>Atout · pris par ${esc(v.taker===v.you?'vous':v.players[v.taker].name)}</small><b>${SUIT_NAME[v.trump]}</b></span></div>`;
+  if(v.phase==='bid'){ const s=suitOf(v.turned);
+    return `<div class="atout attente">${v.bidRound===1?suitIcon(s,50):''}<span class="mot"><small>${v.bidRound===1?'Atout proposé':'Second tour'}</small><b>${v.bidRound===1?SUIT_NAME[s]+'&nbsp;?':'au choix'}</b></span></div>`; }
+  return `<div class="atout attente"><span class="mot"><small>Atout</small><b>…</b></span></div>`;
+}
+function layout(v){
+  const portrait=innerHeight>innerWidth, n=v.hands[v.you].length||8;
+  const avail=app.clientWidth-56;
+  let W=fitK*Math.min(150, innerHeight*(portrait?0.15:0.22), innerWidth*(portrait?0.24:0.13));
+  let step=n>1?Math.min(W*1.04,(avail-W)/(n-1)):W;
+  if(step<0.5*W){ W=avail/(1+0.5*(n-1)); step=0.5*W; }
+  const Wp=Math.round(fitK*Math.min(112, innerHeight*(portrait?0.1:0.135), innerWidth*0.16));
+  return {W:Math.floor(W),step,Wp};
+}
+function helpText(v,info){
+  const me=v.you, P=v.players, who=k=>esc(P[k].name);
+  if(v.phase==='bid'){
+    if(v.turn!==me) return {t:`${who(v.turn)} réfléchit à l'atout…`,wait:true};
+    if(v.bidRound===1) return {t:`À vous de parler : voulez-vous l'atout ${SUIT_NAME[suitOf(v.turned)]}&nbsp;? Vous ramasserez la carte retournée.`};
+    return {t:`Second tour : choisissez une autre couleur pour l'atout, ou passez.`};
+  }
+  if(v.phase==='nobid') return {t:'Personne n\'a pris : on redonne les cartes.',wait:true};
+  if(v.phase!=='play') return {t:esc(v.last||''),wait:true};
+  if(v.trick.length===v.n){ const w=trickWinner(v.trick,v.trump).seat; return {t:w===me?'Vous remportez le pli !':`${who(w)} remporte le pli.`,wait:true}; }
+  const lw=!v.trick.length&&v.lastTrick?v.lastTrick.winner:null;
+  const prev=lw===null?'':lw===me?'Vous avez remporté le pli. ':`${who(lw)} a remporté le pli. `;
+  if(v.turn!==me) return {t:`${prev}C'est à ${who(v.turn)} de jouer.`,wait:true};
+  const T=SUIT_NAME[v.trump];
+  switch(info.why){
+    case null: return {t:v.trick.length?'Jouez la carte de votre choix : touchez-la.':prev+'À vous d\'entamer : touchez la carte à jouer.'};
+    case 'fournir': return {t:`Fournissez : jouez ${SUIT_DU[info.lead]}, la couleur demandée.`};
+    case 'partenaire': return {t:`Votre partenaire est maître : jouez la carte de votre choix.`};
+    case 'monter': return {t:`Atout demandé : montez avec un atout plus fort que ${cardName(info.best)}.`};
+    case 'atout': return {t:`Atout demandé : jouez un atout (${T}).`};
+    case 'couper': return {t:`Vous n'avez pas ${SUIT_DU[info.lead]} : coupez avec un atout (${T}).`};
+    case 'surcouper': return {t:`Vous n'avez pas ${SUIT_DU[info.lead]} : coupez plus fort que ${cardName(info.best)}.`};
+    case 'souscouper': return {t:`Vous n'avez pas ${SUIT_DU[info.lead]} : jouez un atout (${T}), même plus petit.`};
+  }
+  return {t:''};
+}
+function renderGame(pan){
+  const v=V, me=v.you, P=v.players, myTurn=v.turn===me;
+  const hand=v.hands[me]||[];
+  const playing=v.phase==='play'&&myTurn&&v.trick.length<v.n;
+  const info=v.phase==='play'?legalInfo(hand,v.trick,v.trump,v.n,me):{ok:[],why:null};
+  const okSet=new Set(playing?info.ok:[]);
+  const {W,step,Wp}=layout(v);
+  const win=v.phase==='play'&&v.trick.length===v.n?trickWinner(v.trick,v.trump).seat:null;
+  const away=role==='host'?new Set(P.map((p,k)=>!p.bot&&p.cid!==cid&&!(conns.get(p.cid)?.open)?k:-1)):new Set();
+  const places=P.map((p,k)=>{
+    if(k===me) return '';
+    const pos=posOf(v,k), nb=typeof v.hands[k]==='number'?v.hands[k]:0;
+    const sub=v.n===4?(teamOf(v,k)===teamOf(v,me)?'partenaire':'adversaire'):'chacun pour soi';
+    const tour=(v.phase==='bid'||v.phase==='play')&&v.turn===k&&v.trick.length<v.n;
+    return `<div class="place ${pos}${tour?' tour':''}">
+      <span class="bulle">${esc(v.say?.[k]||'')}</span>
+      <span class="nom">${esc(p.name)}<small>${sub}${k===v.dealer?' · donne':''}${away.has(k)?' · pas connectée':''}</small></span>
+      <span class="dos">${Array.from({length:nb},()=>backSVG(30,'')).join('')}</span></div>`;
+  }).join('');
+  const Hp=Math.round(Wp*1.4);
+  const pw=Math.round(Wp*4.3), ph=Math.round(Hp*2.35);
+  let mid='';
+  if(v.phase==='bid'||v.phase==='nobid'){
+    mid=`<div class="retournee">${cardSVG(v.turned,Math.round(Wp*1.15))}<span>${v.bidRound===1?'La carte retournée':'Retournée : '+SUIT_NAME[suitOf(v.turned)]+' refusé'}</span></div>`;
+  } else {
+    mid=v.trick.map(t=>`<div class="pc s-${posOf(v,t.seat)}${t.seat===win?' gagne':''}">${cardSVG(t.card,Wp)}</div>`).join('');
+  }
+  const myBubble=v.say?.[me]?`<span class="bulle mabulle">${esc(v.say[me])}</span>`:'';
+  const h=helpText(v,info);
+  let actions='';
+  if(v.phase==='bid'&&myTurn){
+    const ts=suitOf(v.turned);
+    if(v.bidRound===1) actions=`<button class="big" data-act="prendre">${suitIcon(ts,40)} Je prends à ${SUIT_NAME[ts]}</button><button class="big alt" data-act="passer">Je passe</button>`;
+    else actions=[0,1,2,3].filter(s=>s!==ts).map(s=>`<button class="big" data-act="prendre" data-s="${s}">${suitIcon(s,40)} ${SUIT_NAME[s]}</button>`).join('')+`<button class="big alt" data-act="passer">Je passe</button>`;
+  }
+  const n=hand.length;
+  const handHTML=hand.map((c,k)=>{
+    const cls=v.phase!=='play'||!myTurn||v.trick.length===v.n?'':okSet.has(c)?' ok':' non';
+    return `<button class="carte${cls}" data-act="carte" data-id="${c}" style="margin-left:${k?Math.round(step-W):0}px;z-index:${k}" aria-label="${cardName(c)}">${cardSVG(c,W)}</button>`;
+  }).join('');
+  app.innerHTML=`
+    <div class="top">
+      <span class="titre">Belote</span>
+      <div class="scores">${scoresHTML(v)}</div>
+      ${atoutHTML(v)}
+      <button class="small" data-act="regles">Les règles</button>
+      <button class="small" data-act="${mode==='seul'?'quitter-seul':'leave'}">${mode==='seul'?'Arrêter':'Changer de salle'}</button>
+    </div>
+    <div class="tablejeu">${places}
+      <div class="pli" style="--pw:${pw}px;--ph:${ph}px">${mid}${myBubble}</div>
+    </div>
+    <p class="help${h.wait?' wait':' mine'}" aria-live="polite">${h.t}</p>
+    <div class="actions">${actions}</div>
+    <div class="main" id="main">${handHTML}</div>
+    ${aide?`<div class="aide" role="alert">${esc(aide)}</div>`:''}
+    ${(v.phase==='done'||v.phase==='over')&&!panel?resultHTML(v):''}${pan}`;
+  const mh=document.getElementById('main'); if(mh) document.documentElement.style.setProperty('--hh',mh.offsetHeight+'px');
+  // Tout doit tenir dans l'écran, sans défiler : sinon les cartes rapetissent un peu et on redessine.
+  if(document.documentElement.scrollHeight>innerHeight+2&&fitK>0.55){ fitK-=0.06; renderGame(pan); }
+}
+let fitK=1;
+
+const KIND={reussi:'Contrat réussi !',dedans:'Dedans !',litige:'Litige : égalité',capot:'Capot ! Tous les plis','dedans-capot':'Dedans et capot !'};
+function resultHTML(v){
+  const R=v.result, T=nTeams(v), me=teamOf(v,v.you), tk=teamOf(v,R.taker);
+  const head=Array.from({length:T},(_,t)=>`<span class="h">${esc(teamLabel(v,t))}</span>`).join('');
+  const row=(lab,arr,cls='')=>`<span class="${cls}">${lab}</span>${arr.map(x=>`<b>${x}</b>`).join('')}`;
+  const der=Array.from({length:T},(_,t)=>t===R.der?'10':'');
+  const tak=v.taker===v.you?'Vous aviez':esc(v.players[v.taker].name)+' avait';
+  let expl;
+  if(R.kind==='reussi') expl=`${tak} pris à ${SUIT_NAME[R.trump]} : contrat réussi, chacun marque ses points.`;
+  else if(R.kind==='dedans') expl=v.n===4?`${tak} pris à ${SUIT_NAME[R.trump]} sans faire plus de points : l'autre équipe marque les 162 points.`:`${tak} pris à ${SUIT_NAME[R.trump]} sans faire plus que chacun : ses points vont à celui qui l'a dépassé.`;
+  else if(R.kind==='litige') expl=`Égalité : la défense marque ses points, ceux du preneur sont gardés en réserve pour la donne suivante.`;
+  else expl='Un camp a fait tous les plis : 252 points.';
+  let body=`<div class="compte" style="--nc:${T}"><span></span>${head}
+      ${row('Points des plis',R.pts.map((p,t)=>t===R.der?p-10:p))}
+      ${row('Dix de der',der)}
+      ${row('Belote-rebelote',R.bel.map(b=>b?b:''))}
+      ${row('Marqué cette donne',R.gain,'tot')}
+      ${row('<b>Total</b>',v.scores,'tot')}</div>`;
+  if(R.reserveWon) body+=`<p>La réserve du litige (${R.reserveWon} points) est gagnée cette donne.</p>`;
+  if(v.phase==='over'){
+    const won=v.gameWinner===me, gain=won?40:25;
+    if(v.players[v.you]&&!v.players[v.you].bot) versVillage(gain,'belote-'+v.gameId);
+    const wn=v.n===4?v.players.filter((p,k)=>teamOf(v,k)===v.gameWinner).map(p=>esc(p.name)).join(' et '):esc(v.players[v.gameWinner].name);
+    const again=authority()?'<button class="big" data-act="again">Nouvelle partie</button>':'<p class="note">La tablette qui a ouvert la salle peut lancer une nouvelle partie.</p>';
+    return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de la partie">
+      <h2>${won?'Bravo, vous avez gagné !':'Bravo '+wn+' !'}</h2>
+      <p class="verdict">${wn} ${v.n===4?'gagnent':'gagne'} la partie en ${v.target} points.</p>
+      <p>🏡 +${gain} pièces et des étoiles pour votre village${won?'':' (perdre ne coûte rien)'}.</p>
+      ${body}${again}
+      <button class="small" data-act="${mode==='seul'?'quitter-seul':'leave'}">Retour</button></div></div>`;
+  }
+  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Fin de la donne">
+    <h2>${KIND[R.kind]}</h2><p>${expl}</p>${body}
+    <button class="big" data-act="next">Donne suivante</button></div></div>`;
+}
+function rulesHTML(){
+  return `<div class="overlay"><div class="panel" role="dialog" aria-label="Les règles">
+    <h2>La belote en bref</h2>
+    <ul>
+      <li>On reçoit 5 cartes ; une carte est retournée. Chacun dit « je prends » ou « je passe ». Au second tour, on peut choisir une autre couleur. Celui qui prend ramasse la carte, puis chacun reçoit le reste : 8 cartes.</li>
+      <li><b>Atout</b> : valet (20), neuf (14), as (11), dix (10), roi (4), dame (3), 8, 7. Hors atout : as (11), dix (10), roi (4), dame (3), valet (2), 9, 8, 7.</li>
+      <li><b>Fournir</b> : on joue la couleur demandée si on l'a.</li>
+      <li><b>Couper</b> : sans la couleur demandée, on joue atout ; et on <b>monte</b> sur l'atout déjà posé si on le peut.</li>
+      <li>Si votre <b>partenaire est maître</b> du pli, vous jouez ce que vous voulez.</li>
+      <li>Roi et dame d'atout dans la même main : <b>belote, rebelote</b>, 20 points. Le jeu l'annonce pour vous.</li>
+      <li>162 points par donne avec le <b>dix de der</b>. Le preneur doit faire plus que l'autre camp, sinon il est <b>dedans</b> et l'autre marque tout.</li>
+      <li>À trois, chacun pour soi, sans les 7 ni les 8 : le preneur doit faire plus que chacun des deux autres.</li>
+      <li>Les cartes que vous pouvez jouer sont soulevées et dorées ; les autres sont grisées.</li>
+    </ul>
+    <button class="big alt" data-act="close">J'ai compris</button></div></div>`;
+}
+
+/* ---------- Gestes ---------- */
+app.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(e.target.id==='fPrenom'){
+    const n=document.getElementById('prenom').value.trim().slice(0,20);
+    if(!n){ flash='Écrivez votre prénom.'; render(); return; }
+    try{ localStorage.setItem(KR('nom'),n); }catch{} flash=''; render();
+  }
+  if(e.target.id==='fMot') enterRoom(document.getElementById('mot').value);
+});
+app.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]'); if(!t||t.disabled) return;
+  const a=t.dataset.act;
+  switch(a){
+    case 'seul': mode='seul'; ls.set('mode','seul'); S=null; render(); break;
+    case 'reprendre': S=load('seul'); if(S){ mySeat=0; refreshView(); pump(); } render(); break;
+    case 'salle': mode='salle'; ls.set('mode','salle'); flash=''; render(); break;
+    case 'maison': location.href='index.html'+location.search; break;
+    case 'maison-belote': mode=null; ls.set('mode',null); flash=''; render(); break;
+    case 'n': case 'target': {
+      const val=+t.dataset.v;
+      if(mode==='seul'){ setup[a]=val; render(); }
+      else if(role==='host'&&S.phase==='lobby'){ const st=clone(S); st[a]=val; if(a==='n') st.humans=st.humans.slice(0,val); commit(st); }
+      break;
+    }
+    case 'ens': if(role==='host'&&S.phase==='lobby'){ const st=clone(S); st.ensemble=t.dataset.v==='1'; commit(st); } break;
+    case 'go-seul': startSolo(); break;
+    case 'go-salle': if(role==='host'&&S.phase==='lobby') startHosted(); break;
+    case 'quitter-seul': clearTimeout(pumpT); if(S&&S.phase==='over') ls.set('seul',null); S=null; mode=null; ls.set('mode',null); panel=null; aide=''; V=null; render(); break; // une partie en cours reste gardée pour plus tard
+    case 'leave': leave(); break;
+    case 'regles': panel='regles'; render(); break;
+    case 'close': panel=null; render(); break;
+    case 'prendre': act(t.dataset.s!==undefined?{type:'bid',take:true,suit:+t.dataset.s}:{type:'bid',take:true}); break;
+    case 'passer': act({type:'bid',take:false}); break;
+    case 'next': act({type:'next'}); break;
+    case 'again': if(authority()) act({type:'again'}); break;
+    case 'carte': {
+      const c=+t.dataset.id, v=V;
+      if(v.phase==='bid'||v.phase==='nobid'){ say('On choisit d\'abord l\'atout : les cartes se jouent ensuite.'); break; }
+      if(v.phase!=='play') break;
+      if(v.trick.length===v.n){ say('Un instant : le pli se ramasse.'); break; }
+      if(v.turn!==v.you){ say(`Attendez votre tour : c'est à ${v.players[v.turn].name} de jouer.`); break; }
+      const info=legalInfo(v.hands[v.you],v.trick,v.trump,v.n,v.you);
+      if(!info.ok.includes(c)){ say(refusal(info,c,v.trump)); break; }
+      act({type:'play',card:c}); break;
+    }
+  }
+});
+let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ fitK=1; if(screen()==='game') render(); },120); });
+async function keepAwake(){ try{ await navigator.wakeLock?.request('screen'); }catch{} }
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden||mode!=='salle'||!word) return;
+  keepAwake();
+  if(!peer||peer.destroyed) startNet();
+  else if(peer.disconnected) try{ peer.reconnect(); }catch{}
+  else if(role==='guest'&&!(conn&&conn.open)) connectHost();
+});
+document.addEventListener('click',keepAwake,{once:true});
+
+// Accès pour la vérification automatisée (lecture de l'état et coups) : sans effet pour les joueuses.
+window.__belote={get S(){return S}, get V(){return V}, get role(){return role}, get seat(){return mySeat}, act, apply, legalInfo, botMove, viewFor, newGame,
+  set S(st){ S=st; save(); refreshView(); render(); pump(); }};
+
+const saved=ls.get('salle'), m0=ls.get('mode');
+if(saved&&m0==='salle'){ mode='salle'; word=saved; render(); if(myName()) startNet(); }
+else if(m0==='seul'){ mode='seul'; S=load('seul'); if(S){ mySeat=0; refreshView(); pump(); } render(); }
+else render();
+</script>
+</body>
+</html>
