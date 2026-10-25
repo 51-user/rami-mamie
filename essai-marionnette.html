@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essai marionnette</title>
+<style>
+  :root { --fond: #1d2418; --texte: #efe6cf; --doux: #b8ad92; }
+  html, body { margin: 0; height: 100%; background: var(--fond); color: var(--texte); font-family: system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  canvas { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; display: block; }
+  p { margin: 8px 16px; font-size: 14px; color: var(--doux); text-align: center; }
+</style>
+</head>
+<body>
+<canvas id="scene" width="1280" height="720"></canvas>
+<p>Essai de marionnette : le renard aux pommes marche, l'escargot aviateur glisse. Pièces NoobAI, une par membre, chacune autour de son pivot.</p>
+<script>
+// Essai de marionnette de découpe (25/10/2026, Florian : « Fais le test »).
+// Règle de Florian sur Greenlight : « des personnages qui gigotent tous pareil ne vivent pas ; un personnage vit par une
+// séquence de gestes à lui ». Le renard a sa marche, son arrêt pomme, son saut ; l'escargot sa reptation et sa halte.
+// ?t=12.5 fige la scène à 12,5 s (captures) ; ?pivots=1 montre les pivots.
+const W = 1280, H = 720, BOUCLE = 30;
+const cv = document.getElementById("scene"), cx = cv.getContext("2d");
+const Q = new URLSearchParams(location.search);
+const FIGE = Q.has("t") ? parseFloat(Q.get("t")) : null, PIVOTS = Q.get("pivots") === "1";
+
+const NOMS = ["renard-tete", "renard-corps", "renard-echarpe", "renard-queue", "renard-bras", "renard-jambe",
+  "renard-panier", "renard-pomme", "escargot-corps", "escargot-coquille", "escargot-antenne", "escargot-lunettes"];
+const IMG = {};
+const DECOR = { fond: "cartes/fond-vallee.webp", buisson: "img/v3/decor-buisson.webp", fleurs: "img/v3/decor-fleurs.webp",
+  lanterne: "img/v3/deco-lanterne.webp", rocher: "img/v3/decor-rocher-petit.webp", arbre: "img/v3/decor-arbre-1.webp" };
+
+function charger(src) { return new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }); }
+
+// ── outils ────────────────────────────────────────────────────────────────────────────────────────────────
+const lisse = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+const entre = (t, a, b) => lisse((t - a) / (b - a));
+const rad = d => d * Math.PI / 180;
+// une pièce : image, largeur dessinée, pivot (fraction de l'image), angle, et ce qu'on dessine dedans ensuite
+function piece(nom, larg, px, py, angle, enfants, opts) {
+  const im = IMG[nom]; if (!im) return;
+  const h = larg * im.height / im.width;
+  cx.save(); cx.rotate(rad(angle || 0));
+  if (opts && opts.miroir) cx.scale(-1, 1);
+  if (opts && opts.sombre) cx.filter = "brightness(0.82)";
+  cx.drawImage(im, -px * larg, -py * h, larg, h);
+  cx.filter = "none";
+  if (opts && opts.miroir) cx.scale(-1, 1);
+  if (enfants) enfants(larg, h);
+  if (PIVOTS) { cx.fillStyle = "#f0f"; cx.beginPath(); cx.arc(0, 0, 4, 0, 7); cx.fill(); }
+  cx.restore();
+}
+// point d'attache dans une pièce déjà posée : fraction de l'image -> coordonnées locales au pivot de cette pièce
+const vers = (larg, h, px, py, fx, fy) => [(fx - px) * larg, (fy - py) * h];
+
+// ── le décor ──────────────────────────────────────────────────────────────────────────────────────────────
+function decor() {
+  const f = DECOR.fond;
+  if (f) { cx.filter = "blur(3px) brightness(0.78) saturate(0.9)"; cx.drawImage(f, 0, -60, W, W * f.height / f.width); cx.filter = "none"; }
+  // le chemin où l'on passe : une bande de terre battue, bordée d'herbe
+  const g = cx.createLinearGradient(0, 470, 0, H);
+  g.addColorStop(0, "rgba(96,122,58,0.0)"); g.addColorStop(0.12, "#6f8a3c"); g.addColorStop(0.22, "#c9a46e");
+  g.addColorStop(0.85, "#b98f5c"); g.addColorStop(1, "#7d9a44");
+  cx.fillStyle = g; cx.fillRect(0, 470, W, H - 470);
+  cx.fillStyle = "rgba(255,240,200,0.08)";
+  for (let i = 0; i < 26; i++) { const x = (i * 197) % W, y = 560 + (i * 53) % 120; cx.beginPath(); cx.ellipse(x, y, 10 + i % 7, 4, 0, 0, 7); cx.fill(); }
+  const pose = (im, x, y, l) => { if (im) cx.drawImage(im, x, y - l * im.height / im.width, l, l * im.height / im.width); };
+  pose(DECOR.arbre, 40, 520, 230); pose(DECOR.arbre, 1010, 515, 250); pose(DECOR.lanterne, 860, 540, 120);
+  pose(DECOR.buisson, 300, 535, 110); pose(DECOR.fleurs, 620, 540, 120); pose(DECOR.rocher, 1180, 550, 70);
+}
+function decorDevant() {
+  const pose = (im, x, y, l) => { if (im) cx.drawImage(im, x, y - l * im.height / im.width, l, l * im.height / im.width); };
+  pose(DECOR.fleurs, 60, 770, 150); pose(DECOR.buisson, 1150, 790, 150);
+}
+function ombre(x, y, rx, ry) { cx.fillStyle = "rgba(40,30,15,0.28)"; cx.beginPath(); cx.ellipse(x, y, rx, ry, 0, 0, 7); cx.fill(); }
+
+// ── le renard ─────────────────────────────────────────────────────────────────────────────────────────────
+// Sa séquence : il entre en marchant (balancement des bras, rebond, petit écrasement à chaque pas, corps penché),
+// s'arrête, prend une pomme dans le panier, la croque deux fois en mâchant, fait un petit saut content, repart.
+const R = { sol: 668, echelle: 0.85, vitesse: 110, pas: 0.82 };
+function renardEtat(t) {
+  // temps de marche avant l'arrêt, arrêt de 7,4 s, puis marche ; x calculé sur le temps marché
+  const arretDebut = 6.2, arretFin = 13.6;
+  const marche = t < arretDebut ? t : t < arretFin ? arretDebut : arretDebut + (t - arretFin);
+  const x = -160 + marche * R.vitesse;
+  const enMarche = t < arretDebut || t >= arretFin;
+  // entrée et sortie de marche adoucies sur 0,4 s
+  const amp = t < arretDebut ? 1 - entre(t, arretDebut - 0.4, arretDebut) : t < arretFin ? 0 : entre(t, arretFin, arretFin + 0.4);
+  return { x, phase: (marche / R.pas) * Math.PI * 2, amp, arret: t - arretDebut, enMarche, arretFin: arretFin - arretDebut };
+}
+function renard(t) {
+  const e = renardEtat(t);
+  if (e.x < -260 || e.x > W + 260) return;
+  const s = Math.sin(e.phase), c = Math.cos(e.phase);
+  const a = e.amp;
+  // gestes de l'arrêt (temps relatif à l'arrêt)
+  const u = e.arret;
+  let brasAvant = 0, tete = 0, teteY = 0, pomme = 0, croque = 0, saut = 0, corpsPenche = 6 * a, respire = 0;
+  if (u > 0 && u < e.arretFin) {
+    respire = Math.sin(u * 2.6) * 0.012;
+    // 0,3 -> 1,0 : le bras va chercher dans le panier (derrière, à gauche) ; 1,0 -> 1,7 : il monte la pomme au museau
+    brasAvant = 105 * entre(u, 0.3, 1.0) - 265 * entre(u, 1.0, 1.7) + 160 * entre(u, 5.6, 6.3);
+    pomme = u > 0.95 && u < 6.0 ? 1 : 0;
+    // deux croquées (2,0 et 3,6), chacune : tête qui plonge, puis mâche trois fois
+    const mord = (t0) => { const k = u - t0; return k > 0 && k < 1.2 ? Math.sin(Math.min(1, k / 0.18) * Math.PI) * (k < 0.18 ? 1 : 0) : 0; };
+    tete = -9 * (mord(2.0) + mord(3.6)) + (u > 2.2 && u < 3.4 || u > 3.8 && u < 5.0 ? 3 * Math.sin((u - 2.2) * 15) : 0);
+    teteY = 8 * (mord(2.0) + mord(3.6));
+    croque = u > 2.05 ? (u > 3.65 ? 2 : 1) : 0;
+    // petit saut content à 6,4 s : écrasé, détente, retombée écrasée
+    const k = u - 6.4;
+    if (k > 0 && k < 0.7) saut = k < 0.15 ? -k / 0.15 : k < 0.55 ? Math.sin((k - 0.15) / 0.4 * Math.PI) : -(1 - (k - 0.55) / 0.15);
+    corpsPenche = 0;
+  }
+  const rebond = -7 * Math.abs(s) * a;
+  const contact = Math.pow(1 - Math.abs(s), 6) * a;           // l'instant où le pied touche le sol
+  const ecrase = 0.06 * contact + (saut < 0 ? -saut * 0.1 : 0) - (saut > 0 ? saut * 0.06 : 0);
+  const sautY = saut > 0 ? -saut * 46 : 0;
+  ombre(e.x, R.sol + 2, (62 - (saut > 0 ? saut * 14 : 0)) * R.echelle, 12 * R.echelle);
+  let main = null, museau = null;
+  cx.save();
+  cx.translate(e.x, R.sol + rebond + sautY);
+  cx.scale(R.echelle, R.echelle);
+  cx.scale(1 + ecrase * 0.7, 1 - ecrase + respire);
+  // jambes (le pivot de hanche est sous le corps) : alternées, la lointaine plus sombre
+  const jambe = (fx, ang, sombre) => { cx.save(); cx.translate(fx, -44); piece("renard-jambe", 36, 0.5, 0.12, ang, null, { sombre }); cx.restore(); };
+  jambe(-18, -26 * s * a + (saut > 0 ? -18 * saut : 0), true);
+  // corps : pivot en bas du ventre ; tout le haut du renard s'y accroche
+  cx.translate(0, -40);
+  cx.rotate(rad(corpsPenche));
+  const L = 168, P = { x: 0.5, y: 0.96 };
+  const corpsH = L * 420 / 355;
+  const at = (fx, fy) => [(fx - P.x) * L, (fy - P.y) * corpsH];
+  // queue (derrière, à gauche puisqu'il va vers la droite) : suit la marche avec retard
+  cx.save(); { const [qx, qy] = at(0.16, 0.8); cx.translate(qx, qy);
+    piece("renard-queue", 118, 0.78, 0.9, -18 + 12 * Math.sin(e.phase - 1.1) * a + 6 * Math.sin(t * 1.7) * (1 - a) - 14 * (saut > 0 ? saut : 0), null, { miroir: true }); } cx.restore();
+  // bras lointain (derrière) qui porte le panier
+  cx.save(); { const [bx, by] = at(0.13, 0.42); cx.translate(bx, by);
+    const ang = 10 + 16 * s * a;
+    piece("renard-bras", 26, 0.5, 0.1, ang, (l, h) => {
+      cx.translate(0, h * 0.82); cx.rotate(rad(-ang + 5 * Math.sin(e.phase - 0.9) * a));   // le panier pend et ballotte
+      piece("renard-panier", 74, 0.5, 0.08, 0);
+    }, { sombre: true }); } cx.restore();
+  // tête derrière le corps (l'écharpe cache le cou) ; elle hoche un peu à chaque pas et suit les gestes de l'arrêt
+  cx.save(); { const [tx, ty] = at(0.5, 0.135); cx.translate(tx, ty + teteY);
+    piece("renard-tete", 196, 0.5, 0.97,3 * Math.sin(e.phase * 2 - 0.5) * a + tete); } cx.restore();
+  piece("renard-corps", L, P.x, P.y, 0);
+  // le pan de l'écharpe : pend du nœud et suit avec retard
+  cx.save(); { const [ex, ey] = at(0.57, 0.29); cx.translate(ex, ey);
+    piece("renard-echarpe", L * 107 / 355, 0.5, 0.02, -8 * Math.sin(e.phase - 1.4) * a - 4 - 10 * (saut > 0 ? saut : 0) + 4 * Math.sin(t * 2.1) * (1 - a)); } cx.restore();
+  // bras proche : balance à l'opposé de la jambe proche ; à l'arrêt il va au panier puis porte la pomme au museau
+  cx.save(); { const [bx, by] = at(0.86, 0.42); cx.translate(bx, by);
+    const ang = -18 * s * a + brasAvant;
+    piece("renard-bras", 26, 0.5, 0.1, ang, (l, h) => {
+      cx.translate(0, h * 0.95); main = cx.getTransform();
+    }); } cx.restore();
+  // le museau, derrière le haut de l'écharpe
+  cx.save(); { const [mx, my] = at(0.5, 0.12); cx.translate(mx, my + teteY); museau = cx.getTransform(); } cx.restore();
+  cx.restore();
+  // la pomme : dans la patte, puis glisse jusqu'au museau pendant la montée (le bras chibi est trop court pour l'atteindre)
+  if (pomme && main && museau) {
+    const m = entre(u, 1.25, 1.75) * (1 - entre(u, 5.0, 5.6));
+    const px = main.e + (museau.e - main.e) * m, py = main.f + (museau.f - main.f) * m;
+    cx.save(); cx.translate(px, py); cx.scale(R.echelle, R.echelle); pommeCroquee(30, croque); cx.restore();
+  }
+  // jambe proche, devant
+  cx.save(); cx.translate(e.x, R.sol + rebond + sautY); cx.scale(R.echelle, R.echelle); cx.scale(1 + ecrase * 0.7, 1 - ecrase + respire);
+  jambe(18, 26 * s * a + (saut > 0 ? 18 * saut : 0), false); cx.restore();
+  // miettes à chaque croquée
+  for (const t0 of [2.05, 3.65]) { const k = u - t0; if (k > 0 && k < 0.8 && museau) miettes(museau.e + 10, museau.f, k); }
+}
+function pommeCroquee(l, n) {
+  const im = IMG["renard-pomme"]; if (!im) return;
+  const h = l * im.height / im.width;
+  const o = document.createElement("canvas"); o.width = 80; o.height = 80 * im.height / im.width;
+  const g = o.getContext("2d"); g.drawImage(im, 0, 0, o.width, o.height);
+  g.globalCompositeOperation = "destination-out";
+  if (n >= 1) { g.beginPath(); g.arc(o.width * 0.95, o.height * 0.42, o.width * 0.2, 0, 7); g.fill(); }
+  if (n >= 2) { g.beginPath(); g.arc(o.width * 0.88, o.height * 0.72, o.width * 0.22, 0, 7); g.fill(); }
+  cx.drawImage(o, -l / 2, -h / 2, l, h);
+}
+function miettes(x, y, k) {
+  cx.fillStyle = "#f4e6c4";
+  for (let i = 0; i < 6; i++) { const a = -1.2 + i * 0.45; cx.globalAlpha = 1 - k / 0.8;
+    cx.beginPath(); cx.arc(x + Math.cos(a) * 40 * k + i * 2, y + Math.sin(a) * 18 * k + 160 * k * k, 2.5, 0, 7); cx.fill(); }
+  cx.globalAlpha = 1;
+}
+
+// ── l'escargot ────────────────────────────────────────────────────────────────────────────────────────────
+// Sa séquence : il rampe de droite à gauche, le pied s'étire (la tête part devant) puis se contracte (l'arrière
+// rattrape) ; la coquille suit en retard et dodeline ; les antennes balancent avec retard. À mi-chemin il fait
+// halte, regarde d'un côté puis de l'autre, s'essuie le front d'un frisson de coquille, et repart.
+const E = { sol: 566, cycle: 1.2, larg: 210 };
+function escargotEtat(t) {
+  const haltA = 7.0, haltB = 11.5;
+  const ram = t < haltA ? t : t < haltB ? haltA : haltA + (t - haltB);
+  const n = ram / E.cycle, ph = n * Math.PI * 2;
+  // l'arrière n'avance que pendant la contraction : avance par marches douces
+  const k = Math.floor(n), f = n - k;
+  const pas = 75;
+  const arriere = W + 150 -(k + lisse(Math.max(0, (f - 0.5) / 0.5))) * pas;
+  const etire = t >= haltA && t < haltB ? 0.02 * Math.sin((t - haltA) * 3) : 0.13 * Math.sin(Math.PI * f);  // s'étire puis revient
+  return { arriere, etire, ph, halte: t >= haltA && t < haltB ? t - haltA : -1 };
+}
+function escargot(t) {
+  const e = escargotEtat(t);
+  if (e.arriere < -120 || e.arriere > W + 600) return;
+  const L = E.larg, im = IMG["escargot-corps"]; if (!im) return;
+  const h = L * im.height / im.width;
+  const k = 1 + e.etire;
+  // regard pendant la halte : gauche, droite, gauche
+  const u = e.halte;
+  const regarde = u >= 0 ? (u < 1.3 ? -1 : u < 2.6 ? 1 : u < 3.4 ? -0.4 : 0) * entre(u, 0, 0.3) : 0;
+  const frisson = u > 3.0 && u < 3.8 ? Math.sin((u - 3.0) * 40) * (1 - (u - 3.0) / 0.8) : 0;
+  ombre(e.arriere - L * 0.55 * k, E.sol + 1, L * 0.5 * k, 9);
+  cx.save();
+  cx.translate(e.arriere, E.sol);                      // l'arrière du pied, posé au sol
+  // coquille : posée sur l'arrière du pied, ne s'étire pas ; dodeline avec retard
+  const dod = 3.2 * Math.sin(e.ph - 1.2) + frisson * 6;
+  cx.save(); cx.translate(-L * 0.34, -h * 0.47 + 1.5 * Math.sin(e.ph - 1.0));
+  piece("escargot-coquille", L * 0.6, 0.5, 0.92, dod); cx.restore();
+  // antennes : sur le haut de la tête (qui part devant quand le pied s'étire), balancent avec retard
+  const teteX = (fx) => -(0.995 - fx) * L * k;
+  const ant = (fx, fy, dec) => { cx.save(); cx.translate(teteX(fx), (fy - 0.715) * h);
+    piece("escargot-antenne", 16, 0.5, 0.98, -8 + 9 * Math.sin(e.ph - 0.9 + dec) + regarde * 16 + frisson * 10); cx.restore(); };
+  ant(0.226, 0.06, 0); ant(0.381, 0.05, 0.6);
+  // le corps, étiré depuis l'arrière
+  cx.save(); cx.scale(k, 1 - e.etire * 0.35);
+  cx.drawImage(im, -0.995 * L, -0.715 * h, L, h); cx.restore();
+  // lunettes sur le front : petit rebond en retard
+  cx.save(); cx.translate(teteX(0.298), (0.16 - 0.715) * h + 2 * Math.sin(e.ph - 1.6));
+  piece("escargot-lunettes", L * 0.56, 0.5, 0.5, 2 * Math.sin(e.ph - 1.3) + regarde * 3); cx.restore();
+  cx.restore();
+}
+
+// ── la boucle ─────────────────────────────────────────────────────────────────────────────────────────────
+function dessiner(t) {
+  cx.clearRect(0, 0, W, H);
+  decor();
+  escargot(t % BOUCLE);
+  renard(t % BOUCLE);
+  decorDevant();
+}
+(async () => {
+  await Promise.all(NOMS.map(async n => { IMG[n] = await charger("img/marionnette/" + n + ".webp"); }));
+  await Promise.all(Object.keys(DECOR).map(async k => { DECOR[k] = await charger(DECOR[k]); }));
+  if (FIGE !== null) { document.querySelector("p").remove(); dessiner(FIGE); document.title = "pret"; return; }
+  const t0 = performance.now();
+  const boucle = () => { dessiner((performance.now() - t0) / 1000); requestAnimationFrame(boucle); };
+  requestAnimationFrame(boucle);
+})();
+</script>
+</body>
+</html>
