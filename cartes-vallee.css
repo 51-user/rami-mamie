@@ -24,10 +24,7 @@ html body[data-tapis="bois"]{--txt:#FFF4D6;--txt-dim:#F2E2BC;--line:rgba(255,230
     repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px,rgba(255,220,170,.05) 15px 17px,transparent 17px 31px),
     linear-gradient(180deg,#C08550 0%,#9A6334 100%);
   background-attachment:fixed}
-/* Le cadre de bois autour du tapis */
-html body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:15;
-  box-shadow:inset 0 0 0 3px var(--bord-fonce),inset 0 0 0 9px #A86E3C,inset 0 0 0 11px var(--bord),inset 0 0 26px 10px rgba(30,15,4,.35)}
-html body[data-tapis="bois"]::before{box-shadow:inset 0 0 0 3px var(--bord-fonce),inset 0 0 0 9px #6E4020,inset 0 0 0 11px var(--bord-fonce),inset 0 0 26px 10px rgba(30,15,4,.35)}
+/* Le tapis est le fond de tout l'écran, sans cadre autour (Florian, 25/10 : le jeu d'abord) */
 
 /* ---------- Les faces des cartes : parchemin à bord brun arrondi ---------- */
 html body svg[viewBox="0 0 100 140"] > rect:first-child{fill:#FCF2D8;stroke:#6B4022;stroke-width:2.6px}
@@ -64,11 +61,6 @@ html body .opp{flex:1 1 0;min-width:auto}
 html body .opp .minibacks{flex:1 1 0;width:0}
 html body .opp > span:not(.minibacks){flex-shrink:0}
 html body .score{white-space:normal;flex:0 1 auto;min-width:0;max-width:250px;font-size:17px;line-height:1.15;padding:2px 9px}
-
-/* ---------- La main du rami tient à l'écran, au-dessus du cadre de bois ---------- */
-html body #app{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-html body .hand{padding-top:16px}
-html body .hand .card svg{width:auto;max-height:24vh}
 
 /* ---------- Phrases d'aide et nouvelles : parchemin ---------- */
 html body .help,html body .last,html body .table .empty{background:var(--parchemin);color:var(--brun);border:4px solid var(--cadre);border-radius:12px;
@@ -113,3 +105,98 @@ html body .tapis .t-vert{background:radial-gradient(ellipse at 50% 40%,#3D8150,#
 html body .tapis .t-carreaux{background-color:#F6E7C8;background-image:linear-gradient(90deg,rgba(178,44,36,.35) 50%,transparent 50%),linear-gradient(rgba(178,44,36,.35) 50%,transparent 50%);background-size:28px 28px}
 html body .tapis .t-bois{background:repeating-linear-gradient(180deg,transparent 0 34px,rgba(58,32,16,.55) 34px 36px),repeating-linear-gradient(90deg,rgba(60,30,10,.08) 0 2px,transparent 2px 11px),linear-gradient(#C08550,#9A6334)}
 html body .tapis .t-vert[aria-pressed="true"]{box-shadow:inset 0 0 0 6px #A86E3C,0 0 0 4px var(--lueur),0 0 14px var(--lueur)}
+
+/* ===== LE JEU D'ABORD (25/10, Florian : « des interfaces ENORMES et le jeu en lui-même représente genre 20% de l'affichage »).
+   La table prend l'écran ; au-dessus, une rangée fine de plaques et de petits boutons ronds en bois.
+   Les tailles des cartes partent de la taille réelle de l'écran. ===== */
+:root{--rond:52px;
+  --i-annuler:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF4D6' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5L4 10l5 5'/%3E%3Cpath d='M4 10h10a6 6 0 0 1 0 12h-4'/%3E%3C/svg%3E");
+  --i-nouvelle:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF4D6' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.4-5.7'/%3E%3Cpath d='M20 3v5h-5'/%3E%3C/svg%3E");
+  --i-maison:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF4D6' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 11.5L12 4l9 7.5'/%3E%3Cpath d='M6 10v10h12V10'/%3E%3Cpath d='M10 20v-5h4v5'/%3E%3C/svg%3E");
+  --i-reglages:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF4D6' stroke-width='2.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='3.4'/%3E%3Cpath d='M12 2.8v3.4M12 17.8v3.4M2.8 12h3.4M17.8 12h3.4M5.5 5.5l2.4 2.4M16.1 16.1l2.4 2.4M5.5 18.5l2.4-2.4M16.1 7.9l2.4-2.4'/%3E%3C/svg%3E");
+  --i-regles:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF4D6' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 9a3.5 3.5 0 1 1 5 3.2c-1 .5-1.5 1.2-1.5 2.3v.5'/%3E%3Ccircle cx='12' cy='19.5' r='.6' fill='%23FFF4D6'/%3E%3C/svg%3E");
+  --i-carnet:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFF4D6' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z'/%3E%3Cpath d='M5 17a3 3 0 0 1 3-3h11'/%3E%3Cpath d='M9 8h6'/%3E%3C/svg%3E")}
+
+/* ---------- Les petits boutons ronds en bois ---------- */
+html body .soltop button,html body .soltop button.big,html body .top [data-act="cartes"],html body .top [data-act="leave"]{
+  flex:none;width:var(--rond);height:var(--rond);min-width:0;min-height:0;padding:0;border-radius:50%;border-width:3px;font-size:0;line-height:0;color:transparent;
+  background:var(--i-annuler) center/28px 28px no-repeat,var(--bois);
+  box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 var(--bord-fonce)}
+html body .soltop [data-act="solonew"]{background:var(--i-nouvelle) center/28px 28px no-repeat,var(--bois)}
+html body .soltop [data-act="accueil"],html body .top [data-act="leave"]{background:var(--i-maison) center/28px 28px no-repeat,var(--bois)}
+html body .soltop [data-act="cartes"],html body .top [data-act="cartes"]{background:var(--i-reglages) center/28px 28px no-repeat,var(--bois-clair)}
+html body .soltop button:active,html body .top [data-act="cartes"]:active,html body .top [data-act="leave"]:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),0 0 0 var(--bord-fonce);filter:brightness(1.18) sepia(.2)}
+/* « Toucher encore pour recommencer » : le bouton s'ouvre pour montrer sa phrase
+   (sans cartes-vallee.js, il garde sa phrase en petit pour que la demande de confirmation se voie toujours) */
+html:not(.cv-js) body .soltop [data-act="solonew"],html body .soltop [data-act="solonew"].confirme{width:auto;border-radius:26px;padding:0 16px 0 46px;font-size:16px;line-height:1.1;color:#FFF4D6;
+  background:var(--i-nouvelle) 12px center/26px 26px no-repeat,var(--bois);box-shadow:0 0 0 3px var(--lueur),0 3px 0 var(--bord-fonce)}
+
+/* ---------- Plaques fines du haut ---------- */
+html body .soltop .moves,html body .opp b{display:inline-flex;align-items:center;min-height:34px;box-sizing:border-box;padding:2px 12px;
+  background:var(--plaque);color:#FFF4D6;font-family:var(--f-titre);font-size:18px;font-weight:700;white-space:nowrap;border:3px solid var(--bord);border-radius:8px;
+  text-shadow:0 1px 0 var(--bord-fonce);box-shadow:inset 0 1px 0 rgba(255,230,180,.45),0 2px 0 var(--bord-fonce)}
+
+/* ---------- Ombre douce des cartes ; la lueur des cartes choisies passe devant ---------- */
+html body .scard > svg,html body .spile > svg,html body .card > svg,html body .pile > svg,html body .grp .cards svg{filter:drop-shadow(0 2px 3px rgba(30,15,4,.38))}
+html body .pile.go > svg,html body .starget > svg{filter:drop-shadow(0 0 9px var(--lueur)) drop-shadow(0 0 4px var(--lueur))}
+html body .card.sel > svg,html body .ssel > svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 5px var(--lueur)) drop-shadow(0 0 5px var(--lueur))}
+
+/* ---------- Solitaire : la table remplit l'écran ---------- */
+html body #app:has(> .soltop){padding:6px 8px 8px;position:relative}
+html body .soltop{height:56px;padding:0;background:none;border:0;border-radius:0;box-shadow:none;gap:8px;flex-wrap:nowrap}
+html body .soltop > b{display:none}
+html body .soltop .moves{margin-right:auto}
+html body .soltop ~ .help{position:absolute;top:8px;left:124px;right:260px;margin:0!important;max-height:52px;overflow:hidden;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px;line-height:1.25;padding:3px 12px;border-width:3px;pointer-events:none}
+html:not(.cv-js) body .soltop ~ .help{right:380px;font-size:14px}
+/* en portrait la place ne manque pas en hauteur : la phrase d'aide passe sous la rangée, en entier */
+@media (orientation:portrait){html body .soltop ~ .help{position:static;max-height:none;margin:4px 0 0!important;font-size:15px}}
+html body .soltop ~ .err:empty{display:none}
+html body .soltop ~ .err:not(:empty){position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;max-width:90vw;font-size:17px;pointer-events:none;margin:0}
+/* largeur : 7 colonnes qui remplissent l'écran ; hauteur : la table tient de haut en bas */
+html body #app > div[style*="--cw"]{--g:clamp(6px,1.2vw,14px)!important;
+  --cw:min(calc((100vw - 16px - 6 * var(--g)) / 7),calc((100vh - 84px) / 4.6))!important;--ch:calc(var(--cw) * 1.4)!important;margin-top:8px}
+html body .solgrid.up{margin:0 0 12px}
+html body .spile > svg,html body .scard > svg{display:block;width:var(--cw);height:var(--ch)}
+html body .sslot > svg{width:calc(var(--cw) * .45);height:calc(var(--cw) * .45)}
+html body .sslot{font-size:clamp(14px,calc(var(--cw) * .15),20px)}
+/* les colonnes : chaque carte laisse voir son index ; une colonne trop longue se resserre pour tenir à l'écran */
+html body .scol{height:auto!important;display:flex;flex-direction:column;max-height:calc(100vh - 92px - var(--ch))}
+html body .scard{position:relative!important;top:auto!important;display:block;align-self:flex-start;width:var(--cw);overflow:visible;
+  flex:0 1 calc(var(--ch) * .3);height:calc(var(--ch) * .3);min-height:calc(var(--ch) * .21)}
+html body .scard:has(> svg[aria-label="dos de carte"]){flex-basis:calc(var(--ch) * .13);height:calc(var(--ch) * .13);min-height:calc(var(--ch) * .05)}
+html body .scard:last-child{flex:0 0 var(--ch);height:var(--ch);min-height:var(--ch)}
+
+/* ---------- Rami : même règle, la table et la main d'abord ---------- */
+:root{--pw:clamp(72px,min(12vw,14vh),130px);--tw:clamp(56px,min(8.5vw,9vh),96px)}
+html body #app:has(> .board){padding:6px 10px 10px}
+html body .top{min-height:52px;padding:0;background:none;border:0;border-radius:0;box-shadow:none;gap:8px;flex-wrap:nowrap}
+/* les règles et le carnet : petits boutons ronds tant que la fenêtre ⚙ ne les range pas (classe cv-js posée par cartes-vallee.js) */
+html.cv-js body .top [data-act="regles"],html.cv-js body .top [data-act="carnet"]{display:none}
+html body .top [data-act="regles"],html body .top [data-act="carnet"]{flex:none;width:var(--rond);height:var(--rond);min-width:0;min-height:0;padding:0;border-radius:50%;border-width:3px;
+  font-size:0;line-height:0;color:transparent;background:var(--i-regles) center/28px 28px no-repeat,var(--bois-clair)}
+html body .top [data-act="carnet"]{background:var(--i-carnet) center/28px 28px no-repeat,var(--bois-clair)}
+html body .opp{gap:8px}
+html body .last{align-self:center;margin-top:4px;font-size:15px;padding:2px 12px;border-width:3px;min-height:0}
+html body .board{padding-block:6px;gap:14px}
+html body .piles{gap:12px}
+html body .pile > svg{width:var(--pw);height:calc(var(--pw) * 1.4)}
+html body .pile .slot{width:var(--pw)!important;height:calc(var(--pw) * 1.4)!important}
+html body .pile span{font-size:15px;min-height:28px;padding:1px 8px}
+html body .grp{padding:6px}
+html body .grp .cards svg{width:var(--tw);height:calc(var(--tw) * 1.4)}
+html body .grp .cards > span + span{margin-left:calc(var(--tw) * -.5)!important}
+html body .board ~ .help{align-self:center;max-width:min(900px,100%);font-size:18px;padding:5px 16px;border-width:3px}
+html body .board ~ .err:empty{min-height:0;height:0}
+html body .actions{padding-block:6px;min-height:0;gap:10px}
+html body .actions .big{font-size:22px;min-height:58px;padding:0 22px}
+html body .actions .small{min-height:46px;font-size:17px}
+html body .chip{font-size:18px;min-height:46px;padding:0 14px}
+html body .hand{padding-top:18px}
+/* ⚙ : les règles et le carnet rangés dans la fenêtre des réglages */
+html body .panel .rangement{display:flex;gap:12px;flex-wrap:wrap}
+html body .panel .rangement .big{flex:1;min-width:200px;font-size:22px;min-height:60px}
+
+/* ---------- L'envol des cartes quand on gagne ---------- */
+.envol{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+.envol svg{position:absolute;left:0;top:0;filter:drop-shadow(0 3px 4px rgba(30,15,4,.4))}
