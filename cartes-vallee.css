@@ -155,7 +155,7 @@ html body .soltop ~ .err:empty{display:none}
 html body .soltop ~ .err:not(:empty){position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;max-width:90vw;font-size:17px;pointer-events:none;margin:0}
 /* largeur : 7 colonnes qui remplissent l'écran ; hauteur : la table tient de haut en bas */
 html body #app > div[style*="--cw"]{--g:clamp(6px,1.2vw,14px)!important;
-  --cw:min(calc((100vw - 16px - 6 * var(--g)) / 7),calc((100vh - 84px) / 4.6))!important;--ch:calc(var(--cw) * 1.4)!important;margin-top:8px}
+  --cw:min(calc((100vw - 16px - 6 * var(--g)) / 7),calc((100vh - 92px) / 4.83))!important;--ch:calc(var(--cw) * 1.4)!important;margin-top:8px}
 html body .solgrid.up{margin:0 0 12px}
 html body .spile > svg,html body .scard > svg{display:block;width:var(--cw);height:var(--ch)}
 html body .sslot > svg{width:calc(var(--cw) * .45);height:calc(var(--cw) * .45)}
@@ -163,7 +163,7 @@ html body .sslot{font-size:clamp(14px,calc(var(--cw) * .15),20px)}
 /* les colonnes : chaque carte laisse voir son index ; une colonne trop longue se resserre pour tenir à l'écran */
 html body .scol{height:auto!important;display:flex;flex-direction:column;max-height:calc(100vh - 92px - var(--ch))}
 html body .scard{position:relative!important;top:auto!important;display:block;align-self:flex-start;width:var(--cw);overflow:visible;
-  flex:0 1 calc(var(--ch) * .3);height:calc(var(--ch) * .3);min-height:calc(var(--ch) * .21)}
+  flex:0 1 calc(var(--ch) * .3);height:calc(var(--ch) * .3);min-height:calc(var(--ch) * .17)}
 html body .scard:has(> svg[aria-label="dos de carte"]){flex-basis:calc(var(--ch) * .13);height:calc(var(--ch) * .13);min-height:calc(var(--ch) * .05)}
 html body .scard:last-child{flex:0 0 var(--ch);height:var(--ch);min-height:var(--ch)}
 
@@ -196,6 +196,18 @@ html body .hand{padding-top:18px}
 /* ⚙ : les règles et le carnet rangés dans la fenêtre des réglages */
 html body .panel .rangement{display:flex;gap:12px;flex-wrap:wrap}
 html body .panel .rangement .big{flex:1;min-width:200px;font-size:22px;min-height:60px}
+
+/* ---------- La main en éventail (classe posée par cartes-vallee.js) : la carte touchée se soulève et grandit ---------- */
+html body .hand.eventail{position:relative;display:block;padding:0;margin-top:4px;overflow:visible}
+html body .hand.eventail .hrow{display:contents}
+html body .hand.eventail .card{position:absolute;left:0;top:0;margin:0!important;transform-origin:50% 120%;touch-action:none;
+  transform:translate(var(--x),var(--y)) rotate(var(--r));transition:transform .2s ease}
+html body .hand.eventail .card:active:not(.tenue){transform:translate(var(--x),var(--y)) rotate(var(--r)) translateY(-12px)}
+html body .hand.eventail .card.sel{transform:translate(var(--x),var(--y)) rotate(var(--r)) translateY(-36px) scale(1.08)}
+html body .hand.eventail .card.tenue,html body .hand.eventail.pose .card{transition:none}
+html body .hand.eventail .card.tenue{z-index:300!important}
+html body .hand.eventail .card > svg{filter:drop-shadow(-3px 4px 6px rgba(30,15,4,.38))}
+html body .hand.eventail .card.sel > svg{filter:drop-shadow(0 0 0 var(--lueur)) drop-shadow(0 0 6px var(--lueur)) drop-shadow(-3px 6px 8px rgba(30,15,4,.35))}
 
 /* ---------- L'envol des cartes quand on gagne ---------- */
 .envol{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
