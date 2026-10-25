@@ -399,7 +399,7 @@ function versGraine(cle){
 }
 const myName=()=>ls.get('nom')||'';
 const backName=()=>ls.get('dos-prenom')||myName();
-function applyTapis(){ const t=ls.get('tapis'); document.body.dataset.tapis=['vert','carreaux','bois'].includes(t)?t:'vert'; }
+function applyTapis(){ const t=ls.get('tapis'); document.body.dataset.tapis=['vallee','vert','carreaux','bois'].includes(t)?t:'vallee'; }
 applyTapis();
 
 /* ---------- Dessin des cartes (SVG, viewBox 100 × 140) ---------- */
@@ -572,7 +572,7 @@ function commit(st){
 function act(a){
   if(role==='guest'&&!linked){ flash='La liaison avec votre partenaire est coupée. Un instant, le jeu se reconnecte.'; render(true); return false; }
   const r=apply(S,mySeat,a);
-  if(r.error){ flash=r.error; render(true); return false; }
+  if(r.error){ flash=r.error; render(true); bulle(r.error,dernierToucher.x,dernierToucher.y); return false; }
   flash=''; sel.clear();
   if(a.type!=='add'&&a.type!=='pose') staged=[];
   commit(r.st); return true;
@@ -731,7 +731,7 @@ function renderGame(f, pan){
 
   const L=handLayout(hand.length), rows=[];
   for(let k=0;k<hand.length;k+=L.per) rows.push(hand.slice(k,k+L.per));
-  const handHTML=rows.map(row=>`<div class="hrow">${row.map((i,k)=>`<button class="card${sel.has(i)?' sel':''}" data-act="card" data-id="${i}" ${playing?'':'disabled'} style="margin-left:${k?Math.round(L.step-L.W):0}px;z-index:${k}" aria-pressed="${sel.has(i)}">${cardSVG(i,L.W)}</button>`).join('')}</div>`).join('');
+  const handHTML=rows.map(row=>`<div class="hrow">${row.map((i,k)=>`<button class="card${sel.has(i)?' sel':''}" data-act="card" data-id="${i}" ${playing?'':'aria-disabled="true"'} style="margin-left:${k?Math.round(L.step-L.W):0}px;z-index:${k}" aria-pressed="${sel.has(i)}">${cardSVG(i,L.W)}</button>`).join('')}</div>`).join('');
 
   const drawGo=my&&S.phase==='draw';
   const top=S.discard.at(-1);
@@ -750,8 +750,8 @@ function renderGame(f, pan){
     <div class="last">${esc(S.last||'')}</div>
     <div class="board">
       <div class="piles">
-        <button class="pile${drawGo?' go':''}" data-act="draw" data-from="stock" ${drawGo?'':'disabled'}>${backSVG(W)}<span>Pioche (${S.stock.length})</span></button>
-        <button class="pile${drawGo&&top!==undefined?' go':''}" data-act="draw" data-from="discard" ${drawGo&&top!==undefined?'':'disabled'}>${top!==undefined?cardSVG(top,W):`<div class="slot" style="width:${W}px;height:${Math.round(W*1.4)}px">vide</div>`}<span>Défausse</span></button>
+        <button class="pile${drawGo?' go':''}" data-act="draw" data-from="stock" ${drawGo?'':'aria-disabled="true"'}>${backSVG(W)}<span>Pioche (${S.stock.length})</span></button>
+        <button class="pile${drawGo&&top!==undefined?' go':''}" data-act="draw" data-from="discard" ${drawGo&&top!==undefined?'':'aria-disabled="true"'}>${top!==undefined?cardSVG(top,W):`<div class="slot" style="width:${W}px;height:${Math.round(W*1.4)}px">vide</div>`}<span>Défausse</span></button>
       </div>
       <div class="table">${table}</div>
     </div>
@@ -795,7 +795,7 @@ function cartesHTML(){
        <input id="dosnom" class="field" style="font-size:30px" autocomplete="off" value="${esc(backName())}" placeholder="Votre prénom">
        <button class="big" data-act="dosnom">Écrire ce prénom</button>
        <p class="note">Ce prénom ne pourra être changé qu'une seule fois.</p>`;
-  const tap=[['vert','Tapis vert'],['carreaux','Nappe à carreaux'],['bois','Bois']]
+  const tap=[['vallee','La Vallée'],['vert','Tapis vert'],['carreaux','Nappe à carreaux'],['bois','Bois']]
     .map(([k,n])=>`<button class="t-${k}" data-act="tapis" data-t="${k}" aria-pressed="${t===k}"><span>${t===k?'✓ ':''}${n}</span></button>`).join('');
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Mes cartes">
     <h2>Mes cartes</h2>
@@ -921,6 +921,7 @@ function soloTap(where,col,i){
   }
   if(src){ ssel=src; soloMsg=''; }
   else if(where==='tab'&&i>=0) soloMsg='Cette carte est encore retournée : elle se montrera quand celles du dessus seront parties.';
+  else soloMsg='Touchez d\'abord une carte à déplacer, puis cet endroit.';
   render();
 }
 
@@ -985,8 +986,36 @@ app.addEventListener('submit',e=>{
   if(e.target.id==='fHome') enterRoom(document.getElementById('mot').value);
   if(e.target.id==='fName'||e.target.id==='fAccueil') setName(document.getElementById('prenom').value);
 });
+/* Plus aucun bouton muet (Florian, 25/10 : la grand-mère restait bloquée) : un toucher refusé dit quoi faire, dans une bulle. */
+function bulle(texte,x,y){
+  if(!texte) return;
+  document.querySelectorAll('.bulle').forEach(b=>b.remove());
+  const b=document.createElement('div'); b.className='bulle'; b.setAttribute('role','status'); b.textContent=texte;
+  document.body.appendChild(b);
+  const w=b.offsetWidth, h=b.offsetHeight;
+  b.style.left=Math.max(8,Math.min(innerWidth-w-8,x-w/2))+'px'; b.style.top=Math.max(8,y-h-18)+'px';
+  setTimeout(()=>b.remove(),3200);
+}
+function pourquoi(t){
+  if(screen()!=='game'||!S) return '';
+  if(S.phase==='over') return 'La manche est finie.';
+  if(S.turn!==mySeat) return `C'est au tour de ${S.players[1-mySeat]?.name||'votre partenaire'} : attendez qu'elle ait joué.`;
+  if(t.dataset.act==='draw'){
+    if(S.phase==='play') return 'Vous avez déjà pris une carte : posez si vous pouvez, puis touchez une carte pour la jeter.';
+    if(t.dataset.from==='discard') return 'La défausse est vide : touchez la pioche.';
+  }
+  if(t.dataset.act==='card'&&S.phase==='draw') return "D'abord, prenez une carte : touchez la pioche ou la carte de la défausse.";
+  return '';
+}
+let dernierToucher={x:innerWidth/2,y:innerHeight/2};
+addEventListener('pointerdown',e=>{ dernierToucher={x:e.clientX,y:e.clientY}; },true);
 app.addEventListener('click',e=>{
-  const t=e.target.closest('[data-act]'); if(!t||t.disabled) return;
+  const t=e.target.closest('[data-act]');
+  if(t&&t.getAttribute('aria-disabled')==='true'){ bulle(pourquoi(t),e.clientX||dernierToucher.x,e.clientY||dernierToucher.y); return; }
+  if(!t&&screen()==='game'&&S&&S.phase==='play'&&S.turn===mySeat&&e.target.closest('.grp')){
+    bulle(!sel.size?'Touchez d\'abord une carte de votre main, puis la combinaison.':!S.opened[mySeat]?'Faites d\'abord votre première pose de 51 points.':'Ces cartes ne vont pas sur cette combinaison.',e.clientX,e.clientY); return;
+  }
+  if(!t||t.disabled) return;
   const a=t.dataset.act;
   switch(a){
     case 'rami': mode='rami'; ls.set('mode','rami'); flash=''; render(true); break;

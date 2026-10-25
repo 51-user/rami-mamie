@@ -11,17 +11,20 @@
 
   /* ---------- Les cartes dessinées par cartes-faces.js ---------- */
   window.cardSVG=function(id,w){
+    w=Math.max(20,w||0);
     if(id==null) return backSVG(w);
     if(isJoker(id)) return CartesFaces.face({joker:true},w,'joker');
     return CartesFaces.face({rang:rankOf(id),enseigne:suitOf(id)},w,cardName(id));
   };
-  window.backSVG=function(w,name){ return CartesFaces.dos(w,name===undefined?backName():name,PHOTO_DOS); };
+  window.backSVG=function(w,name){ return CartesFaces.dos(Math.max(20,w||0),name===undefined?backName():name,PHOTO_DOS); };
 
   /* ---------- La main du rami : grande, en éventail ---------- */
   window.handLayout=function(n){
     const avail=app.clientWidth-24, portrait=innerHeight>innerWidth;
     let W=innerHeight*(portrait?0.24:0.29)/1.4;
     W=Math.min(W, avail/(1.45+0.2*Math.max(n-1,0)));
+    /* un onglet caché mesure 0 : jamais de carte de taille nulle ou négative */
+    W=Math.max(40,W||0);
     return {W:Math.floor(W), per:Math.max(n,1), step:0.22*W};
   };
   let ordre=[];

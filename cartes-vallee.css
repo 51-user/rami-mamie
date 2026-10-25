@@ -24,6 +24,21 @@ html body[data-tapis="bois"]{--txt:#FFF4D6;--txt-dim:#F2E2BC;--line:rgba(255,230
     repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px,rgba(255,220,170,.05) 15px 17px,transparent 17px 31px),
     linear-gradient(180deg,#C08550 0%,#9A6334 100%);
   background-attachment:fixed}
+/* La scène Vallée, tapis par défaut (maquette validée par Florian, 25/10) : le soir d'automne du 24/10, un voile violet
+   sur les bords, une lueur chaude au milieu, et pendant la partie une nappe de lin bordée de carreaux.
+   La classe scene-vallee sur body donne la même scène aux autres pages (belote.html). */
+html body[data-tapis="vallee"],html body.scene-vallee{--txt:#FFF4D6;--txt-dim:#F2E2BC;--line:rgba(255,241,204,.5);--band:rgba(40,22,8,.32);--alert-txt:#FFE3A3;
+  background:radial-gradient(ellipse 45% 40% at 50% 58%,rgba(255,190,110,.18),rgba(0,0,0,0) 70%),
+    radial-gradient(ellipse 75% 75% at 50% 52%,rgba(0,0,0,0) 55%,rgba(40,20,60,.55) 100%),
+    url('cartes/fond-vallee.webp') center/cover no-repeat fixed,#2A2018}
+html body[data-tapis="vallee"]:has(.soltop,.board)::before,html body.scene-vallee::before{content:"";position:fixed;z-index:-1;pointer-events:none;
+  inset:max(56px,8vh) max(16px,6vw) max(12px,3vh);transform:rotate(-.8deg);border:clamp(16px,2.4vw,28px) solid transparent;border-radius:6px;box-sizing:border-box;
+  background:repeating-linear-gradient(90deg,rgba(120,90,50,.06) 0 1px,transparent 1px 4px) padding-box,repeating-linear-gradient(0deg,rgba(120,90,50,.06) 0 1px,transparent 1px 4px) padding-box,
+    radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 60%,rgba(90,48,16,.28) 100%) padding-box,linear-gradient(#E6CFA6,#E6CFA6) padding-box,
+    linear-gradient(90deg,rgba(201,71,63,.55) 50%,transparent 0) 0 0/28px 28px border-box,linear-gradient(rgba(201,71,63,.55) 50%,transparent 0) 0 0/28px 28px border-box,#F6E9D2;
+  outline:3px dashed rgba(185,54,47,.6);outline-offset:calc(-1 * clamp(16px,2.4vw,28px) - 8px);
+  box-shadow:0 18px 22px rgba(20,10,0,.45)}
+html body .tapis .t-vallee{background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 50%,rgba(40,20,60,.5) 100%),url('cartes/fond-vallee.webp') center/cover}
 /* Le tapis est le fond de tout l'écran, sans cadre autour (Florian, 25/10 : le jeu d'abord) */
 
 /* ---------- Les faces des cartes : parchemin à bord brun arrondi ---------- */
@@ -214,6 +229,13 @@ html body .choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap
 html body .choice .big{width:auto;min-width:0;min-height:clamp(92px,17vh,150px);padding:8px 10px;font-size:clamp(22px,4.6vw,38px)}
 html body .choice .big small{font-size:clamp(14px,2.6vw,20px)}
 html body .center:has(> .choice){gap:clamp(10px,2.5vh,24px);padding-block:8px}
+
+/* ---------- La bulle d'un toucher refusé : elle dit quoi faire ---------- */
+.bulle{position:fixed;z-index:60;max-width:min(420px,86vw);padding:8px 14px;box-sizing:border-box;pointer-events:none;
+  background:var(--parchemin,#FBF0D2);color:#3E2410;font-family:var(--f-body);font-size:18px;font-weight:700;line-height:1.3;text-align:center;
+  border:3px solid #5A3418;border-radius:12px;box-shadow:inset 0 0 0 2px #C9A36A,0 4px 0 #3A2010,0 6px 16px rgba(30,15,4,.35);animation:bulle .18s ease-out}
+@keyframes bulle{from{transform:translateY(6px) scale(.96);opacity:0}}
+html body .pile[aria-disabled="true"],html body .card[aria-disabled="true"]{cursor:default}
 
 /* ---------- L'envol des cartes quand on gagne ---------- */
 .envol{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
