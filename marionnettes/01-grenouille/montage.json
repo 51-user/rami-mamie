@@ -1,0 +1,48 @@
+{
+ "id": "01-grenouille",
+ "nom": "grenouille",
+ "dessin": "code",
+ "code": "grenouille",
+ "regard": "droite",
+ "hauteur_ecran": 120,
+ "mouvement": {
+  "mode": "sautille",
+  "vitesse": 85,
+  "periode": 0.62,
+  "hauteur": 34
+ },
+ "pieces": [],
+ "arret": {
+  "debut": 5.0,
+  "duree": 3.6
+ },
+ "gestes": [
+  {
+   "piece": "racine",
+   "saut": 70,
+   "monte": [
+    0.8,
+    1.6
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 12,
+   "monte": [
+    2.2,
+    2.45
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 12,
+   "monte": [
+    2.6,
+    2.85
+   ]
+  }
+ ],
+ "placement": {},
+ "controle": {},
+ "temps_total_s": 0
+}

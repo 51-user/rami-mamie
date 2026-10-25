@@ -1,0 +1,40 @@
+{
+ "id": "02-patate",
+ "nom": "patate à chapeau",
+ "dessin": "code",
+ "code": "patate",
+ "regard": "droite",
+ "hauteur_ecran": 120,
+ "mouvement": {
+  "mode": "sautille",
+  "vitesse": 70,
+  "periode": 0.42,
+  "hauteur": 14
+ },
+ "pieces": [],
+ "arret": {
+  "debut": 6.0,
+  "duree": 3.0
+ },
+ "gestes": [
+  {
+   "piece": "racine",
+   "saut": 26,
+   "monte": [
+    0.6,
+    1.0
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 8,
+   "monte": [
+    1.6,
+    1.8
+   ]
+  }
+ ],
+ "placement": {},
+ "controle": {},
+ "temps_total_s": 0
+}

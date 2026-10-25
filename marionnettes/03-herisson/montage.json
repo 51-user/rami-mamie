@@ -1,0 +1,39 @@
+{
+ "id": "03-herisson",
+ "nom": "hérisson",
+ "dessin": "code",
+ "code": "herisson",
+ "regard": "droite",
+ "hauteur_ecran": 120,
+ "mouvement": {
+  "mode": "roule",
+  "vitesse": 110,
+  "periode": 0.8
+ },
+ "pieces": [],
+ "arret": {
+  "debut": 5.5,
+  "duree": 4.0
+ },
+ "gestes": [
+  {
+   "piece": "racine",
+   "saut": 10,
+   "monte": [
+    0.0,
+    0.3
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 5,
+   "monte": [
+    0.3,
+    0.5
+   ]
+  }
+ ],
+ "placement": {},
+ "controle": {},
+ "temps_total_s": 0
+}
