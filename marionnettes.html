@@ -40,6 +40,7 @@ const DECOR = { fond: "cartes/fond-vallee.webp", buisson: "img/v3/decor-buisson.
 
 // ── le décor ──────────────────────────────────────────────────────────────────────────────────────────────
 function pose(im, x, y, l) { if (im) cx.drawImage(im, x, y - l * im.height / im.width, l, l * im.height / im.width); }
+let FOND_DONNE = null;
 function decor() {
   // ?fond=<image> : un fond donné (Greenlight nuit…) remplace le décor de la Vallée, posé plein cadre
   if (FOND_DONNE) { cx.drawImage(FOND_DONNE, 0, 0, W, H); return; }
