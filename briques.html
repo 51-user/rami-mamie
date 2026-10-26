@@ -20,7 +20,7 @@
   --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
   --plaque:repeating-linear-gradient(90deg,rgba(60,30,10,.08) 0 2px,transparent 2px 13px),linear-gradient(#B97B45,#8A5428);
   --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);--brun:#3E2410;--brun-doux:#6B4A2C;--cadre:#5A3418;--bord:#4A2A12;--lueur:#FFD86B;
-  --f:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;color-scheme:light;--bs:96px;--gap:12px}
+  --info:#F3E8CC;--info-bord:#C4A878;--f:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;color-scheme:light;--bs:96px;--gap:12px}
 html,body{height:100%;margin:0}
 body{background:#2A2018;font-family:var(--f);color:var(--brun);overflow:hidden;touch-action:none;
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -39,12 +39,12 @@ button:focus{outline:none}button:focus-visible{box-shadow:0 0 0 4px var(--lueur)
 /* les plaques fines : prochaine pièce, lignes, saison, points */
 .cote{position:absolute;display:flex;flex-direction:column;gap:8px;box-sizing:border-box}
 .plaque{display:flex;align-items:center;justify-content:center;gap:6px;min-height:38px;box-sizing:border-box;padding:3px 10px;text-align:center;
-  background:var(--plaque);color:#FFF4D6;font-size:19px;font-weight:700;line-height:1.15;border:3px solid var(--bord);border-radius:8px;
-  text-shadow:0 1px 0 #3A2010;box-shadow:inset 0 1px 0 rgba(255,230,180,.45),0 2px 0 #3A2010}
+  background:var(--info);color:var(--brun);font-size:19px;font-weight:700;line-height:1.15;border:2px solid var(--info-bord);border-radius:6px}   /* l'info : à plat, comme au village */
+.plaque.gonfle{animation:gonfle .45s}
+@keyframes gonfle{40%{transform:scale(1.22);background:#FFF1B8}}
 .plaque.petit{font-size:16px;font-weight:600;min-height:32px}
 .plaque b{font-size:24px}
-.prochaine{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px 8px;background:var(--parchemin);border:3px solid var(--cadre);border-radius:10px;
-  box-shadow:inset 0 0 0 2px #C9A36A,0 3px 0 #3A2010}
+.prochaine{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px 8px;background:var(--info);border:2px solid var(--info-bord);border-radius:8px}
 .prochaine span{font-size:15px;font-weight:600;color:var(--brun-doux)}
 /* les petits boutons du haut : pause bien visible, musique, maison */
 .haut{position:absolute;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:flex-start}
@@ -78,22 +78,36 @@ body[data-o="paysage"] #cmdD [data-a="tourner"]{grid-column:1 / 3;width:auto}
 .rangee{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .rangee .btn{flex:1 1 180px}
 /* l'annonce d'une nouvelle saison : un parchemin qui passe, sans rien arrêter */
-.annonce{position:fixed;z-index:8;transform:translate(-50%,0);padding:8px 18px;background:var(--parchemin);border:3px solid var(--cadre);border-radius:12px;
-  box-shadow:inset 0 0 0 2px #C9A36A,0 4px 0 #3A2010;font-size:22px;font-weight:700;white-space:nowrap;pointer-events:none;animation:annonce 2.8s ease forwards}
+.annonce{position:fixed;z-index:8;transform:translate(-50%,0);padding:8px 18px;background:var(--info);border:2px solid var(--info-bord);border-radius:8px;
+  font-size:22px;font-weight:700;white-space:nowrap;pointer-events:none;animation:annonce 2.8s ease forwards}
 @keyframes annonce{0%{opacity:0;margin-top:10px}12%{opacity:1;margin-top:0}80%{opacity:1}100%{opacity:0}}
 .etincelle{position:fixed;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle,#FFF6C8,#FFD86B 60%,transparent 70%);pointer-events:none;z-index:9;
   animation:etincelle .9s ease-out forwards}
 @keyframes etincelle{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+/* les effets : le calque des morceaux, les points qui volent, le ruban du grand coup, la bulle des enchaînements */
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9}
+.vole{position:fixed;z-index:9;transform:translate(-50%,-50%);font-size:34px;font-weight:700;color:#FFF1CC;-webkit-text-stroke:5px #4A2A12;paint-order:stroke fill;
+  pointer-events:none;transition:left .75s cubic-bezier(.5,0,.6,1),top .75s cubic-bezier(.5,-.6,.6,1),transform .75s,opacity .75s;white-space:nowrap}
+.ruban{position:fixed;z-index:9;transform:translate(-50%,-50%);padding:8px 34px;background:#C2457A;color:#FFF1CC;font-size:34px;font-weight:700;white-space:nowrap;
+  -webkit-text-stroke:4px #6E1E40;paint-order:stroke fill;pointer-events:none;animation:ruban 1.9s cubic-bezier(.2,1.4,.4,1) forwards;
+  clip-path:polygon(0 0,100% 0,94% 50%,100% 100%,0 100%,6% 50%)}
+.ruban.grand{background:#E2B447;-webkit-text-stroke-color:#6E4A12;font-size:40px}
+@keyframes ruban{0%{transform:translate(-50%,-50%) scale(.2) rotate(-8deg);opacity:0}18%{transform:translate(-50%,-50%) scale(1.08) rotate(2deg);opacity:1}
+  30%{transform:translate(-50%,-50%) scale(1) rotate(0)}82%{opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
+.combo{position:fixed;z-index:9;transform:translate(-50%,-50%);font-size:40px;font-weight:700;color:#FFE27A;-webkit-text-stroke:5px #4A2A12;paint-order:stroke fill;
+  pointer-events:none;animation:combo 1.3s ease-out forwards}
+@keyframes combo{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}25%{transform:translate(-50%,-50%) scale(1.25);opacity:1}100%{transform:translate(-50%,-160%) scale(1);opacity:0}}
 @media (prefers-reduced-motion: reduce){.etincelle{display:none}.annonce{animation:none}}
 </style>
 </head>
 <body data-o="paysage">
-<div id="fond"></div><div id="teinte"></div><div id="ombre"></div><canvas id="ciel"></canvas>
+<div id="fond"></div><div id="teinte"></div><div id="ombre"></div><canvas id="ciel"></canvas><canvas id="fx"></canvas>
 <div id="jeu">
   <div class="puits" id="puits"><canvas id="toile" aria-label="Le puits de briques"></canvas></div>
   <div class="haut" id="haut">
     <button class="pause" data-a="pause" aria-label="Mettre en pause"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="3.4" stroke-linecap="round"><path d="M8.5 5v14M15.5 5v14"/></svg>Pause</button>
     <button class="rond" data-a="son" id="bSon"></button>
+    <button class="rond" data-a="doux" id="bDoux"></button>
     <button class="rond" data-a="accueil" aria-label="Retour à l'accueil"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></button>
   </div>
   <div class="cote" id="infos">
@@ -164,17 +178,21 @@ const SON={
   pose(){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(170,a.currentTime);
     o.frequency.exponentialRampToValueAtTime(70,a.currentTime+.16);g.gain.setValueAtTime(.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.2);
     o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+.25)},
-  ligne(n){[784,988,1175,1319,1568].slice(0,n+1).forEach((f,k)=>note(f,k*.08,.35,'sine',.09));note(1760,n*.08+.08,.4,'triangle',.04)},
+  ligne(n,ch){const m=Math.pow(2,2*Math.min(ch||0,8)/12);[784,988,1175,1319,1568].slice(0,n+1).forEach((f,k)=>note(f*m,k*.08,.35,'sine',.09));note(1760*m,n*.08+.08,.4,'triangle',.04);
+    if(n>=4)[1568,1976,2349,3136].forEach((f,k)=>note(f*m,.5+k*.07,.5,'triangle',.05))},
+  fete(){[523,659,784,1047,1319,1568,2093].forEach((f,k)=>note(f,k*.09,.5,'triangle',.07));[1047,1319,1568].forEach(f=>note(f,.75,1.1,'sine',.05))},
   saison(){[523,659,784,1047].forEach((f,k)=>note(f,k*.12,.4,'triangle',.08))},
   fin(){[784,659,523,659,784].forEach((f,k)=>note(f,k*.16,.45,'triangle',.07))}};
 const GAMME=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
 function musique(on){
-  clearInterval(musiqueMinuteur);musiqueMinuteur=null;if(!on||!audio())return;
+  clearTimeout(musiqueMinuteur);musiqueMinuteur=null;if(!on||!audio())return;
   let k=3,pas=0;
-  musiqueMinuteur=setInterval(()=>{if(document.hidden)return;
+  // un peu plus vive quand le puits est haut, plus calme quand on le vide ; jamais avec les effets doux
+  const temps=()=>doux?420:Math.round(470-170*hauteurPuits());
+  const pasSuivant=()=>{musiqueMinuteur=setTimeout(()=>{if(!document.hidden){
     if(pas%8===0){note(GAMME[[0,3,4,2][(pas/8)%4]]/2,0,2.6,'sine',.035)}
     if(Math.random()<.7){k=Math.max(0,Math.min(GAMME.length-1,k+[-2,-1,1,2][Math.floor(Math.random()*4)]));note(GAMME[k],0,.9,'triangle',.03)}
-    pas++},420);
+    pas++}pasSuivant()},temps())};pasSuivant();
 }
 const ICONE_SON=on=>`<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5h4l5-4v13l-5-4h-4z"/>${on?'<path d="M16 9a4.5 4.5 0 0 1 0 6"/><path d="M18.8 6.3a8.4 8.4 0 0 1 0 11.4"/>':'<path d="M16 9.5l5 5M21 9.5l-5 5"/>'}</svg>`;
 function majSon(){const b=document.getElementById('bSon');b.innerHTML=ICONE_SON(musiqueOn);b.setAttribute('aria-label',musiqueOn?'Couper la musique':'Remettre la musique')}
@@ -277,20 +295,33 @@ function lacher(){
 function chute(){const c=P.cur;let y=c.y;while(!heurte(c.t,c.r,c.x,y+1))y++;return y}
 function poser(){
   const c=P.cur;let dehors=false;
-  ROT[c.t][c.r].forEach(([cx,cy],k)=>{const X=c.x+cx,Y=c.y+cy;if(Y<0){dehors=true;return}P.b[Y*LARG+X]=(TYPES.indexOf(c.t)+1)*4+(k%3)});
-  P.cur=null;SON.pose();
+  const cases=[];
+  ROT[c.t][c.r].forEach(([cx,cy],k)=>{const X=c.x+cx,Y=c.y+cy;if(Y<0){dehors=true;return}P.b[Y*LARG+X]=(TYPES.indexOf(c.t)+1)*4+(k%3);cases.push([X,Y])});
+  P.cur=null;SON.pose();claque={cases,t0:performance.now()};poussiere(cases);
   if(dehors){finir();return}
   const pleines=[];for(let y=0;y<HAUT;y++){let ok=true;for(let x=0;x<LARG;x++)if(!P.b[y*LARG+x]){ok=false;break}if(ok)pleines.push(y)}
-  if(pleines.length){efface={rangs:pleines,t0:performance.now()};SON.ligne(pleines.length);etincellesLignes(pleines)}
-  else sortir();
+  if(pleines.length){const n=pleines.length;P.combo=(P.combo==null||P.combo<0?-1:P.combo)+1;   // des lignes coup sur coup : un enchaînement
+    efface={rangs:pleines,t0:performance.now(),lances:0,saison:(P.niveau-1)%4};SON.ligne(n,P.combo);
+    if(n>=2)secouer(n>=4?9:n===3?6:3.5,n>=4?420:260);
+    if(n>=4&&!doucement()&&(!navigator.userActivation||navigator.userActivation.hasBeenActive)){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch{}}   /* seulement après un vrai toucher */}
+  else{P.combo=-1;sortir()}
   sale=true;majInfos();sauve();
 }
 function retirerLignes(){
-  const n=efface.rangs.length;
-  for(const y of efface.rangs){P.b.splice(y*LARG,LARG);P.b.unshift(...Array(LARG).fill(0))}
-  efface=null;
-  const avant=P.niveau;
-  P.lignes+=n;P.score+=[0,100,300,500,800][n]*P.niveau;P.niveau=1+Math.floor(P.lignes/LIGNES_PAR_NIVEAU);
+  const n=efface.rangs.length,rangs=efface.rangs,sa=efface.saison,yMilieu=(rangs[0]+rangs[n-1]+1)/2*boitePuits().height/HAUT;
+  // chaque rangée du dessus retombe d'autant de lignes qu'il en est parti sous elle
+  const chute=Array(HAUT).fill(0);for(let y=0;y<HAUT;y++){if(rangs.includes(y))continue;const d=rangs.filter(z=>z>y).length;if(d)chute[y+d]=d}
+  for(const y of rangs){P.b.splice(y*LARG,LARG);P.b.unshift(...Array(LARG).fill(0))}
+  efface=null;tombe=chute.some(Boolean)?{t0:performance.now(),chute}:null;
+  const avant=P.niveau,vide=P.b.every(v=>!v);
+  let gain=[0,100,300,500,800][n]*P.niveau;
+  if(P.combo>0)gain+=50*P.combo*P.niveau;   // l'enchaînement : 50 points par coup enchaîné, comme au jeu classique
+  if(vide)gain+=[0,800,1200,1800,2000][n]*P.niveau;   // le puits vidé
+  P.lignes+=n;P.score+=gain;P.niveau=1+Math.floor(P.lignes/LIGNES_PAR_NIVEAU);
+  pointsVolent(gain,yMilieu);
+  if(P.combo>0){bulleCombo(P.combo+1,yMilieu)}
+  if(vide){ruban('🎉 Puits vidé !',true);pluie(90,sa,true);pluie(50,sa);SON.fete();secouer(7,380)}
+  else if(n>=4){ruban('🌾 Récolte !');pluie(70,sa)}
   if(P.niveau!==avant){mettreSaison(true)}
   sortir();majInfos();sauve();
 }
@@ -307,14 +338,15 @@ function boucle(ts){
   requestAnimationFrame(boucle);
   const dt=Math.min(100,ts-(avant||ts));avant=ts;
   if(etat==='jeu'&&P&&!P.fini){
-    if(efface){sale=true;if(ts-efface.t0>=420)retirerLignes()}
+    if(efface){sale=true;const e=ts-efface.t0;while(efface.lances<LARG&&e>=efface.lances*VAGUE)lancerColonne(efface.lances++);if(e>=EFFACE_MS)retirerLignes()}
     else if(P.cur){
       const c=P.cur;
       if(heurte(c.t,c.r,c.x,c.y+1)){acc=0;delai+=dt;if(delai>=DELAI_POSE)poser()}
       else{delai=0;acc+=dt;if(acc>=gravite()){acc=0;c.y++;sale=true}}
     }
   }
-  ciel(dt);
+  ciel(dt);effets(dt);
+  if(tombe||claque)sale=true;
   if(sale){dessine();sale=false}
 }
 
@@ -329,14 +361,26 @@ function dessine(){
   for(let x=1;x<LARG;x++){ctx.moveTo(x*s+.5,0);ctx.lineTo(x*s+.5,H)}for(let y=1;y<HAUT;y++){ctx.moveTo(0,y*s+.5);ctx.lineTo(W,y*s+.5)}ctx.stroke();
   if(!P)return;
   const B=blocs(s);
-  for(let y=0;y<HAUT;y++)for(let x=0;x<LARG;x++){const v=P.b[y*LARG+x];if(v)ctx.drawImage(B[TYPES[(v>>2)-1]][v&3],x*s,y*s)}
-  if(efface){const p=Math.min(1,(performance.now()-efface.t0)/420);
-    ctx.fillStyle=`rgba(255,240,190,${(.85*(1-p)).toFixed(3)})`;for(const y of efface.rangs)ctx.fillRect(0,y*s,W,s)}
+  const now=performance.now();
+  // la chute : les rangées tombent (accélérées), puis s'écrasent un peu en touchant
+  let pc=1;if(tombe){pc=(now-tombe.t0)/300;if(pc>=1)tombe=null}
+  let pq=1;if(claque){pq=(now-claque.t0)/160;if(pq>=1)claque=null}
+  for(let y=0;y<HAUT;y++){const d=tombe?tombe.chute[y]:0;let dy=0,k=1;
+    if(d){if(pc<.7){const q=pc/.7;dy=-d*s*(1-q*q)}else k=1-.13*Math.sin(Math.PI*(pc-.7)/.3)}
+    for(let x=0;x<LARG;x++){const v=P.b[y*LARG+x];if(!v)continue;
+      if(efface&&efface.rangs.includes(y)&&x<efface.lances)continue;   // ce carré est déjà parti dans l'onde
+      let kk=k;if(claque&&claque.cases.some(([a,b])=>a===x&&b===y))kk=1-.12*Math.sin(Math.PI*pq);
+      const img=B[TYPES[(v>>2)-1]][v&3];
+      if(kk===1)ctx.drawImage(img,x*s,y*s+dy);else ctx.drawImage(img,x*s-s*(1/kk-1)/4,y*s+dy+s*(1-kk),s*(1+(1/kk-1)/2),s*kk)}}
+  if(efface){const p=Math.min(1,(now-efface.t0)/EFFACE_MS);
+    ctx.fillStyle=`rgba(255,240,190,${(.35+.4*Math.sin(Math.PI*p)).toFixed(3)})`;for(const y of efface.rangs)ctx.fillRect(efface.lances*s,y*s,W-efface.lances*s,s)}
   const c=P.cur;
   if(c&&!P.fini){
+    // le fantôme : l'ombre de la pièce là où elle tombera, cernée d'un trait clair
     const yf=chute();ctx.globalAlpha=.22;
     ROT[c.t][c.r].forEach(([cx,cy],k)=>{if(yf+cy>=0)ctx.drawImage(B[c.t][k%3],(c.x+cx)*s,(yf+cy)*s)});
-    ctx.globalAlpha=1;
+    ctx.globalAlpha=1;ctx.strokeStyle='rgba(255,240,200,.55)';ctx.lineWidth=Math.max(1.5,s*.06);ctx.setLineDash([s*.18,s*.12]);
+    ROT[c.t][c.r].forEach(([cx,cy])=>{if(yf+cy>=0)ctx.strokeRect((c.x+cx)*s+s*.08,(yf+cy)*s+s*.08,s*.84,s*.84)});ctx.setLineDash([]);
     ROT[c.t][c.r].forEach(([cx,cy],k)=>{if(c.y+cy>=0)ctx.drawImage(B[c.t][k%3],(c.x+cx)*s,(c.y+cy)*s)});
   }
 }
@@ -390,6 +434,81 @@ function ciel(dt){
     cg.restore()}
 }
 
+/* ---------- Les effets (26/10, Florian : « de meilleurs effets lorsque les blocs se détruisent, on ajoute un maximum de features
+   satisfaisantes », puis « go pour le tout ») ----------
+   Un seul calque de particules par-dessus tout, dessiné à chaque image tant qu'il y a quelque chose à montrer.
+   Les règles ne changent pas ; seuls les points d'enchaînement et du puits vidé s'ajoutent (barème du jeu classique). */
+const fxC=document.getElementById('fx'),fx=fxC.getContext('2d');
+let parts=[], secoue=null, tombe=null, claque=null, doux=lis('doux',false), FXD=1;
+const VAGUE=32, EFFACE_MS=LARG*VAGUE+170;   // l'onde : une colonne toutes les 32 ms, de gauche à droite
+const doucement=()=>doux||calme;
+function fxTaille(){FXD=Math.min(2,window.devicePixelRatio||1);fxC.width=Math.round(innerWidth*FXD);fxC.height=Math.round(innerHeight*FXD)}
+const boitePuits=()=>toile.getBoundingClientRect();
+const hasardEntre=(a,b)=>a+Math.random()*(b-a);
+// un morceau de la saison du niveau : pétale, étincelle de soleil, feuille, flocon
+function morceau(x,y,sa,vy){const p={k:['petale','soleil','feuille','flocon'][sa],x,y,vx:hasardEntre(-1.6,1.6),vy:vy==null?hasardEntre(-4,-1):vy,
+  rot:Math.random()*6,vr:hasardEntre(-.15,.15),age:0,vie:hasardEntre(900,1500),r:hasardEntre(4,7),g:sa===3?.05:.09,flotte:sa!==1};parts.push(p);return p}
+// une colonne de l'onde part : chaque carré saute, tourne, puis se brise en quatre et retombe, avec quelques morceaux de saison
+function lancerColonne(x){const r=boitePuits(),c=r.height/HAUT,s=Math.round(C*DPR),B=blocs(s),sa=efface.saison;
+  for(const y of efface.rangs){const v=P.b[y*LARG+x];if(!v)continue;
+    parts.push({k:'bloc',img:B[TYPES[(v>>2)-1]][v&3],x:r.left+(x+.5)*c,y:r.top+(y+.5)*c,vx:hasardEntre(-1.2,1.2)+(x-4.5)*.12,vy:hasardEntre(-7,-4.5),
+      rot:0,vr:hasardEntre(-.18,.18),age:0,vie:380,cote:c,g:.38});
+    for(let k=0;k<2;k++)morceau(r.left+(x+.5)*c,r.top+(y+.5)*c,sa)}
+  if(x%3===0)SON.tac()}
+function briser(p){const h=p.img.width/2;
+  for(let a=0;a<2;a++)for(let b=0;b<2;b++)parts.push({k:'quart',img:p.img,sx:a*h,sy:b*h,sw:h,x:p.x+(a-.5)*p.cote/2,y:p.y+(b-.5)*p.cote/2,
+    vx:p.vx+(a-.5)*2.4,vy:p.vy+(b-.5)*1.6-1,rot:p.rot,vr:hasardEntre(-.25,.25),age:0,vie:hasardEntre(650,900),cote:p.cote/2,g:.42})}
+// la poussière de la pose : de petits nuages sous la pièce
+function poussiere(cases){const r=boitePuits(),c=r.height/HAUT;
+  for(const [X,Y] of cases){if(cases.some(([a,b])=>a===X&&b===Y+1))continue;
+    for(let k=0;k<3;k++)parts.push({k:'nuage',x:r.left+(X+Math.random())*c,y:r.top+(Y+1)*c-2,vx:hasardEntre(-1.2,1.2),vy:hasardEntre(-1.1,-.3),age:0,vie:hasardEntre(380,560),r:hasardEntre(3,6),g:0})}}
+// une pluie de saison sur tout le puits (le grand coup, le puits vidé)
+function pluie(n,sa,conf){const r=boitePuits();
+  for(let k=0;k<n;k++){const p=conf?{k:'confetti',x:hasardEntre(r.left,r.right),y:r.top-10,vx:hasardEntre(-1.5,1.5),vy:hasardEntre(-6,-1),rot:Math.random()*6,vr:hasardEntre(-.3,.3),
+      age:0,vie:hasardEntre(1400,2200),r:hasardEntre(4,7),g:.12,col:['#E53935','#FDD835','#43A047','#1E88E5','#AB47BC','#FB8C00'][k%6]}
+    :morceau(hasardEntre(r.left,r.right),r.top-hasardEntre(0,40),sa,hasardEntre(.5,2.5));
+    p.attente=k*18;p.vie+=600;if(conf)parts.push(p)}}
+function dessinePart(p){const g=fx;g.save();g.translate(p.x,p.y);g.rotate(p.rot||0);const fin=Math.max(0,1-p.age/p.vie);g.globalAlpha=Math.min(1,fin*1.6);
+  if(p.k==='bloc'){const c=p.cote;g.drawImage(p.img,-c/2,-c/2,c,c)}
+  else if(p.k==='quart'){const c=p.cote;g.drawImage(p.img,p.sx,p.sy,p.sw,p.sw,-c/2,-c/2,c,c)}
+  else if(p.k==='petale'){g.fillStyle='#F7B6CF';g.beginPath();g.ellipse(0,0,p.r,p.r*.55,0,0,7);g.fill();g.fillStyle='#FFE3EE';g.beginPath();g.ellipse(-p.r*.3,-p.r*.12,p.r*.35,p.r*.18,0,0,7);g.fill()}
+  else if(p.k==='soleil'){g.fillStyle='#FFE27A';g.beginPath();for(let a=0;a<8;a++){const R=a%2?p.r*.35:p.r;g.lineTo(Math.cos(a*Math.PI/4)*R,Math.sin(a*Math.PI/4)*R)}g.closePath();g.fill();
+    g.fillStyle='#FFF8D6';g.beginPath();g.arc(0,0,p.r*.3,0,7);g.fill()}
+  else if(p.k==='feuille'){g.fillStyle=p.r>5.5?'#D66E28':'#E8A032';g.beginPath();g.ellipse(0,0,p.r*1.2,p.r*.6,0,0,7);g.fill();g.strokeStyle='rgba(110,50,10,.6)';g.lineWidth=1;g.beginPath();g.moveTo(-p.r*1.1,0);g.lineTo(p.r*1.1,0);g.stroke()}
+  else if(p.k==='flocon'){g.strokeStyle='#FFFFFF';g.lineWidth=1.6;g.lineCap='round';g.beginPath();for(let a=0;a<3;a++){const c=Math.cos(a*Math.PI/3)*p.r,s=Math.sin(a*Math.PI/3)*p.r;g.moveTo(-c,-s);g.lineTo(c,s)}g.stroke()}
+  else if(p.k==='nuage'){g.globalAlpha*=.55;g.fillStyle='#E8DCC4';g.beginPath();g.arc(0,0,p.r*(1+p.age/p.vie),0,7);g.fill()}
+  else if(p.k==='confetti'){g.fillStyle=p.col;g.fillRect(-p.r/2,-p.r*.3,p.r,p.r*.6)}
+  g.restore()}
+let fxVide=true;
+function effets(dt){const k=dt/16;
+  if(secoue){const p=(performance.now()-secoue.t0)/secoue.dur,j=$('jeu');
+    if(p>=1){j.style.transform='';secoue=null}else{const a=secoue.amp*(1-p);j.style.transform=`translate(${(Math.random()-.5)*2*a}px,${(Math.random()-.5)*2*a}px)`}}
+  if(!parts.length){if(!fxVide){fx.setTransform(1,0,0,1,0,0);fx.clearRect(0,0,fxC.width,fxC.height);fxVide=true}return}
+  fx.setTransform(FXD,0,0,FXD,0,0);fx.clearRect(0,0,innerWidth,innerHeight);fxVide=false;
+  const neufs=[];
+  for(const p of parts){if(p.attente>0){p.attente-=dt;neufs.push(p);continue}
+    p.age+=dt;p.vy+=p.g*k;if(p.flotte&&p.vy>1.2)p.vy=1.2;p.vx*=Math.pow(.99,k);p.x+=p.vx*k+(p.flotte?Math.sin(p.age/220+p.rot)*.4*k:0);p.y+=p.vy*k;p.rot=(p.rot||0)+(p.vr||0)*k;
+    if(p.k==='bloc'&&p.age>=p.vie){briser(p);continue}
+    if(p.age<p.vie&&p.y<innerHeight+40){neufs.push(p);dessinePart(p)}}
+  parts=neufs;
+  if(parts.length>700)parts.splice(0,parts.length-700)}
+function secouer(amp,dur){if(doucement())return;secoue={t0:performance.now(),amp,dur}}
+// les points qui volent jusqu'au compteur, qui grossit en les recevant
+function pointsVolent(n,y0){const r=boitePuits(),el=document.createElement('div'),cible=$('plPoints').getBoundingClientRect();
+  el.className='vole';el.textContent='+'+n.toLocaleString('fr-FR');el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+y0)+'px';document.body.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.left=(cible.left+cible.width/2)+'px';el.style.top=(cible.top+cible.height/2)+'px';el.style.transform='translate(-50%,-50%) scale(.6)';el.style.opacity='.4'}));
+  setTimeout(()=>{el.remove();const pl=$('plPoints');pl.classList.remove('gonfle');void pl.offsetWidth;pl.classList.add('gonfle')},820)}
+// un ruban au milieu du puits : « Récolte ! », « Puits vidé ! » ; une bulle « ×2 » pour les enchaînements
+function ruban(txt,grand){const r=boitePuits(),el=document.createElement('div');el.className='ruban'+(grand?' grand':'');el.textContent=txt;
+  el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+r.height*.38)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1900)}
+function bulleCombo(n,y0){const r=boitePuits(),el=document.createElement('div');el.className='combo';el.textContent='×'+n;
+  el.style.left=(r.left+r.width*.82)+'px';el.style.top=(r.top+y0)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1300)}
+const ICONE_DOUX=on=>on?'<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4C9 5 5 11 5 19"/><path d="M19 4c1 7-4 12-11 12"/><path d="M5 19l-1.5 1.5"/></svg>'
+  :'<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="2.6"/></svg>';
+function majDoux(){const b=$('bDoux');b.innerHTML=ICONE_DOUX(doux);b.setAttribute('aria-label',doux?'Effets doux : remettre les effets vifs':'Passer aux effets doux')}
+// la hauteur des briques dans le puits, de 0 (vide) à 1 (plein) : la musique la suit
+function hauteurPuits(){if(!P)return 0;for(let y=0;y<HAUT;y++)for(let x=0;x<LARG;x++)if(P.b[y*LARG+x])return (HAUT-y)/HAUT;return 0}
+
 /* ---------- La place : tout est mesuré sur l'écran réel ---------- */
 const $=id=>document.getElementById(id);
 function poseBoite(el,x,y,w,h){el.style.left=x+'px';el.style.top=y+'px';if(w!=null)el.style.width=w+'px';if(h!=null)el.style.height=h+'px'}
@@ -397,7 +516,7 @@ function placer(){
   const vw=innerWidth,vh=innerHeight,m=10,f=13,portrait=vh>vw*1.05;
   document.body.dataset.o=portrait?'portrait':'paysage';
   DPR=Math.min(2,window.devicePixelRatio||1);
-  cielC.width=vw;cielC.height=vh;
+  cielC.width=vw;cielC.height=vh;fxTaille();
   let bs,gap;
   if(portrait){
     const colW=Math.round(Math.min(240,Math.max(150,vw*.25)));
@@ -555,13 +674,14 @@ $('haut').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;audio();
   if(a==='pause'){if(etat==='jeu')mettrePause();else if(etat==='pause')jouer()}
   else if(a==='son'){musiqueOn=!musiqueOn;ecris('musique',musiqueOn);majSon();musique(musiqueOn&&etat==='jeu')}
+  else if(a==='doux'){doux=!doux;ecris('doux',doux);majDoux();if(doux&&secoue){secoue=null;$('jeu').style.transform=''}}
   else if(a==='accueil'){if(P&&!P.fini)sauve();location.href='index.html'+location.search}
 });
 
 /* ---------- Au démarrage : la partie gardée revient en pause, jamais en marche toute seule ---------- */
 P=lis('partie',null);
 if(P&&(!Array.isArray(P.b)||P.b.length!==LARG*HAUT))P=null;
-majSon();placer();addEventListener('resize',placer);
+majSon();majDoux();placer();addEventListener('resize',placer);
 if(P&&!P.fini){if(!P.cur&&!efface)sortir();mettreSaison(false);majInfos();fenChoix()}
 else{fenChoix()}
 requestAnimationFrame(boucle);
