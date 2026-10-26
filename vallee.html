@@ -318,7 +318,7 @@ function estRelie(o,ok){const t=BAT[o.type].t;
 // les décos sur l'anneau de cases qui borde un bâtiment
 function autour(o){const t=BAT[o.type].t;let n=0;S.b.forEach(d=>{if(BAT[d.type].sorte!=='deco'||d===o)return;
   if(d.i>=o.i-1&&d.i<=o.i+t&&d.j>=o.j-1&&d.j<=o.j+t)n++});return n}
-function bienArrange(){let txt='';S.b.forEach(o=>{const so=BAT[o.type].sorte;if(so==='deco'||so==='chemin'||o.orne||autour(o)<3)return;
+function bienArrange(){let txt='';S.b.forEach(o=>{const so=BAT[o.type].sorte;if(so==='deco'||so==='chemin'||so==='fixe'||o.orne||autour(o)<3)return;
   o.orne=1;S.stock.etoiles=(S.stock.etoiles||0)+2;txt=` ✨ ${BAT[o.type].nom} est joliment entouré : +2 ⭐.`});return txt}
 function bonus(o){let b=0;S.b.forEach(d=>{const B=BAT[d.type];if(B.sorte!=='deco')return;
   const t=BAT[o.type].t;if(d.i>=o.i-2&&d.i<=o.i+t+1&&d.j>=o.j-2&&d.j<=o.j+t+1)b+=B.bonus});return Math.min(b,.6)}
@@ -689,7 +689,7 @@ function rendu(){
       .filter(([a])=>enOuverture()?a==='accueil':a==='fete-saison'?feteOuverte():aBouton(a)).map(x=>mb(...x)).join('');
   const SAIS={printemps:['🌸','Printemps'],ete:['🌻','Été'],automne:['🍂','Automne'],hiver:['❄️','Hiver']}[saisonVue()];
   const fj=MOI&&MOI.fleurDonnee&&MOI.fleurDonnee.jour===jourN();
-  const aide=mode&&mode.labour?'Glissez le doigt sur l\'herbe pour labourer. Glisser en partant d\'une case labourée vide la rend à l\'herbe.':mode&&mode.arranger&&!mode.deplace?'Touchez ce que vous voulez déplacer, puis posez-le. Touchez « Fini » quand tout est rangé.':MOI?(fj?'🌸 Vous avez fleuri un bâtiment aujourd\'hui. Promenez-vous, et revenez demain pour fleurir encore.':'🌸 Touchez un de ses bâtiments pour le fleurir : elle produira plus, et vous gagnerez 3 ⭐. Une fois par jour.')
+  const aide=mode&&mode.terre?(mode.terre.cases.length>1?`Touchez la case où poser ce champ de ${mode.terre.cases.length} cases : la case touchée y va, les autres suivent. Touchez-le encore pour le lâcher.`:'Touchez la case où poser ce morceau de champ. Touchez-le encore pour le lâcher.'):mode&&mode.labour?'Glissez le doigt sur l\'herbe pour labourer. Glisser en partant d\'une case labourée vide la rend à l\'herbe.':mode&&mode.arranger&&!mode.deplace?'Touchez ce que vous voulez déplacer, puis posez-le. Touchez « Fini » quand tout est rangé.':MOI?(fj?'🌸 Vous avez fleuri un bâtiment aujourd\'hui. Promenez-vous, et revenez demain pour fleurir encore.':'🌸 Touchez un de ses bâtiments pour le fleurir : elle produira plus, et vous gagnerez 3 ⭐. Une fois par jour.')
     :mode?(mode.chemins?'Touchez les cases pour poser des chemins jusqu\'à la place. Touchez un chemin pour l\'enlever.':'')
     :'';
   const q=!MOI&&S.fil?tache():null;
@@ -781,7 +781,12 @@ function lier(){
   document.querySelectorAll('[data-pose]').forEach(e=>e.onclick=()=>{const k=e.dataset.pose;feuille=null;message='';
     if(k==='chemin')mode={chemins:true,sorte:e.dataset.sorte||'terre'};else{const [i,j]=viserPres(k);mode={pose:k,i,j}}rendu()});
   document.querySelectorAll('[data-case]').forEach(e=>e.onclick=()=>caseFrise(e.dataset.case));
-  document.querySelectorAll('[data-t]').forEach(e=>e.addEventListener('click',ev=>{ev.stopPropagation();if(mode||VISITE)return;toucherTerre(...e.dataset.t.split(',').map(Number),ev)}));
+  document.querySelectorAll('[data-t]').forEach(e=>{const [ti,tj]=e.dataset.t.split(',').map(Number);
+    // un appui long prend tout le champ (les cases labourées qui se touchent), pour le déplacer
+    e.addEventListener('pointerdown',()=>{if(VISITE||(mode&&!mode.arranger))return;appui={t:setTimeout(()=>{appui.long=true;prendreTerre(ti,tj,true)},550),terre:1}});
+    e.addEventListener('pointerup',()=>{if(appui)clearTimeout(appui.t)});e.addEventListener('pointerleave',()=>{if(appui)clearTimeout(appui.t)});
+    e.addEventListener('click',ev=>{ev.stopPropagation();const fin=appui&&appui.long&&appui.terre;appui=null;if(fin||VISITE)return;
+      if(mode&&mode.arranger){prendreTerre(ti,tj,false);return}if(mode)return;toucherTerre(ti,tj,ev)})});
   document.querySelectorAll('[data-semer]').forEach(e=>e.onclick=()=>{const f=feuille,t=f&&terreA(f.i,f.j);if(t&&!t.c&&(S.graines[e.dataset.semer]||0)>0)semer(t,e.dataset.semer)});
   document.querySelectorAll('[data-graine]').forEach(e=>e.onclick=ev=>{const k=e.dataset.graine,n=+e.dataset.n,c=prixGraine(k)*n;if(S.stock.pieces<c)return;
     S.stock.pieces-=c;S.graines[k]=(S.graines[k]||0)+n;message=`🌱 ${n} graine${n>1?'s':''} de ${CULTURES[k].nom.toLowerCase()} : touchez un champ pour planter.`;SON.piece();sauve();rendu()});
@@ -806,7 +811,7 @@ function lier(){
       const v=svg.viewBox.baseVal;glisse={x:e.clientX,y:e.clientY,vb:[v.x,v.y,v.width,v.height],bouge:false}});}
   document.querySelectorAll('g[data-o],polygon[data-o]').forEach(e=>{
     e.addEventListener('pointerdown',()=>{premierGeste();const id=e.dataset.o;appui={id,long:false,t:setTimeout(()=>{if(VISITE)return;appui.long=true;
-      const o=S.b.find(x=>x.id===id);if(BAT[o.type].sorte!=='chemin'){mode={deplace:id,i:o.i,j:o.j,r:!!o.r};feuille=null;message='';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});
+      const o=S.b.find(x=>x.id===id);if(o){mode={deplace:id,i:o.i,j:o.j,r:!!o.r};feuille=null;message='';try{navigator.vibrate&&navigator.vibrate(30)}catch{}rendu()}},550)}});   // les chemins aussi (26/10)
     e.addEventListener('pointerup',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('pointerleave',()=>{if(appui)clearTimeout(appui.t)});
     e.addEventListener('click',ev=>{ev.stopPropagation();const fin=appui&&appui.long&&appui.id===e.dataset.o;appui=null;if(fin)return;toucherObjet(e.dataset.o,ev)});
@@ -850,6 +855,7 @@ function action(a){
 }
 function toucherCase(i,j){
   if(!mode){return}
+  if(mode.terre){poserTerre(i,j);return}
   if(mode.chemins){const o=occupe(i,j);if(surPlace(i,j))return;
     if(natureA(i,j)){message='Il y a un arbre ou une pierre ici : touchez-le d\'abord pour le retirer.';SON.non();rendu();return}
     if(terreA(i,j)){message='C\'est un champ : le chemin passe à côté.';SON.non();rendu();return}
@@ -872,11 +878,29 @@ function poser(){const k=typeVise();if(!k)return;const i=mode.i,j=mode.j;
   if(mode.deplace){const o=S.b.find(x=>x.id===mode.deplace);if(!o){mode=null;rendu();return}
     o.i=i;o.j=j;o.r=mode.r?1:0;o.maj=Date.now();dernierPose=o.id;mode=mode.arranger?{arranger:true}:null;message=`${BAT[o.type].e} Déplacé, sans rien payer.`+bienArrange();sauve();rendu();apresPose(o)}
 }
+/* Déplacer la terre (26/10, la grand-mère de Florian : les lots de terre ne se déplaçaient pas). Dans « Arranger », toucher
+   une case labourée la prend ; un appui long prend tout le champ. Toucher une case libre l'y pose, avec ce qui y pousse :
+   même étape, même arrosage. */
+function prendreTerre(i,j,bloc){if(!terreA(i,j))return;const avant=mode&&mode.terre;
+  if(avant&&!bloc&&avant.cases.some(([a,c])=>a===i&&c===j)){mode={arranger:true};SON.tac();rendu();return}   // retouchée : lâchée
+  let cases=[[i,j]];
+  if(bloc){cases=[];const vus=new Set([i+','+j]),file=[[i,j]];
+    while(file.length){const [a,c]=file.pop();cases.push([a,c]);
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,y])=>{const k=(a+x)+','+(c+y);if(!vus.has(k)&&terreA(a+x,c+y)){vus.add(k);file.push([a+x,c+y])}})}
+    try{navigator.vibrate&&navigator.vibrate(30)}catch{}}
+  mode={arranger:true,terre:{cases,i,j}};feuille=null;message='';SON.tac();rendu()}
+function poserTerre(i,j){const m=mode.terre,di=i-m.i,dj=j-m.j,pris=new Set(m.cases.map(([a,c])=>a+','+c));
+  for(const [a,c] of m.cases){const x=a+di,y=c+dj,g=gene(x,y);
+    if(g&&!(g==='terre'&&pris.has(x+','+y))){message='❌ '+(GENE[g]||'La place est prise.');SON.non();rendu();return}}
+  const ts=m.cases.map(([a,c])=>terreA(a,c)),now=Date.now();
+  ts.forEach(t=>{t.i+=di;t.j+=dj;t.maj=now});
+  mode={arranger:true};message=`🌱 ${ts.length>1?'Le champ est déplacé':'La case est déplacée'}, avec ce qui y pousse : rien n'est perdu.`;SON.pose();sauve();rendu()}
 function apresPose(o){SON.pose();const t=BAT[o.type].t,[x,y]=P(o.i+t/2,o.j+t);const [sx,sy]=versEcran(x,y);setTimeout(()=>poussiere(sx,sy-6),320)}
 function toucherObjet(id,ev){
   if(VISITE){fleurir(id,ev);return}
   const o=S.b.find(x=>x.id===id);if(!o)return;
-  if(mode&&mode.arranger&&!mode.deplace){if(o.type!=='chemin'){mode={deplace:o.id,i:o.i,j:o.j,r:!!o.r,arranger:true};SON.tac();rendu()}return}
+  if(mode&&mode.terre){toucherCase(o.i,o.j);return}   // un champ pris : la case d'un objet le refuse, avec la raison
+  if(mode&&mode.arranger&&!mode.deplace){mode={deplace:o.id,i:o.i,j:o.j,r:!!o.r,arranger:true};SON.tac();rendu();return}
   if(mode){if(mode.chemins&&o.type==='chemin'){toucherCase(o.i,o.j);return}if(mode.deplace||mode.pose)toucherCase(o.i,o.j);return}
   const ok=relies();
   if(pret(o,ok)){ramasser(o,ev);return}
@@ -1306,9 +1330,11 @@ function semerHTML(){const sa=saisonIci(),l=Object.keys(S.graines||{}).filter(k=
 // les cases labourées, le champ et ses plantes, dans le dessin du village
 function dessinTerre(vu,ok){let sol='';const plantes=[],now=Date.now();
   (S.terre||[]).forEach(t=>{if(!vu(t.i,t.j))return;pousser(t,now);const humide=(t.ar||0)>now;
-    sol+=tuile('sol-terre',t.i,t.j)+poly(los(t.i,t.j),'#7A4A2A','#5A341E',`data-t="${t.i},${t.j}" style="fill:${humide?'rgba(28,30,48,.38)':'transparent'};cursor:pointer${mode?';pointer-events:none':''}"`);
+    const bloque=mode&&!mode.arranger,pris=mode&&mode.terre&&mode.terre.cases.some(([a,c])=>a===t.i&&c===t.j);
+    sol+=tuile('sol-terre',t.i,t.j)+poly(los(t.i,t.j),'#7A4A2A','#5A341E',`data-t="${t.i},${t.j}" style="fill:${humide?'rgba(28,30,48,.38)':'transparent'};cursor:pointer${bloque?';pointer-events:none':''}"`)
+      +(pris?poly(los(t.i,t.j),'rgba(255,216,107,.4)','#FFD86B','stroke-width="3" pointer-events="none"'):'');
     if(!t.c)return;const [x,y]=P(t.i+.5,t.j+.5),e=etapeDe(t),m=mur(t);
-    plantes.push({o:t.i+t.j+1,svg:`<g data-t="${t.i},${t.j}" style="cursor:pointer${mode?';pointer-events:none':''}" transform="translate(${x} ${y+5}) scale(${[1.5,1.8,1.9,1.55][e]})"><g class="${m?'mur':''}">${plante(t.c,e)}</g></g>`})});
+    plantes.push({o:t.i+t.j+1,svg:`<g data-t="${t.i},${t.j}" style="cursor:pointer${bloque?';pointer-events:none':''}" transform="translate(${x} ${y+5}) scale(${[1.5,1.8,1.9,1.55][e]})"><g class="${m?'mur':''}">${plante(t.c,e)}</g></g>`})});
   return {sol,plantes}}
 
 /* ===================== V4, étape 2 : les ressources, « ni vide ni trop plein » (CONCEPTION-V4, section 3) =====
