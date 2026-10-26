@@ -1,0 +1,252 @@
+{
+ "id": "gln-3-robe",
+ "nom": "femme en robe verte (Greenlight nuit)",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/gln-perso-3--image.png",
+ "dessin": "pieces",
+ "regard": "gauche",
+ "hauteur_ecran": 340,
+ "modele": "animagine",
+ "prefixe_ordre": "gln-perso-robe",
+ "pre": "a single cutout piece of an elegant adult 1930s woman, slender adult proportions, ",
+ "suf": ", (isolated on a plain flat medium grey background:1.4), (simple background:1.2), nothing else, graphic novel illustration, heavy black ink, bold crosshatching, comic book noir, limited palette of black, amber and deep emerald, dramatic shadows",
+ "neg": "text, watermark, signature, logo, letters, scenery, room, multiple characters, crowd, cropped, extra limbs, extra fingers, bad hands, deformed face, nudity, chibi, child, big head, super deformed, pink, magenta, purple, glowing eyes, black face, faceless, blank face",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 62,
+  "periode": 0.62,
+  "amplitude": 9,
+  "bras": 0,
+  "rebond": 3,
+  "penche": 1
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "boite": [
+     300,
+     150,
+     520,
+     560
+    ]
+   },
+   "pivot": [
+    405,
+    560
+   ],
+   "texte": "the upper body of an elegant woman in a draped emerald and white dress with a long pearl necklace, bare arm, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     395,
+     92,
+     60,
+     76
+    ]
+   },
+   "pivot": [
+    400,
+    160
+   ],
+   "texte": "the head of an elegant woman with a short white bob haircut and green eyes, detailed face, head only"
+  },
+  {
+   "nom": "verre",
+   "role": "objet",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 4,
+   "amplitude": 3,
+   "retard": 0.8,
+   "zone": {
+    "ellipse": [
+     282,
+     225,
+     34,
+     52
+    ]
+   },
+   "pivot": [
+    292,
+    255
+   ],
+   "attache": [
+    330,
+    280
+   ],
+   "texte": "a hand holding a martini cocktail glass with a dark drink, alone"
+  },
+  {
+   "nom": "robe",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 1,
+   "priorite": 2,
+   "amplitude": 4,
+   "retard": 1.2,
+   "zone": {
+    "boite": [
+     310,
+     555,
+     500,
+     790
+    ]
+   },
+   "pivot": [
+    405,
+    560
+   ],
+   "texte": "the long straight lower part of an emerald green and white draped dress, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "robe",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "boite": [
+     350,
+     785,
+     420,
+     1004
+    ]
+   },
+   "pivot": [
+    385,
+    790
+   ],
+   "texte": "one slender leg of a woman with a black high heel shoe, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "robe",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "boite": [
+     420,
+     785,
+     470,
+     1004
+    ]
+   },
+   "pivot": [
+    440,
+    790
+   ],
+   "texte": "one slender leg of a woman with a black high heel shoe, alone"
+  }
+ ],
+ "arret": {
+  "debut": 6.5,
+  "duree": 4.5
+ },
+ "gestes": [
+  {
+   "piece": "verre",
+   "dy": -40,
+   "dx": 20,
+   "monte": [
+    0.4,
+    1.1
+   ],
+   "descend": [
+    2.2,
+    2.9
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 8,
+   "monte": [
+    0.9,
+    1.3
+   ],
+   "descend": [
+    2.2,
+    2.7
+   ]
+  },
+  {
+   "piece": "robe",
+   "angle": 0,
+   "oscille": [
+    3.0,
+    4.2,
+    4,
+    2
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -5,
+   "monte": [
+    3.0,
+    3.4
+   ],
+   "descend": [
+    3.9,
+    4.4
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   294.53,
+   142.47,
+   231.62,
+   416.0
+  ],
+  "tete": [
+   342.07,
+   28.53,
+   113.67,
+   143.42
+  ],
+  "verre": [
+   248.6,
+   202.41,
+   65.84,
+   74.86
+  ],
+  "robe": [
+   321.81,
+   555.03,
+   159.13,
+   236.98
+  ],
+  "jambe-loin": [
+   356.65,
+   784.47,
+   65.46,
+   221.18
+  ],
+  "jambe-proche": [
+   409.96,
+   786.81,
+   59.54,
+   212.25
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.94, couleur 2)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 1)",
+  "verre": "bonne — graine 41, bonne (recouvrement 0.94, couleur 4)",
+  "robe": "bonne — graine 41, bonne (recouvrement 0.98, couleur 6)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 12)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 6)"
+ },
+ "temps_pc51_s": 194,
+ "temps_total_s": 199
+}

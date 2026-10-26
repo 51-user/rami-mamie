@@ -1,0 +1,204 @@
+{
+ "id": "gln-1-barman",
+ "nom": "barman (Greenlight nuit)",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/gln-perso-1--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 330,
+ "modele": "animagine",
+ "prefixe_ordre": "gln-perso-barman",
+ "pre": "a single cutout piece of an adult 1930s bartender, slender adult proportions, ",
+ "suf": ", (isolated on a plain flat medium grey background:1.4), (simple background:1.2), nothing else, graphic novel illustration, heavy black ink, bold crosshatching, comic book noir, limited palette of black, amber and deep emerald, dramatic shadows",
+ "neg": "text, watermark, signature, logo, letters, scenery, room, multiple characters, crowd, cropped, extra limbs, extra fingers, bad hands, deformed face, nudity, chibi, child, big head, super deformed, pink, magenta, purple, glowing eyes, black face, faceless, blank face",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 80,
+  "periode": 1.05,
+  "amplitude": 16,
+  "bras": 0,
+  "rebond": 4,
+  "penche": 2
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "boite": [
+     270,
+     240,
+     560,
+     612
+    ]
+   },
+   "pivot": [
+    410,
+    600
+   ],
+   "texte": "the torso of a bartender in a white shirt with rolled sleeves and a black waistcoat, torso only, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 1,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     380,
+     168,
+     96,
+     98
+    ]
+   },
+   "pivot": [
+    385,
+    255
+   ],
+   "texte": "the head of a young bartender with messy black slicked hair and green eyes, detailed face, head only"
+  },
+  {
+   "nom": "torchon",
+   "role": "fixe",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 4,
+   "zone": {
+    "ellipse": [
+     410,
+     360,
+     92,
+     128
+    ]
+   },
+   "pivot": [
+    470,
+    470
+   ],
+   "texte": "two hands holding a white cloth wiping, rolled white sleeves, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "boite": [
+     292,
+     600,
+     392,
+     948
+    ]
+   },
+   "pivot": [
+    345,
+    605
+   ],
+   "texte": "one long leg of a man in black trousers with a black leather shoe, leg only"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "boite": [
+     392,
+     600,
+     530,
+     948
+    ]
+   },
+   "pivot": [
+    435,
+    605
+   ],
+   "texte": "one long leg of a man in black trousers with a black leather shoe, leg only"
+  }
+ ],
+ "arret": {
+  "debut": 6.0,
+  "duree": 5.0
+ },
+ "gestes": [
+  {
+   "piece": "torchon",
+   "angle": 0,
+   "oscille": [
+    0.3,
+    4.2,
+    9,
+    2.6
+   ]
+  },
+  {
+   "piece": "torchon",
+   "dx": 10,
+   "monte": [
+    0.3,
+    0.6
+   ],
+   "descend": [
+    4.0,
+    4.4
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -6,
+   "monte": [
+    0.4,
+    0.9
+   ],
+   "descend": [
+    3.8,
+    4.4
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   267.15,
+   232.73,
+   294.44,
+   368.63
+  ],
+  "tete": [
+   284.43,
+   68.23,
+   193.63,
+   197.39
+  ],
+  "torchon": [
+   318.62,
+   230.75,
+   184.5,
+   257.72
+  ],
+  "jambe-loin": [
+   292.71,
+   594.64,
+   102.57,
+   361.79
+  ],
+  "jambe-proche": [
+   391.82,
+   593.53,
+   121.53,
+   356.77
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.95, couleur 5)",
+  "torchon": "bonne — graine 41, bonne (recouvrement 0.98, couleur 2)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 2)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 3)"
+ },
+ "temps_pc51_s": 176,
+ "temps_total_s": 184
+}
