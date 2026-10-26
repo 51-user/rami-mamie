@@ -1,0 +1,271 @@
+{
+ "id": "17-renard-mug",
+ "nom": "renard au mug",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-renard-b-givre-g21--image.png",
+ "dessin": "pieces",
+ "regard": "gauche",
+ "hauteur_ecran": 220,
+ "invite": "a grumpy cute chubby orange fox with a blue scarf, cream belly, holding a white mug of hot soup with both paws",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 70,
+  "periode": 0.75,
+  "amplitude": 20,
+  "bras": 4,
+  "rebond": 5,
+  "penche": 4
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     410,
+     950,
+     122,
+     112
+    ]
+   },
+   "pivot": [
+    400,
+    1046
+   ],
+   "texte": "the chubby body of a cute orange fox with a cream belly and a blue scarf around the neck, torso only, no head"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 5,
+   "zone": {
+    "ellipse": [
+     385,
+     745,
+     106,
+     92
+    ]
+   },
+   "pivot": [
+    390,
+    820
+   ],
+   "texte": "the grumpy face of a cute orange fox with half closed blue eyes, dark ear tips, head only"
+  },
+  {
+   "nom": "echarpe",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 4,
+   "priorite": 6,
+   "amplitude": 9,
+   "retard": 1.4,
+   "zone": {
+    "boite": [
+     462,
+     850,
+     535,
+     955
+    ]
+   },
+   "pivot": [
+    470,
+    856
+   ],
+   "texte": "the hanging fringed end of a blue knitted scarf, alone"
+  },
+  {
+   "nom": "tasse",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 5,
+   "priorite": 6,
+   "zone": {
+    "ellipse": [
+     335,
+     905,
+     72,
+     62
+    ]
+   },
+   "pivot": [
+    380,
+    880
+   ],
+   "texte": "two little fox paws holding a white mug of hot soup, alone"
+  },
+  {
+   "nom": "queue",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": -2,
+   "priorite": 3,
+   "amplitude": 12,
+   "retard": 1.1,
+   "zone": {
+    "ellipse": [
+     592,
+     975,
+     106,
+     72
+    ]
+   },
+   "pivot": [
+    500,
+    1000
+   ],
+   "texte": "a fluffy orange fox tail with a dark brown tip, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     360,
+     1042,
+     42,
+     24
+    ]
+   },
+   "pivot": [
+    360,
+    1020
+   ],
+   "texte": "one small cream fox foot, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     462,
+     1045,
+     42,
+     24
+    ]
+   },
+   "pivot": [
+    462,
+    1022
+   ],
+   "texte": "one small cream fox foot, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.5,
+  "duree": 4.2
+ },
+ "gestes": [
+  {
+   "piece": "tasse",
+   "angle": -15,
+   "dy": -26,
+   "monte": [
+    0.4,
+    1.0
+   ],
+   "descend": [
+    2.2,
+    2.8
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -8,
+   "monte": [
+    0.8,
+    1.2
+   ],
+   "descend": [
+    2.2,
+    2.7
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 0,
+   "oscille": [
+    2.9,
+    3.5,
+    5,
+    9
+   ]
+  },
+  {
+   "piece": "queue",
+   "angle": -18,
+   "monte": [
+    2.9,
+    3.1
+   ],
+   "descend": [
+    3.1,
+    3.7
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   315.77,
+   832.42,
+   192.28,
+   241.17
+  ],
+  "tete": [
+   280.17,
+   655.09,
+   211.91,
+   184.57
+  ],
+  "echarpe": [
+   460.76,
+   848.23,
+   76.17,
+   107.56
+  ],
+  "tasse": [
+   263.19,
+   843.95,
+   143.84,
+   123.43
+  ],
+  "queue": [
+   485.97,
+   899.61,
+   200.26,
+   149.48
+  ],
+  "jambe-loin": [
+   317.83,
+   1018.69,
+   85.88,
+   48.85
+  ],
+  "jambe-proche": [
+   423.1,
+   1021.41,
+   82.6,
+   49.13
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.85, couleur 9)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 9)",
+  "echarpe": "bonne — graine 41, bonne (recouvrement 0.95, couleur 4)",
+  "tasse": "bonne — graine 41, bonne (recouvrement 0.79, couleur 4)",
+  "queue": "bonne — graine 41, bonne (recouvrement 0.96, couleur 10)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.94, couleur 3)"
+ },
+ "temps_pc51_s": 227,
+ "temps_total_s": 232
+}

@@ -1,0 +1,305 @@
+{
+ "id": "04-lutin-cueilleur",
+ "nom": "lutin cueilleur de champignons",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-lutin-1-sousbois-v2-g11--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 240,
+ "invite": "a cute chibi old gnome, big red spotted mushroom hat, round white beard, green tunic, brown boots",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 80,
+  "periode": 0.7,
+  "amplitude": 18,
+  "bras": 14,
+  "rebond": 6,
+  "penche": 4
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     415,
+     915,
+     165,
+     98
+    ]
+   },
+   "pivot": [
+    415,
+    1000
+   ],
+   "texte": "the round body of a cute chibi gnome, green tunic with a brown belt and a strap across, torso only, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 6,
+   "zone": {
+    "ellipse": [
+     368,
+     770,
+     108,
+     95
+    ]
+   },
+   "pivot": [
+    380,
+    850
+   ],
+   "texte": "the face of a cute chibi old gnome, small black eyes, round red nose, big round white beard, head only"
+  },
+  {
+   "nom": "chapeau",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 4,
+   "priorite": 5,
+   "amplitude": 4,
+   "retard": 1.2,
+   "zone": {
+    "ellipse": [
+     430,
+     650,
+     225,
+     150
+    ]
+   },
+   "pivot": [
+    368,
+    690
+   ],
+   "texte": "a huge red spotted mushroom cap worn as a hat, brown brim underneath, two tiny mushrooms growing on it, hat only"
+  },
+  {
+   "nom": "bras-proche",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     558,
+     866,
+     36,
+     62
+    ]
+   },
+   "pivot": [
+    540,
+    822
+   ],
+   "texte": "one short chubby arm of a cute gnome, white fluffy sleeve, pink hand, arm only"
+  },
+  {
+   "nom": "bras-loin",
+   "role": "bras-loin",
+   "parent": "corps",
+   "z": 1,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     268,
+     862,
+     27,
+     47
+    ]
+   },
+   "pivot": [
+    276,
+    826
+   ],
+   "texte": "one short chubby arm of a cute gnome, white fluffy sleeve, pink hand, arm only"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     350,
+     1030,
+     56,
+     56
+    ]
+   },
+   "pivot": [
+    350,
+    985
+   ],
+   "texte": "one short leg of a cute gnome in a brown leather boot, leg only"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     456,
+     1036,
+     56,
+     52
+    ]
+   },
+   "pivot": [
+    456,
+    990
+   ],
+   "texte": "one short leg of a cute gnome in a brown leather boot, leg only"
+  },
+  {
+   "nom": "panier",
+   "role": "objet",
+   "parent": "bras-loin",
+   "z": 2,
+   "priorite": 4,
+   "amplitude": 6,
+   "retard": 0.9,
+   "zone": {
+    "ellipse": [
+     190,
+     1005,
+     98,
+     62
+    ]
+   },
+   "pivot": [
+    190,
+    962
+   ],
+   "attache": [
+    262,
+    908
+   ],
+   "texte": "a woven wicker basket full of red spotted mushrooms, with a handle, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.5,
+  "duree": 4.2
+ },
+ "gestes": [
+  {
+   "piece": "bras-loin",
+   "angle": 50,
+   "monte": [
+    0.3,
+    0.9
+   ],
+   "descend": [
+    2.8,
+    3.4
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 9,
+   "monte": [
+    0.5,
+    1.0
+   ],
+   "descend": [
+    2.6,
+    3.2
+   ],
+   "oscille": [
+    1.0,
+    2.4,
+    4,
+    2.2
+   ]
+  },
+  {
+   "piece": "chapeau",
+   "angle": -10,
+   "monte": [
+    1.0,
+    1.2
+   ],
+   "descend": [
+    1.2,
+    1.9
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 24,
+   "monte": [
+    3.5,
+    4.0
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   254.45,
+   821.47,
+   307.47,
+   181.18
+  ],
+  "tete": [
+   260.78,
+   674.62,
+   214.64,
+   192.86
+  ],
+  "chapeau": [
+   208.69,
+   498.5,
+   431.12,
+   300.24
+  ],
+  "bras-proche": [
+   522.96,
+   799.13,
+   66.61,
+   129.7
+  ],
+  "bras-loin": [
+   256.98,
+   827.76,
+   43.45,
+   81.59
+  ],
+  "jambe-loin": [
+   312.01,
+   973.81,
+   95.07,
+   97.49
+  ],
+  "jambe-proche": [
+   402.09,
+   983.45,
+   109.59,
+   103.23
+  ],
+  "panier": [
+   100.48,
+   944.54,
+   187.19,
+   110.37
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.93, couleur 5)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.98, couleur 6)",
+  "chapeau": "bonne — graine 41, bonne (recouvrement 0.91, couleur 8)",
+  "bras-proche": "bonne — graine 41, bonne (recouvrement 0.90, couleur 3)",
+  "bras-loin": "bonne — graine 41, bonne (recouvrement 0.83, couleur 1)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.97, couleur 5)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.96, couleur 2)",
+  "panier": "bonne — graine 41, bonne (recouvrement 0.96, couleur 13)"
+ },
+ "temps_pc51_s": 277,
+ "temps_total_s": 287
+}

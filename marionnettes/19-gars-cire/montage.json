@@ -1,0 +1,169 @@
+{
+ "id": "19-gars-cire",
+ "nom": "petit gars en ciré jaune",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-gars-b-pluie-g21--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 190,
+ "invite": "a cute chibi little boy in an oversized yellow raincoat with a big hood, rosy cheeks, surprised face",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 70,
+  "periode": 0.4,
+  "amplitude": 14,
+  "bras": 0,
+  "rebond": 5,
+  "penche": 3
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     460,
+     742,
+     138,
+     86
+    ]
+   },
+   "pivot": [
+    460,
+    816
+   ],
+   "texte": "the body of a cute chibi boy in an oversized yellow raincoat with big buttons, torso only, no head"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 1,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     460,
+     610,
+     138,
+     100
+    ]
+   },
+   "pivot": [
+    460,
+    692
+   ],
+   "texte": "the head of a cute chibi boy with brown hair and rosy cheeks inside a big yellow raincoat hood, head only"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     410,
+     810,
+     24,
+     11
+    ]
+   },
+   "pivot": [
+    410,
+    802
+   ],
+   "texte": "one tiny yellow rain boot, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     490,
+     810,
+     24,
+     11
+    ]
+   },
+   "pivot": [
+    490,
+    802
+   ],
+   "texte": "one tiny yellow rain boot, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.0,
+  "duree": 3.6
+ },
+ "gestes": [
+  {
+   "piece": "tete",
+   "angle": -10,
+   "monte": [
+    0.3,
+    0.7
+   ],
+   "descend": [
+    1.6,
+    2.0
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 0,
+   "oscille": [
+    2.0,
+    2.7,
+    6,
+    7
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 14,
+   "monte": [
+    2.9,
+    3.25
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   326.68,
+   679.37,
+   259.77,
+   137.72
+  ],
+  "tete": [
+   323.09,
+   512.17,
+   267.39,
+   196.87
+  ],
+  "jambe-loin": [
+   386.26,
+   799.21,
+   48.62,
+   19.91
+  ],
+  "jambe-proche": [
+   466.18,
+   799.21,
+   48.71,
+   20.42
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.96, couleur 2)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 3)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 9)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 6)"
+ },
+ "temps_pc51_s": 128,
+ "temps_total_s": 132
+}

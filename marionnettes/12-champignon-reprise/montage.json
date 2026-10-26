@@ -1,0 +1,135 @@
+{
+ "id": "12-champignon-reprise",
+ "nom": "champignon sous la pluie, reprise",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-champignon-a-pluie-v2-g21--image.png",
+ "dessin": "pieces",
+ "regard": "gauche",
+ "hauteur_ecran": 250,
+ "invite": "a chubby round cream mushroom creature with a red spotted cap on its back, holding a big green leaf umbrella",
+ "mouvement": {
+  "mode": "sautille",
+  "vitesse": 60,
+  "periode": 0.55,
+  "hauteur": 20
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     400,
+     850,
+     250,
+     212
+    ]
+   },
+   "pivot": [
+    390,
+    1062
+   ],
+   "texte": "a chubby round cream white mushroom creature body with small black eyes and a red cap with white spots on its back, no legs"
+  },
+  {
+   "nom": "parapluie",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 3,
+   "amplitude": 6,
+   "retard": 1.2,
+   "zone": {
+    "union": [
+     {
+      "boite": [
+       128,
+       195,
+       682,
+       470
+      ]
+     },
+     {
+      "segment": [
+       455,
+       460,
+       255,
+       805,
+       48
+      ]
+     },
+     {
+      "ellipse": [
+       175,
+       845,
+       45,
+       35
+      ]
+     }
+    ]
+   },
+   "pivot": [
+    252,
+    812
+   ],
+   "texte": "a big green leaf umbrella with a long curved green stem ending in a hook, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.0,
+  "duree": 4.0
+ },
+ "gestes": [
+  {
+   "piece": "parapluie",
+   "angle": 16,
+   "monte": [
+    0.3,
+    0.9
+   ],
+   "descend": [
+    1.8,
+    2.4
+   ]
+  },
+  {
+   "piece": "parapluie",
+   "angle": 0,
+   "oscille": [
+    2.4,
+    3.2,
+    10,
+    3
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 14,
+   "monte": [
+    3.2,
+    3.6
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   186.73,
+   640.26,
+   442.1,
+   419.81
+  ],
+  "parapluie": [
+   126.54,
+   188.06,
+   556.25,
+   701.83
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.95, couleur 6)",
+  "parapluie": "bonne — graine 41, bonne (recouvrement 0.93, couleur 13)"
+ },
+ "temps_pc51_s": 65,
+ "temps_total_s": 81
+}

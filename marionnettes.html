@@ -62,7 +62,8 @@ async function chargerPerso(id) {
   await Promise.all(f.pieces.map(async p => { if (f.placement && f.placement[p.nom]) f.img[p.nom] = await charger("marionnettes/" + id + "/" + p.nom + ".webp"); }));
   // l'emprise du personnage sur l'image du roster : sa hauteur fixe l'échelle, son bas est le sol
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-  for (const n in (f.placement || {})) { const [x, y, w, h] = f.placement[n]; if ((f.pieces.find(p => p.nom === n) || {}).cache) continue;
+  // l'emprise (et donc le sol) ne compte ni ce qui est caché ni ce qui pend au bout d'un fil (le flotteur du pêcheur)
+  for (const n in (f.placement || {})) { const [x, y, w, h] = f.placement[n]; const pc = f.pieces.find(p => p.nom === n) || {}; if (pc.cache || pc.fil) continue;
     x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x + w); y1 = Math.max(y1, y + h); }
   if (f.dessin === "code") { x0 = -50; x1 = 50; y0 = -100; y1 = 0; }
   f.emprise = { x0, y0, x1, y1 };

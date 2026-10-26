@@ -1,0 +1,305 @@
+{
+ "id": "08-lutin-jardinier",
+ "nom": "lutin jardinier des saisons",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-lutin-3-jardinier-v3-g12--image.png",
+ "dessin": "pieces",
+ "regard": "droite",
+ "hauteur_ecran": 240,
+ "invite": "a cute chibi old gnome with red skin, big round nose, white beard, yellow helmet hat, green apron, holding a tin watering can",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 75,
+  "periode": 0.72,
+  "amplitude": 18,
+  "bras": 10,
+  "rebond": 6,
+  "penche": 4
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     420,
+     870,
+     172,
+     152
+    ]
+   },
+   "pivot": [
+    420,
+    1010
+   ],
+   "texte": "the round body of a cute chibi gnome in a green apron with a big pocket, torso only, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 5,
+   "zone": {
+    "ellipse": [
+     385,
+     640,
+     162,
+     96
+    ]
+   },
+   "pivot": [
+    390,
+    722
+   ],
+   "texte": "the face of a cute chibi old gnome with red skin, a huge round red nose and a bushy white beard, head only"
+  },
+  {
+   "nom": "casque",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 4,
+   "priorite": 4,
+   "amplitude": 3,
+   "retard": 1.1,
+   "zone": {
+    "ellipse": [
+     385,
+     482,
+     192,
+     122
+    ]
+   },
+   "pivot": [
+    390,
+    562
+   ],
+   "texte": "a round yellow helmet hat with a white fluffy pompom, hat only"
+  },
+  {
+   "nom": "bras-loin",
+   "role": "bras-loin",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     245,
+     815,
+     62,
+     66
+    ]
+   },
+   "pivot": [
+    276,
+    770
+   ],
+   "texte": "the chubby red arm of a cute gnome, hand on the hip, arm only"
+  },
+  {
+   "nom": "bras-proche",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     590,
+     712,
+     46,
+     96
+    ]
+   },
+   "pivot": [
+    570,
+    790
+   ],
+   "texte": "the chubby red arm of a cute gnome raised up, hand holding a handle, arm only"
+  },
+  {
+   "nom": "arrosoir",
+   "role": "objet",
+   "parent": "bras-proche",
+   "z": 3,
+   "priorite": 6,
+   "amplitude": 6,
+   "retard": 0.9,
+   "zone": {
+    "ellipse": [
+     690,
+     596,
+     118,
+     102
+    ]
+   },
+   "pivot": [
+    640,
+    640
+   ],
+   "texte": "a shiny brass watering can with a long spout, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     330,
+     1038,
+     62,
+     32
+    ]
+   },
+   "pivot": [
+    330,
+    1012
+   ],
+   "texte": "one short leg of a cute gnome in a brown boot, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     500,
+     1038,
+     64,
+     32
+    ]
+   },
+   "pivot": [
+    500,
+    1012
+   ],
+   "texte": "one short leg of a cute gnome in a brown boot, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.5,
+  "duree": 4.2
+ },
+ "gestes": [
+  {
+   "piece": "bras-proche",
+   "angle": 15,
+   "monte": [
+    0.3,
+    0.8
+   ],
+   "descend": [
+    2.8,
+    3.3
+   ]
+  },
+  {
+   "piece": "arrosoir",
+   "angle": 38,
+   "monte": [
+    0.6,
+    1.1
+   ],
+   "descend": [
+    2.6,
+    3.1
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 7,
+   "monte": [
+    0.6,
+    1.0
+   ],
+   "descend": [
+    2.6,
+    3.0
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 12,
+   "monte": [
+    3.4,
+    3.75
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 0,
+   "oscille": [
+    3.7,
+    4.2,
+    4,
+    3
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   248.93,
+   724.25,
+   331.33,
+   303.0
+  ],
+  "tete": [
+   222.76,
+   546.41,
+   326.37,
+   191.64
+  ],
+  "casque": [
+   204.32,
+   364.12,
+   363.61,
+   208.11
+  ],
+  "bras-loin": [
+   181.67,
+   747.23,
+   127.75,
+   132.11
+  ],
+  "bras-proche": [
+   543.45,
+   622.32,
+   94.6,
+   156.05
+  ],
+  "arrosoir": [
+   572.35,
+   501.05,
+   215.56,
+   193.16
+  ],
+  "jambe-loin": [
+   266.24,
+   1004.47,
+   128.45,
+   68.07
+  ],
+  "jambe-proche": [
+   433.98,
+   1004.78,
+   128.45,
+   66.01
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.96, couleur 7)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.98, couleur 8)",
+  "casque": "bonne — graine 41, bonne (recouvrement 0.97, couleur 2)",
+  "bras-loin": "bonne — graine 41, bonne (recouvrement 0.93, couleur 7)",
+  "bras-proche": "bonne — graine 41, bonne (recouvrement 0.96, couleur 14)",
+  "arrosoir": "bonne — graine 41, bonne (recouvrement 0.97, couleur 19)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.91, couleur 9)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.91, couleur 5)"
+ },
+ "temps_pc51_s": 291,
+ "temps_total_s": 304
+}

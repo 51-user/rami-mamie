@@ -1,0 +1,267 @@
+{
+ "id": "11-sorcier-conteur",
+ "nom": "sorcier conteur des veillées",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-sorcier-4-conteur-v2-g11--image.png",
+ "dessin": "pieces",
+ "regard": "gauche",
+ "hauteur_ecran": 270,
+ "invite": "a cozy old wizard with a big straw yellow hat, grey beard, eyes closed, wrapped in a red plaid robe, holding a white mug, purple slippers",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 50,
+  "periode": 1.0,
+  "amplitude": 10,
+  "bras": 4,
+  "rebond": 3,
+  "penche": 3
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     440,
+     740,
+     202,
+     262
+    ]
+   },
+   "pivot": [
+    450,
+    1000
+   ],
+   "texte": "the body of an old wizard wrapped in a red plaid blanket robe over a grey gown, torso only, no head"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 5,
+   "zone": {
+    "ellipse": [
+     425,
+     380,
+     108,
+     94
+    ]
+   },
+   "pivot": [
+    430,
+    452
+   ],
+   "texte": "the head of a peaceful old wizard with closed eyes, rosy cheeks, grey hair, head only"
+  },
+  {
+   "nom": "barbe",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 4,
+   "priorite": 4,
+   "amplitude": 3,
+   "retard": 1.3,
+   "zone": {
+    "ellipse": [
+     410,
+     502,
+     92,
+     72
+    ]
+   },
+   "pivot": [
+    420,
+    442
+   ],
+   "texte": "a bushy dark grey beard, alone"
+  },
+  {
+   "nom": "chapeau",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 5,
+   "priorite": 3,
+   "amplitude": 3,
+   "retard": 1.1,
+   "zone": {
+    "ellipse": [
+     455,
+     300,
+     272,
+     192
+    ]
+   },
+   "pivot": [
+    430,
+    332
+   ],
+   "texte": "a big round straw yellow hat with a pointed top, dark underside, hat only"
+  },
+  {
+   "nom": "tasse",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 6,
+   "priorite": 6,
+   "zone": {
+    "ellipse": [
+     310,
+     672,
+     128,
+     96
+    ]
+   },
+   "pivot": [
+    420,
+    642
+   ],
+   "texte": "two hands holding a white mug of hot tea, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     400,
+     1066,
+     74,
+     52
+    ]
+   },
+   "pivot": [
+    410,
+    1010
+   ],
+   "texte": "one fluffy purple slipper, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     505,
+     1070,
+     64,
+     52
+    ]
+   },
+   "pivot": [
+    500,
+    1010
+   ],
+   "texte": "one fluffy purple slipper, alone"
+  }
+ ],
+ "arret": {
+  "debut": 6.0,
+  "duree": 4.6
+ },
+ "gestes": [
+  {
+   "piece": "tasse",
+   "angle": -18,
+   "dy": -36,
+   "monte": [
+    0.4,
+    1.1
+   ],
+   "descend": [
+    2.4,
+    3.0
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -7,
+   "monte": [
+    0.9,
+    1.3
+   ],
+   "descend": [
+    2.4,
+    2.9
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 6,
+   "monte": [
+    2.9,
+    3.2
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 0,
+   "oscille": [
+    3.2,
+    4.4,
+    4,
+    1.2
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   237.99,
+   490.95,
+   399.58,
+   522.46
+  ],
+  "tete": [
+   317.08,
+   285.27,
+   216.75,
+   190.75
+  ],
+  "barbe": [
+   316.49,
+   447.19,
+   187.34,
+   129.49
+  ],
+  "chapeau": [
+   177.97,
+   110.98,
+   525.49,
+   378.09
+  ],
+  "tasse": [
+   182.41,
+   576.44,
+   255.24,
+   191.95
+  ],
+  "jambe-loin": [
+   326.05,
+   1014.17,
+   148.83,
+   85.22
+  ],
+  "jambe-proche": [
+   451.98,
+   1015.46,
+   97.49,
+   104.0
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.97, couleur 6)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.99, couleur 3)",
+  "barbe": "bonne — graine 41, bonne (recouvrement 0.94, couleur 1)",
+  "chapeau": "bonne — graine 41, bonne (recouvrement 0.94, couleur 13)",
+  "tasse": "bonne — graine 41, bonne (recouvrement 0.99, couleur 1)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.95, couleur 4)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 9)"
+ },
+ "temps_pc51_s": 240,
+ "temps_total_s": 252
+}

@@ -1,0 +1,149 @@
+{
+ "id": "14-veilleur-guimauve",
+ "nom": "veilleur sur sa guimauve",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-pale-a-guimauve-g21--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 220,
+ "invite": "a cute round pale ghost spirit with a blue halo, sitting on a big toasted marshmallow",
+ "mouvement": {
+  "mode": "sautille",
+  "vitesse": 60,
+  "periode": 0.7,
+  "hauteur": 28
+ },
+ "pieces": [
+  {
+   "nom": "guimauve",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     425,
+     730,
+     148,
+     112
+    ]
+   },
+   "pivot": [
+    425,
+    830
+   ],
+   "texte": "a big round toasted marshmallow, golden brown bottom, alone"
+  },
+  {
+   "nom": "fantome",
+   "role": "tete",
+   "parent": "guimauve",
+   "z": 1,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     425,
+     490,
+     172,
+     166
+    ]
+   },
+   "pivot": [
+    425,
+    640
+   ],
+   "texte": "a round pale lavender ghost spirit with small eyes, one tear and a tiny smile, little stubby arms, alone"
+  },
+  {
+   "nom": "aureole",
+   "role": "suiveur",
+   "parent": "fantome",
+   "z": 2,
+   "priorite": 4,
+   "amplitude": 6,
+   "retard": 1.4,
+   "zone": {
+    "ellipse": [
+     430,
+     236,
+     188,
+     66
+    ]
+   },
+   "pivot": [
+    430,
+    332
+   ],
+   "texte": "a glowing light blue halo ring, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.0,
+  "duree": 4.0
+ },
+ "gestes": [
+  {
+   "piece": "aureole",
+   "dy": -24,
+   "monte": [
+    0.4,
+    0.7
+   ],
+   "descend": [
+    0.7,
+    1.4
+   ]
+  },
+  {
+   "piece": "fantome",
+   "angle": 0,
+   "oscille": [
+    1.4,
+    2.8,
+    6,
+    2.5
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 8,
+   "monte": [
+    3.0,
+    3.25
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 8,
+   "monte": [
+    3.35,
+    3.6
+   ]
+  }
+ ],
+ "placement": {
+  "guimauve": [
+   280.38,
+   639.77,
+   295.95,
+   180.78
+  ],
+  "fantome": [
+   252.74,
+   332.08,
+   345.82,
+   321.59
+  ],
+  "aureole": [
+   318.45,
+   175.36,
+   293.96,
+   124.49
+  ]
+ },
+ "controle": {
+  "guimauve": "bonne — graine 41, bonne (recouvrement 0.97, couleur 5)",
+  "fantome": "bonne — graine 41, bonne (recouvrement 0.98, couleur 3)",
+  "aureole": "bonne — graine 41, bonne (recouvrement 0.77, couleur 11)"
+ },
+ "temps_pc51_s": 99,
+ "temps_total_s": 106
+}

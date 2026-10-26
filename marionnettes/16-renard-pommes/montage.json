@@ -1,0 +1,476 @@
+{
+ "id": "16-renard-pommes",
+ "nom": "renard aux pommes",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-renard-a-pommes-g21--image.png",
+ "dessin": "pieces",
+ "regard": "gauche",
+ "invite": "a cute chibi orange fox, warm orange fur, white belly",
+ "hauteur_ecran": 230,
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 95,
+  "periode": 0.82,
+  "amplitude": 26,
+  "bras": 18,
+  "rebond": 7,
+  "penche": 6
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     412,
+     712,
+     102,
+     88
+    ]
+   },
+   "pivot": [
+    412,
+    798
+   ],
+   "texte": "the round chubby torso of a cute orange fox, white belly, red and cream striped knitted scarf around the neck, torso only, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 4,
+   "zone": {
+    "ellipse": [
+     415,
+     578,
+     108,
+     80
+    ]
+   },
+   "pivot": [
+    415,
+    648
+   ],
+   "texte": "the head of a cute chibi orange fox, closed happy eyes, small smile, white muzzle, rounded ears, head only"
+  },
+  {
+   "nom": "echarpe",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 6,
+   "amplitude": 9,
+   "retard": 1.4,
+   "zone": {
+    "boite": [
+     400,
+     688,
+     448,
+     762
+    ]
+   },
+   "pivot": [
+    425,
+    690
+   ],
+   "texte": "the hanging end of a red and cream striped knitted scarf, alone"
+  },
+  {
+   "nom": "queue",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": -2,
+   "priorite": 3,
+   "amplitude": 12,
+   "retard": 1.1,
+   "zone": {
+    "ellipse": [
+     548,
+     712,
+     70,
+     98
+    ]
+   },
+   "pivot": [
+    498,
+    786
+   ],
+   "texte": "the big fluffy tail of a cute orange fox, white fluffy tip, tail only"
+  },
+  {
+   "nom": "panier",
+   "role": "objet",
+   "parent": "corps",
+   "z": 1,
+   "priorite": 5,
+   "amplitude": 5,
+   "retard": 0.9,
+   "zone": {
+    "ellipse": [
+     316,
+     684,
+     47,
+     43
+    ]
+   },
+   "pivot": [
+    332,
+    650
+   ],
+   "texte": "a small woven wicker basket of red apples with a handle, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "zone": {
+    "capsule": [
+     386,
+     770,
+     381,
+     816,
+     30
+    ],
+    "couleur": [
+     243,
+     166,
+     110
+    ],
+    "bout": [
+     250,
+     250,
+     250
+    ]
+   },
+   "pivot": [
+    386,
+    772
+   ],
+   "texte": "one short chubby leg of a cute orange fox, orange fur, round white paw at the end, leg only, vertical"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "zone": {
+    "capsule": [
+     446,
+     770,
+     452,
+     816,
+     30
+    ],
+    "couleur": [
+     243,
+     166,
+     110
+    ],
+    "bout": [
+     250,
+     250,
+     250
+    ]
+   },
+   "pivot": [
+    446,
+    772
+   ],
+   "texte": "one short chubby leg of a cute orange fox, orange fur, round white paw at the end, leg only, vertical"
+  },
+  {
+   "nom": "bras-loin",
+   "role": "bras-loin",
+   "parent": "corps",
+   "z": -1,
+   "zone": {
+    "capsule": [
+     356,
+     688,
+     346,
+     736,
+     22
+    ],
+    "couleur": [
+     243,
+     166,
+     110
+    ],
+    "bout": [
+     250,
+     250,
+     250
+    ]
+   },
+   "pivot": [
+    356,
+    690
+   ],
+   "texte": "one short chubby arm of a cute orange fox, orange fur, round white paw at the end, arm only, vertical"
+  },
+  {
+   "nom": "bras-proche",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 4,
+   "zone": {
+    "capsule": [
+     466,
+     688,
+     474,
+     736,
+     22
+    ],
+    "couleur": [
+     243,
+     166,
+     110
+    ],
+    "bout": [
+     250,
+     250,
+     250
+    ]
+   },
+   "pivot": [
+    466,
+    690
+   ],
+   "texte": "one short chubby arm of a cute orange fox, orange fur, round white paw at the end, arm only, vertical"
+  },
+  {
+   "nom": "pomme",
+   "role": "fixe",
+   "parent": "bras-proche",
+   "z": 5,
+   "priorite": 7,
+   "cache": true,
+   "zone": {
+    "ellipse": [
+     282,
+     772,
+     30,
+     30
+    ]
+   },
+   "pivot": [
+    282,
+    772
+   ],
+   "attache": [
+    474,
+    738
+   ],
+   "texte": "a single shiny red apple with a short brown stem, alone"
+  }
+ ],
+ "arret": {
+  "debut": 6.2,
+  "duree": 7.4
+ },
+ "gestes": [
+  {
+   "piece": "bras-proche",
+   "angle": 100,
+   "monte": [
+    0.3,
+    1.0
+   ],
+   "descend": [
+    1.0,
+    1.7
+   ]
+  },
+  {
+   "piece": "bras-proche",
+   "angle": 145,
+   "monte": [
+    1.0,
+    1.7
+   ],
+   "descend": [
+    5.6,
+    6.3
+   ]
+  },
+  {
+   "piece": "pomme",
+   "visible": [
+    0.95,
+    6.0
+   ]
+  },
+  {
+   "piece": "pomme",
+   "dx": -22,
+   "dy": -18,
+   "monte": [
+    1.2,
+    1.7
+   ],
+   "descend": [
+    5.4,
+    6.0
+   ]
+  },
+  {
+   "piece": "pomme",
+   "echelle": -0.3,
+   "monte": [
+    2.05,
+    2.1
+   ],
+   "descend": [
+    9.0,
+    9.1
+   ]
+  },
+  {
+   "piece": "pomme",
+   "echelle": -0.25,
+   "monte": [
+    3.65,
+    3.7
+   ],
+   "descend": [
+    9.0,
+    9.1
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -9,
+   "monte": [
+    2.0,
+    2.18
+   ],
+   "descend": [
+    2.18,
+    2.5
+   ],
+   "oscille": [
+    2.5,
+    3.4,
+    3,
+    2.4
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -9,
+   "monte": [
+    3.6,
+    3.78
+   ],
+   "descend": [
+    3.78,
+    4.1
+   ],
+   "oscille": [
+    4.1,
+    5.0,
+    3,
+    2.4
+   ]
+  },
+  {
+   "piece": "queue",
+   "angle": -14,
+   "monte": [
+    6.4,
+    6.6
+   ],
+   "descend": [
+    6.9,
+    7.2
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 40,
+   "monte": [
+    6.4,
+    7.1
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   328.28,
+   642.62,
+   165.1,
+   156.77
+  ],
+  "tete": [
+   322.09,
+   506.38,
+   181.12,
+   152.38
+  ],
+  "echarpe": [
+   399.18,
+   686.12,
+   50.51,
+   76.41
+  ],
+  "queue": [
+   478.53,
+   616.55,
+   124.93,
+   189.26
+  ],
+  "panier": [
+   276.34,
+   640.1,
+   86.53,
+   82.51
+  ],
+  "jambe-loin": [
+   363.95,
+   753.68,
+   39.73,
+   79.33
+  ],
+  "jambe-proche": [
+   428.82,
+   752.76,
+   41.18,
+   78.94
+  ],
+  "bras-loin": [
+   331.9,
+   674.16,
+   38.15,
+   77.62
+  ],
+  "bras-proche": [
+   454.43,
+   676.81,
+   31.87,
+   71.1
+  ],
+  "pomme": [
+   254.52,
+   743.25,
+   58.96,
+   60.3
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.97, couleur 5)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 3)",
+  "echarpe": "bonne — graine 41, bonne (recouvrement 0.96, couleur 6)",
+  "queue": "bonne — graine 41, bonne (recouvrement 0.98, couleur 9)",
+  "panier": "bonne — graine 41, bonne (recouvrement 0.97, couleur 7)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.89, couleur 3)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.89, couleur 2)",
+  "bras-loin": "bonne — graine 41, bonne (recouvrement 0.84, couleur 3)",
+  "bras-proche": "bonne — graine 41, bonne (recouvrement 0.97, couleur 6)",
+  "pomme": "bonne — graine 41, bonne (recouvrement 0.93, couleur 10)"
+ },
+ "temps_pc51_s": 371,
+ "temps_total_s": 375
+}

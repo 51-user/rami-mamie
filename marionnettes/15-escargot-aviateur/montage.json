@@ -1,0 +1,255 @@
+{
+ "id": "15-escargot-aviateur",
+ "nom": "escargot aviateur",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-escargot-c-course-g22--image.png",
+ "dessin": "pieces",
+ "regard": "gauche",
+ "hauteur_ecran": 200,
+ "seuil_fond": 70,
+ "invite": "a cute chibi snail with a cream white body, big orange eyes, a red scarf, a yellow spiral shell and brown aviator goggles",
+ "mouvement": {
+  "mode": "glisse",
+  "style": "chenille",
+  "vitesse": 62,
+  "periode": 1.2,
+  "etirement": 0.12
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 1,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     505,
+     720,
+     215,
+     250
+    ]
+   },
+   "pivot": [
+    480,
+    900
+   ],
+   "texte": "the soft cream white body of a cute chibi snail, big round head with two long orange eyes, red scarf, no shell, no goggles, no antennae"
+  },
+  {
+   "nom": "coquille",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 0,
+   "priorite": 2,
+   "amplitude": 3,
+   "retard": 1.2,
+   "rigide": true,
+   "zone": {
+    "ellipse": [
+     790,
+     650,
+     150,
+     245
+    ]
+   },
+   "pivot": [
+    660,
+    860
+   ],
+   "texte": "a big round yellow snail shell with a brown spiral line, alone"
+  },
+  {
+   "nom": "lunettes",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 4,
+   "amplitude": 2,
+   "retard": 1.3,
+   "rigide": true,
+   "zone": {
+    "ellipse": [
+     505,
+     555,
+     198,
+     88
+    ]
+   },
+   "pivot": [
+    505,
+    556
+   ],
+   "texte": "brown leather aviator goggles with two round green lenses, alone"
+  },
+  {
+   "nom": "antenne-g",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 5,
+   "amplitude": 9,
+   "retard": 0.9,
+   "zone": {
+    "union": [
+     {
+      "segment": [
+       330,
+       140,
+       400,
+       190,
+       60
+      ]
+     },
+     {
+      "segment": [
+       398,
+       186,
+       474,
+       482,
+       44
+      ]
+     }
+    ]
+   },
+   "pivot": [
+    470,
+    482
+   ],
+   "texte": "a thin black snail eyestalk with a dark brown oval tip, alone"
+  },
+  {
+   "nom": "antenne-d",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 0,
+   "priorite": 5,
+   "amplitude": 9,
+   "retard": 1.5,
+   "zone": {
+    "union": [
+     {
+      "segment": [
+       638,
+       80,
+       640,
+       190,
+       60
+      ]
+     },
+     {
+      "segment": [
+       642,
+       190,
+       628,
+       440,
+       44
+      ]
+     }
+    ]
+   },
+   "pivot": [
+    628,
+    438
+   ],
+   "texte": "a thin black snail eyestalk with a dark brown oval tip, alone"
+  }
+ ],
+ "arret": {
+  "debut": 6.0,
+  "duree": 4.5
+ },
+ "gestes": [
+  {
+   "piece": "antenne-g",
+   "angle": -16,
+   "monte": [
+    0.2,
+    0.5
+   ],
+   "descend": [
+    1.3,
+    1.6
+   ],
+   "oscille": [
+    1.6,
+    2.6,
+    10,
+    1.2
+   ]
+  },
+  {
+   "piece": "antenne-d",
+   "angle": 16,
+   "monte": [
+    1.3,
+    1.6
+   ],
+   "descend": [
+    2.6,
+    2.9
+   ]
+  },
+  {
+   "piece": "lunettes",
+   "dy": -18,
+   "monte": [
+    2.9,
+    3.05
+   ],
+   "descend": [
+    3.05,
+    3.5
+   ]
+  },
+  {
+   "piece": "coquille",
+   "angle": 0,
+   "oscille": [
+    3.0,
+    3.8,
+    5,
+    9
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   318.72,
+   603.32,
+   372.17,
+   362.53
+  ],
+  "coquille": [
+   641.39,
+   424.72,
+   270.14,
+   440.28
+  ],
+  "lunettes": [
+   323.74,
+   467.79,
+   380.75,
+   177.03
+  ],
+  "antenne-g": [
+   302.01,
+   123.2,
+   190.8,
+   371.27
+  ],
+  "antenne-d": [
+   602.98,
+   72.0,
+   52.92,
+   407.15
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.95, couleur 7)",
+  "coquille": "bonne — graine 41, bonne (recouvrement 0.94, couleur 13)",
+  "lunettes": "bonne — graine 41, bonne (recouvrement 0.97, couleur 7)",
+  "antenne-g": "bonne — graine 41, bonne (recouvrement 0.79, couleur 8)",
+  "antenne-d": "bonne — graine 41, bonne (recouvrement 0.82, couleur 3)"
+ },
+ "temps_pc51_s": 158,
+ "temps_total_s": 176
+}

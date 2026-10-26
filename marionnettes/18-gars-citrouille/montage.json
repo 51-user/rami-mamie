@@ -1,0 +1,114 @@
+{
+ "id": "18-gars-citrouille",
+ "nom": "petit gars à la citrouille",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-gars-a-citrouille-g21--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 190,
+ "invite": "a cute chibi little boy with messy brown hair and rosy cheeks peeking out of a big orange pumpkin",
+ "mouvement": {
+  "mode": "sautille",
+  "vitesse": 70,
+  "periode": 0.5,
+  "hauteur": 26
+ },
+ "pieces": [
+  {
+   "nom": "citrouille",
+   "role": "racine",
+   "z": 1,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     432,
+     735,
+     152,
+     86
+    ]
+   },
+   "pivot": [
+    432,
+    815
+   ],
+   "texte": "a big round orange pumpkin with a green stem, alone"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "citrouille",
+   "z": 0,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     432,
+     585,
+     112,
+     90
+    ]
+   },
+   "pivot": [
+    432,
+    660
+   ],
+   "texte": "the head of a cute chibi little boy with messy brown hair, rosy cheeks, small hands on a rim, head only"
+  }
+ ],
+ "arret": {
+  "debut": 5.0,
+  "duree": 3.8
+ },
+ "gestes": [
+  {
+   "piece": "tete",
+   "dy": 42,
+   "monte": [
+    0.4,
+    0.8
+   ],
+   "descend": [
+    1.6,
+    1.9
+   ]
+  },
+  {
+   "piece": "tete",
+   "dy": -22,
+   "monte": [
+    1.9,
+    2.1
+   ],
+   "descend": [
+    2.1,
+    2.6
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 22,
+   "monte": [
+    2.8,
+    3.2
+   ]
+  }
+ ],
+ "placement": {
+  "citrouille": [
+   288.01,
+   658.62,
+   291.95,
+   159.98
+  ],
+  "tete": [
+   322.01,
+   491.71,
+   225.13,
+   183.64
+  ]
+ },
+ "controle": {
+  "citrouille": "bonne — graine 41, bonne (recouvrement 0.97, couleur 6)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 2)"
+ },
+ "temps_pc51_s": 67,
+ "temps_total_s": 71
+}

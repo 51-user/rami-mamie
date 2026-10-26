@@ -1,0 +1,245 @@
+{
+ "id": "06-champignon-pluie",
+ "nom": "champignon sous la pluie",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-champignon-a-pluie-g21--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 250,
+ "fond": [
+  238,
+  228,
+  196
+ ],
+ "invite": "a tiny cute mushroom creature with a red cap with white spots, holding a big green leaf as an umbrella",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 60,
+  "periode": 0.45,
+  "amplitude": 22,
+  "bras": 0,
+  "rebond": 5,
+  "penche": 3
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 5,
+   "zone": {
+    "ellipse": [
+     455,
+     862,
+     56,
+     46
+    ]
+   },
+   "pivot": [
+    455,
+    912
+   ],
+   "texte": "the tiny grey round body of a cute mushroom creature with two dot eyes and tiny arms, body only"
+  },
+  {
+   "nom": "chapeau",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 1,
+   "priorite": 4,
+   "amplitude": 3,
+   "retard": 1.0,
+   "zone": {
+    "ellipse": [
+     445,
+     730,
+     120,
+     96
+    ]
+   },
+   "pivot": [
+    455,
+    812
+   ],
+   "texte": "a round orange red mushroom cap with big white spots, cap only"
+  },
+  {
+   "nom": "parapluie",
+   "role": "suiveur",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 2,
+   "amplitude": 6,
+   "retard": 1.2,
+   "zone": {
+    "boite": [
+     205,
+     105,
+     648,
+     905
+    ]
+   },
+   "pivot": [
+    386,
+    862
+   ],
+   "texte": "a big green leaf used as an umbrella, with a long thin green stem ending in a curled hook, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "zone": {
+    "capsule": [
+     430,
+     888,
+     428,
+     918,
+     20
+    ],
+    "couleur": [
+     200,
+     196,
+     204
+    ],
+    "bout": [
+     186,
+     182,
+     190
+    ]
+   },
+   "pivot": [
+    430,
+    890
+   ],
+   "texte": "one tiny grey stubby leg, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "zone": {
+    "capsule": [
+     463,
+     888,
+     465,
+     918,
+     20
+    ],
+    "couleur": [
+     200,
+     196,
+     204
+    ],
+    "bout": [
+     186,
+     182,
+     190
+    ]
+   },
+   "pivot": [
+    463,
+    890
+   ],
+   "texte": "one tiny grey stubby leg, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.0,
+  "duree": 4.0
+ },
+ "gestes": [
+  {
+   "piece": "chapeau",
+   "angle": -8,
+   "monte": [
+    0.3,
+    0.7
+   ],
+   "descend": [
+    2.0,
+    2.4
+   ]
+  },
+  {
+   "piece": "parapluie",
+   "angle": -14,
+   "monte": [
+    0.4,
+    1.0
+   ],
+   "descend": [
+    1.6,
+    2.2
+   ]
+  },
+  {
+   "piece": "parapluie",
+   "angle": 0,
+   "oscille": [
+    2.4,
+    3.2,
+    7,
+    6
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 8,
+   "monte": [
+    2.4,
+    2.6
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 8,
+   "monte": [
+    2.7,
+    2.9
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   400.73,
+   814.49,
+   98.0,
+   93.42
+  ],
+  "chapeau": [
+   324.97,
+   631.74,
+   239.01,
+   191.91
+  ],
+  "parapluie": [
+   201.36,
+   100.09,
+   443.23,
+   815.74
+  ],
+  "jambe-loin": [
+   417.36,
+   877.36,
+   23.99,
+   51.98
+  ],
+  "jambe-proche": [
+   451.91,
+   877.18,
+   25.26,
+   52.62
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.96, couleur 7)",
+  "chapeau": "bonne — graine 41, bonne (recouvrement 0.98, couleur 7)",
+  "parapluie": "bonne — graine 41, bonne (recouvrement 0.89, couleur 11)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.91, couleur 7)"
+ },
+ "temps_pc51_s": 164,
+ "temps_total_s": 178
+}

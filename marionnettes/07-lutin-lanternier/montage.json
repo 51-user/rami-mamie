@@ -1,0 +1,328 @@
+{
+ "id": "07-lutin-lanternier",
+ "nom": "lutin lanternier du soir",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-lutin-2-lanternier-v2-g11--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 230,
+ "invite": "a cute chibi old gnome in a blue hooded coat with an orange pompom, round red nose, white beard, holding a glowing lantern and a wooden stick",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 75,
+  "periode": 0.68,
+  "amplitude": 18,
+  "bras": 10,
+  "rebond": 6,
+  "penche": 4
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     430,
+     850,
+     142,
+     122
+    ]
+   },
+   "pivot": [
+    430,
+    975
+   ],
+   "texte": "the round body of a cute chibi gnome in a blue coat with pockets, torso only, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 5,
+   "zone": {
+    "ellipse": [
+     395,
+     680,
+     118,
+     76
+    ]
+   },
+   "pivot": [
+    400,
+    735
+   ],
+   "texte": "the sleepy face of a cute chibi old gnome, closed eyes, big round red nose, brown hair, head only"
+  },
+  {
+   "nom": "barbe",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 4,
+   "priorite": 4,
+   "amplitude": 3,
+   "retard": 1.3,
+   "zone": {
+    "ellipse": [
+     365,
+     822,
+     82,
+     108
+    ]
+   },
+   "pivot": [
+    365,
+    722
+   ],
+   "texte": "a long fluffy white beard, alone"
+  },
+  {
+   "nom": "bonnet",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 5,
+   "priorite": 3,
+   "amplitude": 5,
+   "retard": 1.1,
+   "zone": {
+    "ellipse": [
+     420,
+     582,
+     168,
+     122
+    ]
+   },
+   "pivot": [
+    400,
+    642
+   ],
+   "texte": "a blue hood with a big fluffy orange pompom on top, hood only"
+  },
+  {
+   "nom": "lanterne",
+   "role": "objet",
+   "parent": "corps",
+   "z": 6,
+   "priorite": 6,
+   "amplitude": 9,
+   "retard": 0.9,
+   "zone": {
+    "ellipse": [
+     152,
+     840,
+     98,
+     132
+    ]
+   },
+   "pivot": [
+    188,
+    726
+   ],
+   "texte": "a glowing old brass lantern held by a red mittened hand, warm yellow light, alone"
+  },
+  {
+   "nom": "baton",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 6,
+   "priorite": 2,
+   "zone": {
+    "segment": [
+     440,
+     852,
+     822,
+     642,
+     46
+    ]
+   },
+   "pivot": [
+    555,
+    738
+   ],
+   "texte": "a long straight wooden stick, alone"
+  },
+  {
+   "nom": "main",
+   "role": "fixe",
+   "parent": "baton",
+   "z": 7,
+   "priorite": 3,
+   "zone": {
+    "ellipse": [
+     552,
+     736,
+     40,
+     48
+    ]
+   },
+   "pivot": [
+    552,
+    736
+   ],
+   "texte": "a red mitten hand gripping, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     345,
+     966,
+     50,
+     30
+    ]
+   },
+   "pivot": [
+    345,
+    946
+   ],
+   "texte": "one short leg of a cute gnome in a brown boot, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     500,
+     966,
+     62,
+     30
+    ]
+   },
+   "pivot": [
+    500,
+    946
+   ],
+   "texte": "one short leg of a cute gnome in a brown boot, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.5,
+  "duree": 4.2
+ },
+ "gestes": [
+  {
+   "piece": "lanterne",
+   "dy": -40,
+   "dx": 34,
+   "monte": [
+    0.3,
+    0.9
+   ],
+   "descend": [
+    3.0,
+    3.6
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 0,
+   "oscille": [
+    0.9,
+    2.7,
+    7,
+    0.7
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": 6,
+   "monte": [
+    2.8,
+    3.1
+   ],
+   "descend": [
+    3.4,
+    3.9
+   ]
+  },
+  {
+   "piece": "bonnet",
+   "angle": -9,
+   "monte": [
+    2.8,
+    3.0
+   ],
+   "descend": [
+    3.0,
+    3.6
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   288.9,
+   744.35,
+   286.71,
+   226.28
+  ],
+  "tete": [
+   279.17,
+   603.95,
+   236.6,
+   149.63
+  ],
+  "barbe": [
+   281.1,
+   738.77,
+   167.09,
+   196.67
+  ],
+  "bonnet": [
+   309.1,
+   469.68,
+   280.03,
+   209.57
+  ],
+  "lanterne": [
+   62.66,
+   715.42,
+   189.36,
+   229.56
+  ],
+  "baton": [
+   422.78,
+   626.02,
+   395.09,
+   257.77
+  ],
+  "main": [
+   511.2,
+   687.65,
+   81.67,
+   97.81
+  ],
+  "jambe-loin": [
+   293.51,
+   934.27,
+   104.1,
+   56.8
+  ],
+  "jambe-proche": [
+   436.36,
+   934.18,
+   113.96,
+   60.7
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.88, couleur 1)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 5)",
+  "barbe": "bonne — graine 41, bonne (recouvrement 0.88, couleur 11)",
+  "bonnet": "bonne — graine 41, bonne (recouvrement 0.95, couleur 7)",
+  "lanterne": "bonne — graine 41, bonne (recouvrement 0.96, couleur 5)",
+  "baton": "bonne — graine 41, bonne (recouvrement 0.88, couleur 12)",
+  "main": "bonne — graine 41, bonne (recouvrement 0.97, couleur 4)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.89, couleur 15)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.91, couleur 11)"
+ },
+ "temps_pc51_s": 309,
+ "temps_total_s": 318
+}

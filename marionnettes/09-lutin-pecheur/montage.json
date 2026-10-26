@@ -1,0 +1,348 @@
+{
+ "id": "09-lutin-pecheur",
+ "nom": "lutin pêcheur du ruisseau",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-lutin-4-ruisseau-v4-g13--image.png",
+ "dessin": "pieces",
+ "regard": "face",
+ "hauteur_ecran": 220,
+ "invite": "a cute chibi old gnome in a teal hat and teal waistcoat, round red nose, white beard, carrying a fishing rod",
+ "mouvement": {
+  "mode": "marche",
+  "vitesse": 75,
+  "periode": 0.6,
+  "amplitude": 20,
+  "bras": 6,
+  "rebond": 6,
+  "penche": 4
+ },
+ "pieces": [
+  {
+   "nom": "corps",
+   "role": "racine",
+   "z": 0,
+   "priorite": 1,
+   "zone": {
+    "ellipse": [
+     425,
+     822,
+     102,
+     62
+    ]
+   },
+   "pivot": [
+    425,
+    890
+   ],
+   "texte": "the round body of a cute chibi gnome in a teal waistcoat over white, torso only, no head, no legs"
+  },
+  {
+   "nom": "tete",
+   "role": "tete",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 5,
+   "zone": {
+    "ellipse": [
+     420,
+     745,
+     102,
+     62
+    ]
+   },
+   "pivot": [
+    420,
+    792
+   ],
+   "texte": "the face of a cute chibi old gnome, small black eyes, round red nose, white beard, head only"
+  },
+  {
+   "nom": "bonnet",
+   "role": "suiveur",
+   "parent": "tete",
+   "z": 4,
+   "priorite": 4,
+   "amplitude": 4,
+   "retard": 1.1,
+   "zone": {
+    "ellipse": [
+     418,
+     652,
+     110,
+     72
+    ]
+   },
+   "pivot": [
+    418,
+    702
+   ],
+   "texte": "a soft teal hat with a little orange tuft on top, hat only"
+  },
+  {
+   "nom": "canne",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 5,
+   "priorite": 3,
+   "zone": {
+    "segment": [
+     505,
+     726,
+     742,
+     474,
+     42
+    ]
+   },
+   "pivot": [
+    505,
+    742
+   ],
+   "texte": "a long thin bent wooden fishing rod, alone"
+  },
+  {
+   "nom": "flotteur",
+   "role": "objet",
+   "parent": "canne",
+   "z": 5,
+   "priorite": 6,
+   "amplitude": 10,
+   "retard": 1.4,
+   "fil": true,
+   "zone": {
+    "ellipse": [
+     735,
+     1002,
+     24,
+     24
+    ]
+   },
+   "pivot": [
+    738,
+    480
+   ],
+   "texte": "a small red fishing float, alone"
+  },
+  {
+   "nom": "sac",
+   "role": "objet",
+   "parent": "corps",
+   "z": 2,
+   "priorite": 4,
+   "amplitude": 6,
+   "retard": 0.8,
+   "zone": {
+    "ellipse": [
+     300,
+     765,
+     46,
+     40
+    ]
+   },
+   "pivot": [
+    330,
+    742
+   ],
+   "texte": "a small brown cloth sack, alone"
+  },
+  {
+   "nom": "poisson",
+   "role": "suiveur",
+   "parent": "sac",
+   "z": 1,
+   "priorite": 3,
+   "amplitude": 8,
+   "retard": 1.4,
+   "zone": {
+    "boite": [
+     232,
+     362,
+     366,
+     726
+    ]
+   },
+   "pivot": [
+    322,
+    726
+   ],
+   "texte": "a silver fish skewered on a thin twig with two green leaves, alone"
+  },
+  {
+   "nom": "jambe-loin",
+   "role": "jambe-loin",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     370,
+     894,
+     36,
+     19
+    ]
+   },
+   "pivot": [
+    370,
+    880
+   ],
+   "texte": "one short leg of a cute gnome in a small grey boot, alone"
+  },
+  {
+   "nom": "jambe-proche",
+   "role": "jambe-proche",
+   "parent": "corps",
+   "z": -1,
+   "priorite": 2,
+   "zone": {
+    "ellipse": [
+     480,
+     894,
+     42,
+     19
+    ]
+   },
+   "pivot": [
+    480,
+    880
+   ],
+   "texte": "one short leg of a cute gnome in a small grey boot, alone"
+  }
+ ],
+ "arret": {
+  "debut": 5.5,
+  "duree": 4.4
+ },
+ "gestes": [
+  {
+   "piece": "canne",
+   "angle": -28,
+   "monte": [
+    0.3,
+    0.8
+   ],
+   "descend": [
+    0.8,
+    1.05
+   ]
+  },
+  {
+   "piece": "canne",
+   "angle": 12,
+   "monte": [
+    0.8,
+    1.05
+   ],
+   "descend": [
+    3.4,
+    3.9
+   ]
+  },
+  {
+   "piece": "flotteur",
+   "angle": 0,
+   "oscille": [
+    1.2,
+    3.2,
+    6,
+    1.6
+   ]
+  },
+  {
+   "piece": "racine",
+   "saut": 16,
+   "monte": [
+    2.3,
+    2.6
+   ]
+  },
+  {
+   "piece": "tete",
+   "angle": -6,
+   "monte": [
+    2.3,
+    2.45
+   ],
+   "descend": [
+    2.9,
+    3.3
+   ]
+  },
+  {
+   "piece": "poisson",
+   "angle": 0,
+   "oscille": [
+    2.3,
+    3.0,
+    12,
+    5
+   ]
+  }
+ ],
+ "placement": {
+  "corps": [
+   321.47,
+   782.87,
+   190.36,
+   103.3
+  ],
+  "tete": [
+   318.19,
+   683.56,
+   204.86,
+   124.77
+  ],
+  "bonnet": [
+   308.95,
+   587.45,
+   192.58,
+   116.82
+  ],
+  "canne": [
+   497.72,
+   464.27,
+   249.73,
+   263.1
+  ],
+  "flotteur": [
+   716.32,
+   978.76,
+   38.09,
+   44.25
+  ],
+  "sac": [
+   265.49,
+   725.31,
+   75.68,
+   80.43
+  ],
+  "poisson": [
+   231.83,
+   360.52,
+   115.29,
+   381.61
+  ],
+  "jambe-loin": [
+   334.16,
+   875.59,
+   70.92,
+   34.42
+  ],
+  "jambe-proche": [
+   438.01,
+   874.98,
+   48.45,
+   33.24
+  ]
+ },
+ "controle": {
+  "corps": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.98, couleur 2)",
+  "bonnet": "bonne — graine 41, bonne (recouvrement 0.92, couleur 3)",
+  "canne": "bonne — graine 42, bonne (recouvrement 0.75, couleur 11)",
+  "flotteur": "bonne — graine 41, bonne (recouvrement 0.95, couleur 9)",
+  "sac": "bonne — graine 41, bonne (recouvrement 0.94, couleur 3)",
+  "poisson": "bonne — graine 41, bonne (recouvrement 0.85, couleur 15)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.93, couleur 13)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.95, couleur 11)"
+ },
+ "temps_pc51_s": 351,
+ "temps_total_s": 358
+}
