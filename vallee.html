@@ -1805,6 +1805,33 @@ html body .tableau b{font-family:var(--f-titre);font-size:22px;text-align:center
 html body .tableau span{text-align:center;font-weight:700;background:rgba(255,244,214,.16);border-radius:8px;padding:4px 6px}
 html body .tableau .lib{text-align:left;background:none}
 html body .tableau .devant{background:#F6D36B;color:#4A2A12}
+/* ===== Info ou cliquable (26/10, Florian : « une identité claire "ceci est une info" et "ceci est un menu cliquable" sans l'écrire ») =====
+   LE CLIQUABLE : bois en relief, bord clair en haut, ombre portée dessous ; au toucher il s'enfonce, l'ombre disparaît.
+   L'INFO : étiquette de parchemin mat, posée à plat, sans relief ni ombre ; aucun bouton n'a cette couleur.
+   Ce qui est les deux (la tâche du fil, un habitant à qui parler) prend l'identité du cliquable. */
+:root{--info:#F3E8CC;--info-bord:#C4A878;
+  --relief:inset 0 3px 0 rgba(255,236,196,.55),inset 0 -3px 0 rgba(0,0,0,.22),0 5px 0 #3A2010,0 8px 9px rgba(40,20,5,.35);
+  --enfonce:inset 0 3px 5px rgba(0,0,0,.35)}
+html body :is(.big,.mb,.son,.fermer,.pancarte,button.choix,.acheter button,.don button,.s-bouton,.h-donner,.h-autre,.h-gens,.vente button,.choix-c){
+  border:3px solid #4A2A12;border-top-color:#B88450;box-shadow:var(--relief);cursor:pointer;transition:transform .08s,box-shadow .08s,filter .12s}
+html body :is(button.choix,.h-gens,.choix-c){background:var(--bois-clair);color:#3A2010}
+html body :is(button.choix,.h-gens) small{color:#4A2A12}
+html body :is(.big,.mb,.son,.fermer,.pancarte,button.choix,.acheter button,.don button,.s-bouton,.h-donner,.h-autre,.h-gens,.vente button,.choix-c):active:not([disabled]){
+  transform:translateY(5px);box-shadow:var(--enfonce)}
+html body :is(button.choix,.acheter button,.don button)[disabled]{filter:grayscale(.7);opacity:.5}
+html body .choix-c.choisie{box-shadow:var(--relief),0 0 0 4px #FFD86B}
+/* l'info : à plat */
+html body :is(.pill,.msg,.aide,.h-bulle,.tableau,div.choix,.lot,.don,.s-bandeau,.debut .boite){
+  background:var(--info);border:2px solid var(--info-bord);box-shadow:none;color:var(--ink)}
+html body div.choix:active{transform:none;filter:none}
+html body .pill{border-radius:6px;opacity:1}
+html body .pill b{color:var(--ink);-webkit-text-stroke:0;text-shadow:none}
+html body :is(.pill,.tableau,div.choix,.don,.lot) .case,html body :is(div.choix,.don,.lot,.h-bulle) .e{background:#FBF5E4;border:2px solid var(--info-bord);box-shadow:none}
+html body .feuille{background:var(--info);border:4px solid #A88456;border-bottom:0;box-shadow:none}
+html body :is(.h-portrait,.h-mini){border:3px solid var(--info-bord);box-shadow:none}
+html body .tableau b{color:var(--ink);-webkit-text-stroke:0}
+html body .tableau span{background:rgba(196,168,120,.2)}
+html body .lot.fait{background:#E9F0D8}html body .don.donne{background:#E4EFD2;border-color:#9DBF7A}
 @media (prefers-reduced-motion:reduce){.picore,.trotte,.ondule,.balance,.vole,.bat,.nage,.pose-oiseau,.respire{animation:none}}
 </style>
 </body>
