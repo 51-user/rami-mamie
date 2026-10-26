@@ -244,8 +244,8 @@ const SaisonsFaces=(function(){
   const ENCRE=['#B8325E','#B07A06','#C2501A','#2A63A6'], TRAIT=['#6E1634','#6A4A00','#6E2A08','#123B6A'];
   const LETTRE={1:'A',11:'V',12:'C',13:'D',14:'R'};
   const chemin='cartes/tarot-saisons/';
-  const figures=['r-automne','d-printemps'];   // les portraits déjà rendus (PC51, NoobAI, 26/10)
-  const atouts=['atout-01','atout-06','atout-19','excuse'];   // les scènes déjà rendues (les autres attendent PC51 : fenêtre sombre)
+  const figures=['r','d','c','v'].flatMap(r=>FICHIER.map(s=>r+'-'+s));   // les 16 portraits (PC51, NoobAI, 26/10)
+  const atouts=[...Array(21)].map((_,k)=>'atout-'+String(k+1).padStart(2,'0')).concat('excuse');   // les 21 scènes et l'Excuse
   const SCENES=['Tout dort','Premiers pas','Rosée','Source','Matin clair','Ruisseau','Verger','Plein midi','Sieste','Colline','Chemin creux',
     'Clairière',"Fin d'après-midi",'Soleil bas','Étang','Feu du soir','Dernière lueur','Braises','Première neige',"Ciel d'hiver",'Étoiles sans batterie','Veillée'];
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
