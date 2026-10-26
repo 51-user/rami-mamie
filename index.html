@@ -625,6 +625,7 @@ function render(force){
         <button class="big alt" data-act="rami">🃏 Rami à deux<small>avec votre partenaire, à distance</small></button>
         <button class="big alt" data-act="solo">🂡 Solitaire<small>toute seule, sans connexion</small></button>
         <button class="big alt" data-act="belote">♣️ Belote<small>à trois ou quatre, en famille ou avec le village</small></button>
+        <button class="big alt" data-act="tarot">🌸 Tarot des saisons<small>à quatre ou à trois, avec le village</small></button>
         <button class="big alt" data-act="motsmeles">🔤 Mots mêlés<small>trouver les mots cachés, sans se presser</small></button>
         <button class="big alt" data-act="briques">🧱 Les briques<small>ranger les briques qui tombent</small></button>
       </div>
@@ -1026,6 +1027,7 @@ app.addEventListener('click',e=>{
     case 'solo': mode='solo'; ls.set('mode','solo'); soloLoad(); render(true); break;
     case 'village': location.href='vallee.html'+location.search; break;
     case 'belote': location.href='belote.html'+location.search; break;
+    case 'tarot': location.href='tarot.html'+location.search; break;
     case 'motsmeles': location.href='motsmeles.html'+location.search; break;
     case 'briques': location.href='briques.html'+location.search; break;
     case 'accueil': mode=null; ls.set('mode',null); ssel=null; soloMsg=''; flash=''; render(true); break;

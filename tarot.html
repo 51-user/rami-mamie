@@ -13,7 +13,8 @@
    et « Règlement officiel en donnes libres » de la Fédération française de tarot, 12 pages)
    ---------------------------------------------------------------------
    LE JEU : 78 cartes.
-   - 4 couleurs (pique, cœur, carreau, trèfle) de 14 cartes, de la plus forte à la plus faible :
+   - 4 couleurs de 14 cartes ; ici ce sont les 4 SAISONS (Printemps, Été, Automne, Hiver, validé par Florian le 26/10),
+     de la plus forte à la plus faible :
      roi, dame, cavalier, valet (les honneurs), 10, 9, 8, 7, 6, 5, 4, 3, 2, as.
    - 21 atouts numérotés : le 21 est le plus fort, le 1 (« le petit ») le plus faible.
    - L'Excuse (l'étoile) : elle dispense de jouer la couleur ou l'atout demandé.
@@ -229,38 +230,73 @@ html body .overlay.doux{background:rgba(40,22,8,.35)}
 
 <script src="cartes-faces.js"></script>
 <script>
-/* ===== Les faces du tarot. Les 52 cartes communes viennent de cartes-faces.js (même matière, rien de redessiné) ;
-   ici seulement ce qui manque au jeu de 52 : les 4 cavaliers, les 21 atouts et l'Excuse, sur le MÊME papier
-   (dégradé, grain et toile, liseré doré, reflet : les définitions cf-* posées dans la page par cartes-faces.js).
-   Atout : une petite scène Vallée (cartes/tarot/atout-NN.webp, découpée dans les peintures Vallée déjà faites)
-   dans un cadre doré, son numéro en grand dans un médaillon aux deux coins, le nom de la scène sur un ruban.
-   Cavalier : cadre doré des figures ; portrait cartes/tarot/c-<enseigne>.webp s'il existe, sinon la version
-   provisoire (lettre C, tête de cheval dorée et enseigne), comme les autres figures sans portrait.
-   Numéros : 0-55 les couleurs (enseigne × 14 + rang − 1 ; rangs 1-10, 11 valet, 12 cavalier, 13 dame, 14 roi),
-   56-76 les atouts 1 à 21, 77 l'Excuse. Enseignes : 0 pique, 1 cœur, 2 carreau, 3 trèfle (comme cartes-faces.js). ===== */
-const TarotFaces=(function(){
+/* ===== Le tarot des saisons (26/10, Florian : « go pour les saisons »). Les 4 couleurs sont les 4 saisons :
+   Printemps (fleur, rose), Été (soleil, jaune), Automne (feuille, orange), Hiver (flocon, bleu).
+   Les cartes 1 à 10 restent classiques : le symbole répété autant de fois que la valeur, aux places d'un vrai jeu.
+   Même matière que cartes-faces.js : papier grainé et toilé, liseré doré, ornements Vallée, reflet (définitions cf-*).
+   Figures : le personnage de la Vallée en pied dans le cadre doré (cartes/tarot/<r|d|c|v>-<saison>.webp).
+   Atouts et Excuse : une scène de la Vallée avec eux (cartes/tarot/atout-NN.webp, excuse.webp), numéro en médaillon.
+   Numéros : 0-55 les saisons (saison × 14 + rang − 1 ; 11 valet, 12 cavalier, 13 dame, 14 roi), 56-76 atouts 1-21, 77 Excuse. ===== */
+const SaisonsFaces=(function(){
   const INDEX="Georgia, 'Noto Serif', 'Times New Roman', serif";
-  const NOMS=['pique','cœur','carreau','trèfle'], FICHIER=['pique','coeur','carreau','trefle'];
-  const SCENES=['Veillée','Premiers pas','Rosée','Source','Matin clair','Ruisseau','Verger','Plein midi','Sieste','Colline','Chemin creux',
-    'Clairière',"Fin d'après-midi",'Soleil bas','Étang','Feu du soir','Dernière lueur','Braises','Première neige',"Ciel d'hiver",'Étoiles sans batterie','Tout dort'];
-  /* les portraits de cavaliers déjà déposés dans cartes/tarot (aucun pour l'instant) */
-  const portraits=[];
-  const chemin='cartes/tarot/';
+  const SAISONS=['printemps','été','automne','hiver'], FICHIER=['printemps','ete','automne','hiver'];
+  const NOMS_S=['Printemps','Été','Automne','Hiver'];
+  const ENCRE=['#B8325E','#B07A06','#C2501A','#2A63A6'], TRAIT=['#6E1634','#6A4A00','#6E2A08','#123B6A'];
+  const LETTRE={1:'A',11:'V',12:'C',13:'D',14:'R'};
+  const chemin='cartes/tarot-saisons/';
+  const figures=['r-automne','d-printemps'];   // les portraits déjà rendus (PC51, NoobAI, 26/10)
+  const atouts=['atout-01','atout-06','atout-19','excuse'];   // les scènes déjà rendues (les autres attendent PC51 : fenêtre sombre)
+  const SCENES=['Tout dort','Premiers pas','Rosée','Source','Matin clair','Ruisseau','Verger','Plein midi','Sieste','Colline','Chemin creux',
+    'Clairière',"Fin d'après-midi",'Soleil bas','Étang','Feu du soir','Dernière lueur','Braises','Première neige',"Ciel d'hiver",'Étoiles sans batterie','Veillée'];
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  /* repris de cartes-faces.js : les enseignes, l'ornement de coin, le papier et le reflet */
-  const FORME=[
-    '<path d="M50 3C50 3 95 33 95 60C95 74 85 83 72 83C63 83 56 79 53 73C54 83 58 91 67 97H33C42 91 46 83 47 73C44 79 37 83 28 83C15 83 5 74 5 60C5 33 50 3 50 3Z"/>',
-    '<path d="M50 94C50 94 5 63 5 33C5 16 17 5 31 5C41 5 47 11 50 20C53 11 59 5 69 5C83 5 95 16 95 33C95 63 50 94 50 94Z"/>',
-    '<path d="M50 2Q69 29 91 50Q69 71 50 98Q31 71 9 50Q31 29 50 2Z"/>',
-    '<circle cx="50" cy="27" r="21"/><circle cx="26" cy="58" r="21"/><circle cx="74" cy="58" r="21"/><circle cx="50" cy="52" r="13"/><path d="M46 58C46 77 41 88 31 97H69C59 88 54 77 54 58Z"/>'
-  ];
-  const rougeDe=s=>s===1||s===2;
-  function enseigne(s,x,y,t){
-    const r=rougeDe(s);
-    return `<g transform="translate(${x-t/2} ${y-t/2}) scale(${t/100})">
-      <g fill="url(#cf-${r?'rouge':'noir'})" stroke="${r?'#6E0A14':'#05080E'}" stroke-width="3.5" stroke-linejoin="round">${FORME[s]}</g>
-      <ellipse cx="34" cy="32" rx="11" ry="6" transform="rotate(-35 34 32)" fill="#fff" fill-opacity=".5"/></g>`;
+
+  /* Les quatre symboles, dessinés dans une boîte de 100 × 100 : une silhouette franche, lisible même petite. */
+  function symbole(s){
+    if(s===0){ // fleur : cinq pétales ronds et un cœur doré
+      const p=[0,72,144,216,288].map(a=>`<ellipse cx="50" cy="27" rx="17" ry="22" transform="rotate(${a} 50 52)"/>`).join('');
+      return `<g fill="url(#sf-g0)" stroke="${TRAIT[0]}" stroke-width="3.5">${p}</g><circle cx="50" cy="52" r="13" fill="#F6C945" stroke="#8A5A00" stroke-width="3"/>`;
+    }
+    if(s===1){ // soleil : disque et douze rayons
+      const r=[...Array(12)].map((_,k)=>`<path d="M50 2L56 18L44 18Z" transform="rotate(${k*30} 50 50)"/>`).join('');
+      return `<g fill="url(#sf-g1)" stroke="${TRAIT[1]}" stroke-width="2.5" stroke-linejoin="round">${r}<circle cx="50" cy="50" r="26"/></g>`;
+    }
+    if(s===2){ // feuille d'érable
+      return `<path d="M50 4L58 22L72 16L68 34L88 30L78 46L94 54L74 60L80 74L60 68L54 84L50 74L46 84L40 68L20 74L26 60L6 54L22 46L12 30L32 34L28 16L42 22Z" fill="url(#sf-g2)" stroke="${TRAIT[2]}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M50 30V97" stroke="${TRAIT[2]}" stroke-width="4.5" stroke-linecap="round"/><path d="M50 60L70 46M50 60L30 46" stroke="${TRAIT[2]}" stroke-width="2.4" stroke-linecap="round" fill="none"/>`;
+    }
+    // flocon : six branches à petites pointes
+    const b=[...Array(6)].map((_,k)=>`<g transform="rotate(${k*60} 50 50)"><path d="M50 50V6M50 20L39 11M50 20L61 11M50 33L41 26M50 33L59 26"/></g>`).join('');
+    return `<g stroke="${TRAIT[3]}" stroke-width="10" stroke-linecap="round" fill="none">${b}</g><g stroke="url(#sf-g3)" stroke-width="6" stroke-linecap="round" fill="none">${b}</g><circle cx="50" cy="50" r="8" fill="#DDEEFF" stroke="${TRAIT[3]}" stroke-width="2.5"/>`;
   }
+  function sym(s,x,y,t,tete){
+    return `<g transform="translate(${x-t/2} ${y-t/2}) scale(${t/100})${tete?' rotate(180 50 50)':''}">${symbole(s)}
+      <ellipse cx="36" cy="30" rx="10" ry="5" transform="rotate(-35 36 30)" fill="#fff" fill-opacity=".45"/></g>`;
+  }
+  function installer(){
+    if(document.getElementById('sf-defs')||!document.body) return;
+    const d=document.createElement('div');
+    d.innerHTML=`<svg id="sf-defs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <linearGradient id="sf-g0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7A6C2"/><stop offset=".6" stop-color="#E06890"/><stop offset="1" stop-color="#B8325E"/></linearGradient>
+      <linearGradient id="sf-g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE680"/><stop offset=".55" stop-color="#F6C02A"/><stop offset="1" stop-color="#D9920A"/></linearGradient>
+      <linearGradient id="sf-g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6A04A"/><stop offset=".6" stop-color="#E26A1E"/><stop offset="1" stop-color="#B8460E"/></linearGradient>
+      <linearGradient id="sf-g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A8D4FF"/><stop offset=".6" stop-color="#5E9EE8"/><stop offset="1" stop-color="#2F6FB0"/></linearGradient>
+      <clipPath id="sf-fenetre"><rect x="22" y="22" width="206" height="308" rx="8"/></clipPath>
+      <clipPath id="sf-portrait"><rect x="60" y="30" width="130" height="290" rx="7"/></clipPath>
+      <radialGradient id="sf-medaille" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFFDF4"/><stop offset=".7" stop-color="#F6E6C0"/><stop offset="1" stop-color="#E4C98E"/></radialGradient>
+      <linearGradient id="sf-ruban" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8E4"/><stop offset="1" stop-color="#EEDCB0"/></linearGradient>
+    </defs></svg>`;
+    document.body.appendChild(d.firstElementChild);
+  }
+
+  /* repris de cartes-faces.js : le papier, le reflet, l'ornement de coin, la couronne de l'as, les places */
+  const papier=`<rect x="1.5" y="4.5" width="247" height="347" rx="16" fill="#C9B387"/>
+    <rect x="1.5" y="3" width="247" height="347" rx="16" fill="#E2D2AC"/>
+    <rect x="1.5" y="1.5" width="247" height="347" rx="16" fill="url(#cf-papier)" stroke="#8F7A52" stroke-width="1.6"/>
+    <rect x="1.5" y="1.5" width="247" height="347" rx="16" fill="url(#cf-matiere)"/>
+    <rect x="9" y="9" width="232" height="332" rx="11" fill="none" stroke="url(#cf-or)" stroke-width="2.4"/>
+    <rect x="12.5" y="12.5" width="225" height="325" rx="9" fill="none" stroke="#B88A2E" stroke-opacity=".45" stroke-width=".8"/>`;
+  const reflet=`<rect x="1.5" y="1.5" width="247" height="347" rx="16" fill="url(#cf-reflet)"/>`;
+  const ouvre=(w,nom)=>`<svg class="cf" width="${w}" height="${Math.round(w*1.4)}" viewBox="0 0 250 352" role="img" aria-label="${esc(nom)}">`;
   function ornement(x,y,rot){
     return `<g transform="translate(${x} ${y}) rotate(${rot})">
       <path d="M0 0 Q18 4 30 -8 Q40 -18 54 -14" stroke="#6E7F3E" stroke-width="2.2" fill="none" stroke-linecap="round"/>
@@ -273,99 +309,88 @@ const TarotFaces=(function(){
       <rect x="53" y="-6" width="6" height="9" rx="1.2" fill="#FFF3C8"/>
       <rect x="49" y="6" width="14" height="2.6" rx="1" fill="#7A5418"/></g>`;
   }
-  const papier=`<rect x="1.5" y="4.5" width="247" height="347" rx="16" fill="#C9B387"/>
-    <rect x="1.5" y="3" width="247" height="347" rx="16" fill="#E2D2AC"/>
-    <rect x="1.5" y="1.5" width="247" height="347" rx="16" fill="url(#cf-papier)" stroke="#8F7A52" stroke-width="1.6"/>
-    <rect x="1.5" y="1.5" width="247" height="347" rx="16" fill="url(#cf-matiere)"/>
-    <rect x="9" y="9" width="232" height="332" rx="11" fill="none" stroke="url(#cf-or)" stroke-width="2.4"/>
-    <rect x="12.5" y="12.5" width="225" height="325" rx="9" fill="none" stroke="#B88A2E" stroke-opacity=".45" stroke-width=".8"/>`;
-  const reflet=`<rect x="1.5" y="1.5" width="247" height="347" rx="16" fill="url(#cf-reflet)"/>`;
-  const ouvre=(w,nom)=>`<svg class="cf" width="${w}" height="${Math.round(w*1.4)}" viewBox="0 0 250 352" role="img" aria-label="${esc(nom)}">`;
+  function couronne(){
+    const feuilles=[...Array(18)].map((_,k)=>{ const a=k/18*2*Math.PI, x=125+Math.cos(a)*86, y=175+Math.sin(a)*96, r=a*180/Math.PI+90;
+      return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="11" ry="4.6" transform="rotate(${r.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${k%2?'#7E9C5B':'#94B06A'}" stroke="#4E6630" stroke-width="1"/>`; }).join('');
+    const baies=[0,3,6,9,12,15].map(k=>{ const a=k/18*2*Math.PI+.17; return `<circle cx="${(125+Math.cos(a)*88).toFixed(1)}" cy="${(175+Math.sin(a)*98).toFixed(1)}" r="4" fill="#D9604A" stroke="#6E1A14" stroke-width="1"/>`; }).join('');
+    return `<ellipse cx="125" cy="175" rx="86" ry="96" fill="none" stroke="#B88A2E" stroke-opacity=".5" stroke-width="1.2"/>${feuilles}${baies}`;
+  }
+  /* Les places d'un jeu classique, réparties sur toute la hauteur de la carte (Florian, 26/10 : le 10 était tassé) :
+     deux colonnes de quatre rangées régulières (64, 138, 212, 286) ; au 10, les deux du milieu entre les rangées 1-2 et 3-4. */
+  const G=80, C=125, D=170, Hh=64, B=286, M=175, R2=138, R3=212;
+  const PLACES={
+    2:[[C,Hh],[C,B]], 3:[[C,Hh],[C,M],[C,B]],
+    4:[[G,Hh],[D,Hh],[G,B],[D,B]], 5:[[G,Hh],[D,Hh],[C,M],[G,B],[D,B]],
+    6:[[G,Hh],[D,Hh],[G,M],[D,M],[G,B],[D,B]],
+    7:[[G,Hh],[D,Hh],[C,(Hh+M)/2],[G,M],[D,M],[G,B],[D,B]],
+    8:[[G,Hh],[D,Hh],[C,(Hh+M)/2],[G,M],[D,M],[C,(M+B)/2],[G,B],[D,B]],
+    9:[[G,Hh],[D,Hh],[G,R2],[D,R2],[C,M],[G,R3],[D,R3],[G,B],[D,B]],
+    10:[[G,Hh],[D,Hh],[C,(Hh+R2)/2],[G,R2],[D,R2],[G,R3],[D,R3],[C,(R3+B)/2],[G,B],[D,B]]
+  };
+  const TAILLE={2:50,3:48,4:50,5:48,6:46,7:44,8:42,9:40,10:38};
+  /* l'index peint : la valeur dans l'encre de la saison, le symbole dessous */
+  function coin(L,s){
+    const dix=L==='10';
+    return `<text x="31" y="60" font-size="${dix?48:54}" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="${ENCRE[s]}" stroke="${TRAIT[s]}" stroke-width="1.2"${dix?' textLength="48" lengthAdjust="spacingAndGlyphs"':''}>${L}</text>${sym(s,31,90,34)}`;
+  }
+  const coins=(L,s)=>coin(L,s)+`<g transform="rotate(180 125 175)">${coin(L,s)}</g>`+ornement(186,40,0)+`<g transform="rotate(180 125 175)">${ornement(186,40,0)}</g>`;
 
-  /* les définitions propres au tarot : la fenêtre de la scène, le médaillon, le ruban */
-  function installer(){
-    if(document.getElementById('tf-defs')||!document.body) return;
-    const d=document.createElement('div');
-    d.innerHTML=`<svg id="tf-defs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-      <clipPath id="tf-fenetre"><rect x="22" y="22" width="206" height="308" rx="8"/></clipPath>
-      <radialGradient id="tf-medaille" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFFDF4"/><stop offset=".7" stop-color="#F6E6C0"/><stop offset="1" stop-color="#E4C98E"/></radialGradient>
-      <linearGradient id="tf-ruban" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8E4"/><stop offset="1" stop-color="#EEDCB0"/></linearGradient>
-      <linearGradient id="tf-voile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A0E04" stop-opacity=".28"/><stop offset=".22" stop-color="#1A0E04" stop-opacity="0"/><stop offset=".8" stop-color="#1A0E04" stop-opacity="0"/><stop offset="1" stop-color="#1A0E04" stop-opacity=".3"/></linearGradient>
-    </defs></svg>`;
-    document.body.appendChild(d.firstElementChild);
+  /* la figure : le personnage en pied, une seule tête, dans le cadre doré ; son nom de saison sur un ruban */
+  function figure(r,s,w,nom){
+    const L=LETTRE[r], cle=`${L.toLowerCase()}-${FICHIER[s]}`;
+    const dedans=figures.includes(cle)
+      ?`<image href="${chemin}${cle}.webp" x="60" y="30" width="130" height="290" preserveAspectRatio="xMidYMid slice" clip-path="url(#sf-portrait)"/>`
+      :`<rect x="60" y="30" width="130" height="290" fill="#F4E6C6"/>${sym(s,125,150,90)}<text x="125" y="268" font-size="70" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="${ENCRE[s]}" stroke="${TRAIT[s]}">${L}</text>`;
+    const coinF=`<text x="29" y="56" font-size="46" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="${ENCRE[s]}" stroke="${TRAIT[s]}" stroke-width="1.2">${L}</text>${sym(s,29,84,30)}`;
+    return `${ouvre(w,nom)}${papier}${coinF}<g transform="rotate(180 125 175)">${coinF}</g>
+      <rect x="54" y="24" width="142" height="302" rx="10" fill="#5A3A1E"/>${dedans}
+      <rect x="54" y="24" width="142" height="302" rx="10" fill="none" stroke="url(#cf-or)" stroke-width="4.5"/>
+      <rect x="60" y="30" width="130" height="290" rx="7" fill="none" stroke="#FFF1C8" stroke-opacity=".6" stroke-width="1"/>${reflet}</svg>`;
   }
 
-  /* l'étoile de l'Excuse */
+  /* les atouts et l'Excuse (même dessin que la planche validée le 25/10) */
   const etoile=(x,y,r)=>{ const p=[...Array(10)].map((_,k)=>{ const a=-Math.PI/2+k*Math.PI/5, q=k%2?r*.45:r; return `${(x+Math.cos(a)*q).toFixed(1)},${(y+Math.sin(a)*q).toFixed(1)}`; }).join(' ');
     return `<polygon points="${p}" fill="url(#cf-or)" stroke="#7A5418" stroke-width="1.6" stroke-linejoin="round"/>`; };
-  /* le médaillon du coin : numéro en grand, ou l'étoile de l'Excuse */
   function medaillon(n){
     const dedans=n===0?etoile(46,50,22)
-      :`<text x="46" y="${n>9?63:65}" font-size="${n>9?38:44}" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="#3A2210" stroke="#1E1006" stroke-width=".8"${n>9?' textLength="44" lengthAdjust="spacingAndGlyphs"':''}>${n}</text>`;
+      :`<text x="46" y="${n>9?63:65}" font-size="${n>9?38:44}" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="#3A2210" stroke="#1E1006" stroke-width=".8"${n>9?' textLength="44" lengthAdjust="spacingAndGlyphs"':''}>${n}</text>${n===6||n===9?'<rect x="37" y="69" width="18" height="3.4" rx="1.7" fill="#3A2210"/>':''}`;   // 6 et 9 soulignés : lisibles à l'envers
     return `<circle cx="46" cy="50" r="31" fill="#3A2010" fill-opacity=".35" transform="translate(1.5 2.5)"/>
-      <circle cx="46" cy="50" r="31" fill="url(#tf-medaille)" stroke="url(#cf-or)" stroke-width="4.5"/>
+      <circle cx="46" cy="50" r="31" fill="url(#sf-medaille)" stroke="url(#cf-or)" stroke-width="4.5"/>
       <circle cx="46" cy="50" r="25.5" fill="none" stroke="#B88A2E" stroke-opacity=".7" stroke-width="1"/>${dedans}`;
   }
-  function scene(n,nom){
-    const f=n===0?'excuse':'atout-'+String(n).padStart(2,'0');
-    const t=nom.length, fs=t>16?15:t>11?17:19;
-    return `<rect x="22" y="22" width="206" height="308" rx="8" fill="#5A3A1E"/>
-      <image href="${chemin}${f}.webp" x="22" y="22" width="206" height="308" preserveAspectRatio="xMidYMid slice" clip-path="url(#tf-fenetre)"/>
-      <rect x="22" y="22" width="206" height="308" rx="8" fill="url(#tf-voile)"/>
+  function atout(n,w,nom){
+    const f=n===0?'excuse':'atout-'+String(n).padStart(2,'0'), titre=n===0?'Excuse':SCENES[n], t=titre.length, fs=t>16?15:t>11?17:19;
+    const img=atouts.includes(f)?`<image href="${chemin}${f}.webp" x="22" y="22" width="206" height="308" preserveAspectRatio="xMidYMid slice" clip-path="url(#sf-fenetre)"/>`:'';
+    return `${ouvre(w,nom)}${papier}<rect x="22" y="22" width="206" height="308" rx="8" fill="#5A3A1E"/>${img}
       <rect x="22" y="22" width="206" height="308" rx="8" fill="none" stroke="url(#cf-or)" stroke-width="5"/>
       <rect x="27.5" y="27.5" width="195" height="297" rx="5" fill="none" stroke="#FFF1C8" stroke-opacity=".55" stroke-width="1"/>
-      <g transform="translate(125 258)"><path d="M-78 -15H78L70 0L78 15H-78L-70 0Z" fill="url(#tf-ruban)" stroke="#8A5A22" stroke-width="2"/>
-      <text y="6" font-size="${fs}" text-anchor="middle" font-family="${INDEX}" font-style="italic" fill="#4A2A12"${t>16?' textLength="132" lengthAdjust="spacingAndGlyphs"':''}>${esc(nom)}</text></g>`;
-  }
-  function atout(n,w,label){
-    const nom=n===0?'Excuse':SCENES[n];
-    return `${ouvre(w,label)}${papier}${scene(n,nom)}${medaillon(n)}<g transform="rotate(180 125 176)">${medaillon(n)}</g>${reflet}</svg>`;
+      <g transform="translate(125 258)"><path d="M-78 -15H78L70 0L78 15H-78L-70 0Z" fill="url(#sf-ruban)" stroke="#8A5A22" stroke-width="2"/>
+      <text y="6" font-size="${fs}" text-anchor="middle" font-family="${INDEX}" font-style="italic" fill="#4A2A12"${t>16?' textLength="132" lengthAdjust="spacingAndGlyphs"':''}>${esc(titre)}</text></g>
+      ${medaillon(n)}<g transform="rotate(180 125 176)">${medaillon(n)}</g>${reflet}</svg>`;
   }
 
-  /* le cavalier : même cadre doré à deux têtes que les figures de cartes-faces.js */
-  function teteCheval(col){
-    return `<path d="M104 97L106 83C99 77 97 66 103 58L101 46L112 53C119 49 128 50 135 54C147 61 156 72 158 84C159 91 153 94 147 92L137 86C131 86 127 89 126 97Z"
-      fill="url(#cf-or)" stroke="${col}" stroke-width="2.6" stroke-linejoin="round"/>
-      <path d="M109 55C104 66 104 78 109 90M115 54C111 63 111 72 114 80" stroke="${col}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-      <path d="M140 87C142 78 150 74 156 78" stroke="${col}" stroke-width="1.4" fill="none"/>
-      <circle cx="133" cy="66" r="3" fill="${col}"/><circle cx="152" cy="85" r="1.7" fill="${col}"/>`;
-  }
-  function cavalier(s,w,label){
-    const rouge=rougeDe(s), col=rouge?'#B3121F':'#141A24', cle='c-'+FICHIER[s];
-    const moitie=portraits.includes(cle)
-      ?`<image href="${chemin}${cle}.webp" x="62" y="36" width="126" height="139" preserveAspectRatio="xMidYMin slice" clip-path="url(#cf-haut)"/>`
-      :`${teteCheval(col)}<text x="106" y="160" font-size="66" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="url(#cf-${rouge?'rouge':'noir'})" stroke="${col}" stroke-width="1">C</text>${enseigne(s,158,138,40)}`;
-    const coin=`<text x="31" y="60" font-size="54" text-anchor="middle" font-family="${INDEX}" font-weight="700" fill="url(#cf-${rouge?'rouge':'noir'})" stroke="${rouge?'#6E0A14':'#05080E'}" stroke-width="1.2">C</text>${enseigne(s,31,88,32)}`;
-    return `${ouvre(w,label)}${papier}${coin}<g transform="rotate(180 125 175)">${coin}</g>${ornement(186,40,0)}<g transform="rotate(180 125 175)">${ornement(186,40,0)}</g>
-      <rect x="54" y="28" width="142" height="294" rx="9" fill="url(#cf-cadre-${rouge?'r':'n'})" stroke="url(#cf-or)" stroke-width="3"/>
-      ${moitie}<g transform="rotate(180 125 175)">${moitie}</g>
-      <rect x="62" y="36" width="126" height="278" rx="5" fill="none" stroke="url(#cf-or)" stroke-width="2.4"/>
-      <line x1="62" y1="175" x2="188" y2="175" stroke="url(#cf-or)" stroke-width="2.4"/>
-      ${enseigne(s,170,160,22)}<g transform="rotate(180 125 175)">${enseigne(s,170,160,22)}</g>${reflet}</svg>`;
-  }
-
-  /* le nom d'une carte, en toutes lettres (bulles, fin de donne, lecteurs d'écran) */
   function nom(id){
     if(id===77) return "l'Excuse";
     if(id>=56) return id===56?'le petit':"l'atout "+(id-55);
-    const s=Math.floor(id/14), r=id%14+1;
-    return (r===1?"l'as":r===11?'le valet':r===12?'le cavalier':r===13?'la dame':r===14?'le roi':'le '+r)+' de '+NOMS[s];
+    const s=Math.floor(id/14), r=id%14+1, de=s===2?"d'Automne":s===3?"d'Hiver":s===1?"d'Été":'de Printemps';
+    return (r===1?"l'as":r===11?'le valet':r===12?'le cavalier':r===13?'la dame':r===14?'le roi':'le '+r)+' '+de;
   }
   function face(id,w){
     if(id>=56) return atout(id===77?0:id-55,w,nom(id));
-    const s=Math.floor(id/14), r=id%14+1;
-    if(r===12) return cavalier(s,w,nom(id));
-    return CartesFaces.face({rang:r<=11?r:r===13?12:13,enseigne:s},w,nom(id));
+    const s=Math.floor(id/14), r=id%14+1, L=LETTRE[r]||String(r);
+    if(r>10) return figure(r,s,w,nom(id));
+    const milieu=r===1?couronne()+sym(s,125,175,112):PLACES[r].map(([x,y])=>sym(s,x,y,TAILLE[r],y>M)).join('');
+    return `${ouvre(w,nom(id))}${papier}${coins(L,s)}${milieu}${reflet}</svg>`;
   }
   if(document.body) installer(); else addEventListener('DOMContentLoaded',installer);
-  return {face,nom,SCENES,installer,portraits};
+  return {face,nom,installer,figures,atouts,SAISONS,NOMS_S,SCENES};
 })();
 </script>
 <script>
 /* ===================== LE MOTEUR : les règles écrites en tête de ce fichier ===================== */
 const EXC=77, PETIT=56, VINGTETUN=76;
-const COULEUR=['pique','cœur','carreau','trèfle'];
-const DU=['du pique','du cœur','du carreau','du trèfle'];
+const COULEUR=['Printemps','Été','Automne','Hiver'];   // les 4 couleurs sont les 4 saisons
+const DE=['de Printemps',"d'Été","d'Automne","d'Hiver"];
 const BOTS=['Hugo','Chloé','Pierre'];   // les trois habitants du village, comme à la belote
 const CONTRATS=['','Petite','Garde','Garde sans','Garde contre'];
 const MULT=[0,1,2,4,6];
@@ -377,14 +402,14 @@ const isBout=c=>c===PETIT||c===VINGTETUN||c===EXC;
 const isRoi=c=>c<56&&rang(c)===14;
 /* valeur en demi-points : bout ou roi 9, dame 7, cavalier 5, valet 3, toute autre carte 1 (91 points en tout) */
 const demi=c=>isBout(c)?9:c<56?({14:9,13:7,12:5,11:3}[rang(c)]||1):1;
-const nomC=c=>TarotFaces.nom(c);
+const nomC=c=>SaisonsFaces.nom(c);
 const clone=o=>JSON.parse(JSON.stringify(o));
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 const SEUILS=n=>n===4?[10,13,15]:[13,15,18];
 const PRIMES=[20,30,40];
 /* la main rangée : atouts du plus fort au plus petit, l'Excuse, puis les couleurs alternées, du roi à l'as */
 function ranger(h){
-  const ord=[0,1,3,2];
+  const ord=[0,1,2,3];
   const k=c=>c===EXC?-100:isAtout(c)?-200+(77-c):ord[coul(c)]*20+(15-rang(c));
   return [...h].sort((a,b)=>k(a)-k(b));
 }
@@ -444,12 +469,12 @@ function legalInfo(hand,trick){
 function refus(info,c){
   const A=b=>"l'atout "+b;
   switch(info.why){
-    case 'fournir': return `Vous avez ${DU[info.lead]} : il faut jouer ${COULEUR[info.lead]}${info.ok.includes(EXC)?" (ou l'Excuse)":''}.`;
+    case 'fournir': return `Vous avez des cartes ${DE[info.lead]} : il faut en jouer une${info.ok.includes(EXC)?" (ou l'Excuse)":''}.`;
     case 'monter': return `Atout demandé : il faut monter plus haut que ${A(info.best)}, vous en avez un plus fort.`;
     case 'pisser': return `Atout demandé : il faut jouer un atout, même plus petit.`;
-    case 'couper': return `Vous n'avez pas ${DU[info.lead]} : il faut couper avec un atout.`;
-    case 'surcouper': return `Vous n'avez pas ${DU[info.lead]} : il faut couper plus haut que ${A(info.best)}.`;
-    case 'souscouper': return `Vous n'avez pas ${DU[info.lead]} : il faut jouer un atout, même plus petit.`;
+    case 'couper': return `Vous n'avez pas de carte ${DE[info.lead]} : il faut couper avec un atout.`;
+    case 'surcouper': return `Vous n'avez pas de carte ${DE[info.lead]} : il faut couper plus haut que ${A(info.best)}.`;
+    case 'souscouper': return `Vous n'avez pas de carte ${DE[info.lead]} : il faut jouer un atout, même plus petit.`;
   }
   return 'Cette carte ne peut pas être jouée maintenant.';
 }
@@ -719,7 +744,7 @@ function versVillage(n,cle){
   try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
     localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
 }
-const carte=(id,w)=>id==null?CartesFaces.dos(w,''):TarotFaces.face(id,w);
+const carte=(id,w)=>id==null?CartesFaces.dos(w,''):SaisonsFaces.face(id,w);
 
 let S=null, V=null, mode=null, flash='', aide='', aideT=null, panel=null, setupN=4, choisies=[], pumpT=null;
 const me=0;
@@ -831,12 +856,12 @@ function helpText(v,info){
   if(v.turn!==v.you) return {t:`${prev}C'est à ${who(v.turn)} de jouer.`,wait:true};
   switch(info.why){
     case null: return {t:prev+'À vous d\'entamer : touchez la carte à jouer.'};
-    case 'fournir': return {t:`Fournissez : jouez ${DU[info.lead].replace('du ','du ')}, la couleur demandée.`};
+    case 'fournir': return {t:`Fournissez : jouez une carte ${DE[info.lead]}, la saison demandée.`};
     case 'monter': return {t:`Atout demandé : montez plus haut que l'atout ${info.best}.`};
     case 'pisser': return {t:`Atout demandé : jouez un atout, même plus petit.`};
-    case 'couper': return {t:`Vous n'avez pas ${DU[info.lead]} : coupez avec un atout.`};
-    case 'surcouper': return {t:`Vous n'avez pas ${DU[info.lead]} : coupez plus haut que l'atout ${info.best}.`};
-    case 'souscouper': return {t:`Vous n'avez pas ${DU[info.lead]} : jouez un atout, même plus petit.`};
+    case 'couper': return {t:`Pas de carte ${DE[info.lead]} : coupez avec un atout.`};
+    case 'surcouper': return {t:`Pas de carte ${DE[info.lead]} : coupez plus haut que l'atout ${info.best}.`};
+    case 'souscouper': return {t:`Pas de carte ${DE[info.lead]} : jouez un atout, même plus petit.`};
   }
   return {t:'Jouez la carte de votre choix : touchez-la.'};
 }
@@ -948,11 +973,11 @@ function rulesHTML(){
   return `<div class="overlay"><div class="panel" role="dialog" aria-label="Les règles">
     <h2>Le tarot en bref</h2>
     <ul>
-      <li>78 cartes : 4 couleurs (roi, dame, <b>cavalier</b>, valet, puis 10 à l'as), 21 <b>atouts</b> (le 21 est le plus fort, le 1 s'appelle le <b>petit</b>) et l'<b>Excuse</b> (l'étoile).</li>
+      <li>78 cartes : 4 <b>saisons</b> (🌸 Printemps, ☀️ Été, 🍁 Automne, ❄️ Hiver) qui jouent le rôle des couleurs : roi, dame, <b>cavalier</b>, valet, puis 10 à l'as ; 21 <b>atouts</b> (le 21 est le plus fort, le 1 s'appelle le <b>petit</b>) et l'<b>Excuse</b> (l'étoile).</li>
       <li>Chacun reçoit 18 cartes ; 6 vont au <b>chien</b>, au milieu.</li>
       <li><b>Enchères</b> : chacun parle une fois. Petite, Garde (× 2), Garde sans le chien (× 4), Garde contre le chien (× 6), ou « je passe ». Celui qui dit le plus fort joue seul contre les autres.</li>
       <li>En petite et en garde, le preneur prend le chien et remet 6 cartes de côté : jamais de roi ni de bout.</li>
-      <li><b>Fournir</b> la couleur demandée. Sinon <b>couper</b> avec un atout, plus fort que celui déjà posé si on peut. À l'atout, il faut <b>monter</b>.</li>
+      <li><b>Fournir</b> la saison demandée. Sinon <b>couper</b> avec un atout, plus fort que celui déjà posé si on peut. À l'atout, il faut <b>monter</b>.</li>
       <li>L'<b>Excuse</b> se joue quand on veut ; elle ne gagne pas le pli mais revient à son camp.</li>
       <li>Les 3 <b>bouts</b> (le petit, le 21, l'Excuse) baissent les points à faire : 56 sans bout, 51 avec un, 41 avec deux, 36 avec les trois. Il y a 91 points en tout.</li>
       <li><b>Petit au bout</b> : le petit dans le dernier pli rapporte une prime. <b>Poignée</b> : 10 atouts montrés avant de jouer = prime de 20.</li>
