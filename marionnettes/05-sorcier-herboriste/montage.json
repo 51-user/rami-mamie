@@ -5,6 +5,11 @@
  "dessin": "pieces",
  "regard": "gauche",
  "hauteur_ecran": 260,
+ "fond": [
+  150,
+  190,
+  230
+ ],
  "invite": "a cute old wizard with a huge floppy brown hat, long grey beard, green robe, holding a blue potion bottle",
  "mouvement": {
   "mode": "marche",
@@ -240,63 +245,63 @@
  "placement": {
   "corps": [
    293.13,
-   563.84,
-   293.74,
-   513.0
+   559.66,
+   300.43,
+   554.84
   ],
   "tete": [
-   326.72,
-   262.39,
-   238.97,
-   166.94
+   327.49,
+   263.15,
+   237.06,
+   165.03
   ],
   "barbe": [
-   315.23,
-   385.79,
-   127.13,
-   174.06
+   314.04,
+   383.71,
+   139.31,
+   180.6
   ],
   "chapeau": [
-   107.45,
+   108.39,
    56.54,
-   596.35,
+   594.49,
    432.36
   ],
   "bras-loin": [
-   221.45,
-   441.19,
-   119.05,
-   362.89
+   189.39,
+   437.76,
+   168.85,
+   365.75
   ],
   "bras-proche": [
-   499.95,
-   679.44,
-   104.43,
-   245.83
+   506.05,
+   680.2,
+   99.09,
+   244.69
   ],
   "jambe-loin": [
-   317.17,
+   317.03,
    1057.75,
-   84.07,
+   85.2,
    74.48
   ],
   "jambe-proche": [
-   490.55,
-   1056.19,
-   72.21,
-   87.73
+   490.7,
+   1055.89,
+   72.06,
+   88.03
   ]
  },
  "controle": {
-  "corps": "bonne — graine 41, bonne (recouvrement 0.96, couleur 4)",
-  "tete": "bonne — graine 41, bonne (recouvrement 0.93, couleur 4)",
-  "barbe": "bonne — graine 41, bonne (recouvrement 0.86, couleur 7)",
-  "chapeau": "bonne — graine 41, bonne (recouvrement 0.89, couleur 15)",
-  "bras-loin": "bonne — graine 41, bonne (recouvrement 0.96, couleur 6)",
-  "bras-proche": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
+  "corps": "bonne — graine 41, bonne (recouvrement 0.96, couleur 6)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.98, couleur 1)",
+  "barbe": "bonne — graine 41, bonne (recouvrement 0.97, couleur 5)",
+  "chapeau": "bonne — graine 41, bonne (recouvrement 0.87, couleur 2)",
+  "bras-loin": "bonne — graine 41, bonne (recouvrement 0.91, couleur 10)",
+  "bras-proche": "bonne — graine 41, bonne (recouvrement 0.95, couleur 5)",
   "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.91, couleur 6)",
-  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.96, couleur 2)"
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.97, couleur 2)"
  },
- "temps_pc51_s": 315,
- "temps_total_s": 336
+ "temps_pc51_s": 281,
+ "temps_total_s": 308
 }
