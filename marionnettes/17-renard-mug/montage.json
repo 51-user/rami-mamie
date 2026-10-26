@@ -43,17 +43,22 @@
    "priorite": 5,
    "zone": {
     "ellipse": [
-     385,
-     745,
-     106,
-     92
+     412,
+     715,
+     82,
+     62
     ]
    },
    "pivot": [
-    390,
-    820
+    400,
+    775
    ],
-   "texte": "the grumpy face of a cute orange fox with half closed blue eyes, dark ear tips, head only"
+   "attache": [
+    400,
+    865
+   ],
+   "texte": "the clean grumpy face of a cute orange fox, half closed blue eyes, white muzzle, dark ear tips, head only",
+   "negatif": "mug, cup, scarf, blue, hands"
   },
   {
    "nom": "echarpe",
@@ -64,15 +69,15 @@
    "amplitude": 9,
    "retard": 1.4,
    "zone": {
-    "boite": [
-     462,
-     850,
-     535,
-     955
+    "ellipse": [
+     492,
+     905,
+     32,
+     52
     ]
    },
    "pivot": [
-    470,
+    485,
     856
    ],
    "texte": "the hanging fringed end of a blue knitted scarf, alone"
@@ -215,22 +220,22 @@
  ],
  "placement": {
   "corps": [
-   315.77,
-   832.42,
-   192.28,
-   241.17
+   315.96,
+   837.89,
+   187.17,
+   234.97
   ],
   "tete": [
-   280.17,
-   655.09,
-   211.91,
-   184.57
+   329.04,
+   652.74,
+   165.43,
+   126.76
   ],
   "echarpe": [
-   460.76,
-   848.23,
-   76.17,
-   107.56
+   459.57,
+   851.15,
+   66.31,
+   106.03
   ],
   "tasse": [
    263.19,
@@ -239,10 +244,10 @@
    123.43
   ],
   "queue": [
-   485.97,
+   487.25,
    899.61,
-   200.26,
-   149.48
+   202.51,
+   149.8
   ],
   "jambe-loin": [
    317.83,
@@ -258,14 +263,14 @@
   ]
  },
  "controle": {
-  "corps": "bonne — graine 41, bonne (recouvrement 0.85, couleur 9)",
-  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 9)",
-  "echarpe": "bonne — graine 41, bonne (recouvrement 0.95, couleur 4)",
+  "corps": "bonne — graine 41, bonne (recouvrement 0.85, couleur 6)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 7)",
+  "echarpe": "bonne — graine 41, bonne (recouvrement 0.95, couleur 6)",
   "tasse": "bonne — graine 41, bonne (recouvrement 0.79, couleur 4)",
   "queue": "bonne — graine 41, bonne (recouvrement 0.96, couleur 10)",
   "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
   "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.94, couleur 3)"
  },
- "temps_pc51_s": 227,
- "temps_total_s": 232
+ "temps_pc51_s": 259,
+ "temps_total_s": 263
 }

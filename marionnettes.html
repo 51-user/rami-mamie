@@ -74,6 +74,8 @@ async function chargerPerso(id) {
   const largeur = (x1 - x0) * f.echelle;
   f.trajet = W + largeur + 200;
   f.duree = f.trajet / (M.vitesse || 90) + (f.arret ? f.arret.duree : 0);
+  // assis (le pianiste) : il reste à sa place ; sa « halte » dure tout le temps et ses gestes jouent en continu
+  if (M.mode === "assis") { f.arret = { debut: 0, duree: (f.arret && f.arret.duree) || 20 }; f.duree = f.arret.duree; }
   return f;
 }
 
@@ -272,7 +274,7 @@ function dessiner(t) {
     const tour = Math.floor(tt / f.duree), loc = tt % f.duree, dir = tour % 2 ? -1 : 1;
     const s = etat(f, loc);
     const larg = (f.emprise.x1 - f.emprise.x0) * f.echelle;
-    const x = dir > 0 ? -larg / 2 - 80 + s.d : W + larg / 2 + 80 - s.d;
+    const x = (f.mouvement || {}).mode === "assis" ? W / 2 : dir > 0 ? -larg / 2 - 80 + s.d : W + larg / 2 + 80 - s.d;
     const sol = PERSOS.length > 1 ? 560 + (i % 4) * 42 : 668;
     dessinerPerso(f, loc, x, sol, dir);
   });

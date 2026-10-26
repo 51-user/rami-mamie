@@ -126,41 +126,34 @@
    "role": "bras-proche",
    "parent": "corps",
    "z": 6,
-   "priorite": 2,
+   "priorite": 7,
    "zone": {
-    "segment": [
-     440,
-     852,
-     822,
-     642,
-     46
+    "union": [
+     {
+      "segment": [
+       440,
+       852,
+       822,
+       642,
+       46
+      ]
+     },
+     {
+      "ellipse": [
+       552,
+       736,
+       40,
+       48
+      ]
+     }
     ]
    },
    "pivot": [
     555,
     738
    ],
-   "texte": "a long straight wooden stick, alone"
-  },
-  {
-   "nom": "main",
-   "role": "fixe",
-   "parent": "baton",
-   "z": 7,
-   "priorite": 3,
-   "zone": {
-    "ellipse": [
-     552,
-     736,
-     40,
-     48
-    ]
-   },
-   "pivot": [
-    552,
-    736
-   ],
-   "texte": "a red mitten hand gripping, alone"
+   "texte": "a red mitten hand gripping a long straight brown wooden stick, alone",
+   "negatif": "blue, smear, stain"
   },
   {
    "nom": "jambe-loin",
@@ -270,10 +263,10 @@
    149.63
   ],
   "barbe": [
-   281.1,
+   283.94,
    738.77,
-   167.09,
-   196.67
+   164.57,
+   193.21
   ],
   "bonnet": [
    309.1,
@@ -288,16 +281,10 @@
    229.56
   ],
   "baton": [
-   422.78,
-   626.02,
-   395.09,
-   257.77
-  ],
-  "main": [
-   511.2,
-   687.65,
-   81.67,
-   97.81
+   418.62,
+   627.25,
+   407.71,
+   253.3
   ],
   "jambe-loin": [
    293.51,
@@ -315,14 +302,13 @@
  "controle": {
   "corps": "bonne — graine 41, bonne (recouvrement 0.88, couleur 1)",
   "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 5)",
-  "barbe": "bonne — graine 41, bonne (recouvrement 0.88, couleur 11)",
+  "barbe": "bonne — graine 41, bonne (recouvrement 0.96, couleur 4)",
   "bonnet": "bonne — graine 41, bonne (recouvrement 0.95, couleur 7)",
   "lanterne": "bonne — graine 41, bonne (recouvrement 0.96, couleur 5)",
-  "baton": "bonne — graine 41, bonne (recouvrement 0.88, couleur 12)",
-  "main": "bonne — graine 41, bonne (recouvrement 0.97, couleur 4)",
+  "baton": "bonne — graine 41, bonne (recouvrement 0.91, couleur 11)",
   "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.89, couleur 15)",
   "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.91, couleur 11)"
  },
- "temps_pc51_s": 309,
- "temps_total_s": 318
+ "temps_pc51_s": 316,
+ "temps_total_s": 330
 }
