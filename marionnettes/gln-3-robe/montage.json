@@ -5,6 +5,7 @@
  "dessin": "pieces",
  "regard": "gauche",
  "hauteur_ecran": 340,
+ "recouvrement": 14,
  "modele": "animagine",
  "prefixe_ordre": "gln-perso-robe",
  "pre": "a single cutout piece of an elegant adult 1930s woman, slender adult proportions, ",
@@ -203,50 +204,50 @@
  ],
  "placement": {
   "corps": [
-   294.53,
-   142.47,
-   231.62,
-   416.0
+   278.88,
+   138.04,
+   253.37,
+   433.56
   ],
   "tete": [
-   342.07,
-   28.53,
-   113.67,
-   143.42
+   342.14,
+   27.63,
+   127.91,
+   154.14
   ],
   "verre": [
-   248.6,
-   202.41,
-   65.84,
-   74.86
+   247.08,
+   202.09,
+   77.08,
+   89.73
   ],
   "robe": [
-   321.81,
-   555.03,
-   159.13,
-   236.98
+   318.2,
+   537.29,
+   169.93,
+   267.46
   ],
   "jambe-loin": [
-   356.65,
-   784.47,
-   65.46,
-   221.18
+   355.12,
+   769.96,
+   86.84,
+   235.33
   ],
   "jambe-proche": [
-   409.96,
-   786.81,
-   59.54,
-   212.25
+   406.03,
+   776.53,
+   63.12,
+   224.75
   ]
  },
  "controle": {
-  "corps": "bonne — graine 41, bonne (recouvrement 0.94, couleur 2)",
-  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 1)",
-  "verre": "bonne — graine 41, bonne (recouvrement 0.94, couleur 4)",
-  "robe": "bonne — graine 41, bonne (recouvrement 0.98, couleur 6)",
-  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 12)",
-  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 6)"
+  "corps": "bonne — graine 41, bonne (recouvrement 0.95, couleur 5)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 0)",
+  "verre": "bonne — graine 41, bonne (recouvrement 0.95, couleur 4)",
+  "robe": "bonne — graine 41, bonne (recouvrement 0.95, couleur 6)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.92, couleur 3)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)"
  },
- "temps_pc51_s": 194,
- "temps_total_s": 199
+ "temps_pc51_s": 200,
+ "temps_total_s": 210
 }

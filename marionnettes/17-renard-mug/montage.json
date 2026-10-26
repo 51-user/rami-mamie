@@ -1,18 +1,19 @@
 {
  "id": "17-renard-mug",
  "nom": "renard au mug",
- "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-renard-b-givre-g21--image.png",
+ "reference": "/Users/floriandelmas/Fourmies/courrier/entrant/pc51/vallee-roster-renard-c-mug-bleu-g21--image.png",
  "dessin": "pieces",
- "regard": "gauche",
- "hauteur_ecran": 220,
- "invite": "a grumpy cute chubby orange fox with a blue scarf, cream belly, holding a white mug of hot soup with both paws",
+ "regard": "face",
+ "hauteur_ecran": 230,
+ "recouvrement": 6,
+ "invite": "a cute chibi orange fox with a bright blue knitted scarf holding a white mug",
  "mouvement": {
   "mode": "marche",
   "vitesse": 70,
   "periode": 0.75,
   "amplitude": 20,
-  "bras": 4,
-  "rebond": 5,
+  "bras": 6,
+  "rebond": 6,
   "penche": 4
  },
  "pieces": [
@@ -23,45 +24,60 @@
    "priorite": 1,
    "zone": {
     "ellipse": [
-     410,
-     950,
-     122,
-     112
+     430,
+     990,
+     138,
+     118
     ]
    },
    "pivot": [
-    400,
-    1046
+    430,
+    1100
    ],
-   "texte": "the chubby body of a cute orange fox with a cream belly and a blue scarf around the neck, torso only, no head"
+   "texte": "the round chubby body of a cute orange fox with a white belly, torso only, no head, no legs, no scarf"
   },
   {
    "nom": "tete",
    "role": "tete",
    "parent": "corps",
-   "z": 3,
-   "priorite": 5,
+   "z": 2,
+   "priorite": 4,
    "zone": {
     "ellipse": [
-     412,
-     715,
-     82,
-     62
+     420,
+     735,
+     148,
+     122
     ]
    },
    "pivot": [
-    400,
-    775
+    425,
+    852
    ],
-   "attache": [
-    400,
-    865
-   ],
-   "texte": "the clean grumpy face of a cute orange fox, half closed blue eyes, white muzzle, dark ear tips, head only",
-   "negatif": "mug, cup, scarf, blue, hands"
+   "texte": "the head of a cute chibi orange fox, big shiny dark eyes, white muzzle and cheeks, pointed ears with dark tips, head only"
   },
   {
-   "nom": "echarpe",
+   "nom": "col",
+   "role": "fixe",
+   "parent": "corps",
+   "z": 3,
+   "priorite": 5,
+   "zone": {
+    "boite": [
+     295,
+     845,
+     565,
+     910
+    ]
+   },
+   "pivot": [
+    430,
+    880
+   ],
+   "texte": "a bright blue knitted scarf wrapped around a neck, alone"
+  },
+  {
+   "nom": "pan",
    "role": "suiveur",
    "parent": "corps",
    "z": 4,
@@ -69,60 +85,84 @@
    "amplitude": 9,
    "retard": 1.4,
    "zone": {
-    "ellipse": [
-     492,
-     905,
-     32,
-     52
+    "boite": [
+     465,
+     900,
+     545,
+     1035
     ]
    },
    "pivot": [
-    485,
-    856
+    500,
+    905
    ],
-   "texte": "the hanging fringed end of a blue knitted scarf, alone"
+   "texte": "the hanging fringed end of a bright blue knitted scarf, alone"
   },
   {
-   "nom": "tasse",
-   "role": "bras-proche",
+   "nom": "traine",
+   "role": "suiveur",
    "parent": "corps",
-   "z": 5,
-   "priorite": 6,
+   "z": -1,
+   "priorite": 3,
+   "amplitude": 12,
+   "retard": 1.8,
    "zone": {
-    "ellipse": [
-     335,
-     905,
-     72,
-     62
+    "boite": [
+     520,
+     985,
+     665,
+     1125
     ]
    },
    "pivot": [
-    380,
-    880
+    530,
+    990
    ],
-   "texte": "two little fox paws holding a white mug of hot soup, alone"
+   "texte": "the long trailing end of a bright blue knitted scarf, alone"
   },
   {
    "nom": "queue",
    "role": "suiveur",
    "parent": "corps",
    "z": -2,
-   "priorite": 3,
+   "priorite": 2,
    "amplitude": 12,
    "retard": 1.1,
    "zone": {
     "ellipse": [
-     592,
-     975,
-     106,
-     72
+     262,
+     1060,
+     75,
+     62
     ]
    },
    "pivot": [
-    500,
-    1000
+    325,
+    1060
    ],
-   "texte": "a fluffy orange fox tail with a dark brown tip, alone"
+   "texte": "a fluffy orange fox tail with a white tip, alone"
+  },
+  {
+   "nom": "tasse",
+   "role": "bras-proche",
+   "parent": "corps",
+   "z": 5,
+   "priorite": 7,
+   "vapeur": true,
+   "zone": {
+    "ellipse": [
+     262,
+     915,
+     62,
+     64
+    ]
+   },
+   "pivot": [
+    305,
+    905
+   ],
+   "texte": "a fox paw holding a plain white mug, alone",
+   "negatif": "steam, smoke"
   },
   {
    "nom": "jambe-loin",
@@ -132,17 +172,17 @@
    "priorite": 2,
    "zone": {
     "ellipse": [
-     360,
-     1042,
-     42,
-     24
+     372,
+     1112,
+     34,
+     30
     ]
    },
    "pivot": [
-    360,
-    1020
+    372,
+    1092
    ],
-   "texte": "one small cream fox foot, alone"
+   "texte": "one short dark brown fox leg with a little paw, alone"
   },
   {
    "nom": "jambe-proche",
@@ -152,17 +192,17 @@
    "priorite": 2,
    "zone": {
     "ellipse": [
-     462,
-     1045,
-     42,
-     24
+     500,
+     1112,
+     34,
+     30
     ]
    },
    "pivot": [
-    462,
-    1022
+    500,
+    1092
    ],
-   "texte": "one small cream fox foot, alone"
+   "texte": "one short dark brown fox leg with a little paw, alone"
   }
  ],
  "arret": {
@@ -172,26 +212,27 @@
  "gestes": [
   {
    "piece": "tasse",
+   "dx": 95,
+   "dy": -95,
    "angle": -15,
-   "dy": -26,
    "monte": [
     0.4,
-    1.0
+    1.1
    ],
    "descend": [
-    2.2,
-    2.8
+    2.4,
+    3.0
    ]
   },
   {
    "piece": "tete",
-   "angle": -8,
+   "angle": -6,
    "monte": [
-    0.8,
+    0.9,
     1.2
    ],
    "descend": [
-    2.2,
+    2.3,
     2.7
    ]
   },
@@ -199,78 +240,92 @@
    "piece": "tete",
    "angle": 0,
    "oscille": [
-    2.9,
-    3.5,
+    3.0,
+    3.6,
     5,
-    9
+    4
    ]
   },
   {
    "piece": "queue",
    "angle": -18,
    "monte": [
-    2.9,
-    3.1
+    3.0,
+    3.2
    ],
    "descend": [
-    3.1,
-    3.7
+    3.2,
+    3.8
    ]
   }
  ],
  "placement": {
   "corps": [
-   315.96,
-   837.89,
-   187.17,
-   234.97
+   278.01,
+   902.47,
+   296.57,
+   206.45
   ],
   "tete": [
-   329.04,
-   652.74,
-   165.43,
-   126.76
+   275.03,
+   633.49,
+   285.0,
+   219.51
   ],
-  "echarpe": [
-   459.57,
-   851.15,
-   66.31,
-   106.03
+  "col": [
+   305.2,
+   831.24,
+   263.98,
+   87.1
   ],
-  "tasse": [
-   263.19,
-   843.95,
-   143.84,
-   123.43
+  "pan": [
+   458.14,
+   893.73,
+   93.67,
+   149.2
+  ],
+  "traine": [
+   511.4,
+   976.92,
+   161.84,
+   156.68
   ],
   "queue": [
-   487.25,
-   899.61,
-   202.51,
-   149.8
+   201.0,
+   987.94,
+   143.72,
+   132.95
+  ],
+  "tasse": [
+   200.07,
+   855.79,
+   133.72,
+   120.01
   ],
   "jambe-loin": [
-   317.83,
-   1018.69,
-   85.88,
-   48.85
+   343.77,
+   1075.54,
+   65.74,
+   64.14
   ],
   "jambe-proche": [
-   423.1,
-   1021.41,
-   82.6,
-   49.13
+   466.59,
+   1075.36,
+   70.42,
+   65.89
   ]
  },
  "controle": {
-  "corps": "bonne — graine 41, bonne (recouvrement 0.85, couleur 6)",
-  "tete": "bonne — graine 41, bonne (recouvrement 0.96, couleur 7)",
-  "echarpe": "bonne — graine 41, bonne (recouvrement 0.95, couleur 6)",
-  "tasse": "bonne — graine 41, bonne (recouvrement 0.79, couleur 4)",
-  "queue": "bonne — graine 41, bonne (recouvrement 0.96, couleur 10)",
-  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
-  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.94, couleur 3)"
+  "corps": "bonne — graine 41, bonne (recouvrement 0.93, couleur 2)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 2)",
+  "col": "bonne — graine 41, bonne (recouvrement 0.90, couleur 8)",
+  "pan": "bonne — graine 41, bonne (recouvrement 0.98, couleur 7)",
+  "traine": "bonne — graine 41, bonne (recouvrement 0.93, couleur 1)",
+  "queue": "bonne — graine 41, bonne (recouvrement 0.92, couleur 7)",
+  "tasse": "bonne — graine 41, bonne (recouvrement 0.95, couleur 5)",
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.96, couleur 5)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 7)"
  },
- "temps_pc51_s": 259,
- "temps_total_s": 263
+ "temps_pc51_s": 300,
+ "temps_total_s": 306
 }

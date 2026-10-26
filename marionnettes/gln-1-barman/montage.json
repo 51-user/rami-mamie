@@ -5,6 +5,7 @@
  "dessin": "pieces",
  "regard": "face",
  "hauteur_ecran": 330,
+ "recouvrement": 14,
  "modele": "animagine",
  "prefixe_ordre": "gln-perso-barman",
  "pre": "a single cutout piece of an adult 1930s bartender, slender adult proportions, ",
@@ -162,43 +163,43 @@
  ],
  "placement": {
   "corps": [
-   267.15,
-   232.73,
-   294.44,
-   368.63
+   249.12,
+   217.71,
+   308.12,
+   396.95
   ],
   "tete": [
-   284.43,
-   68.23,
-   193.63,
-   197.39
+   265.21,
+   55.97,
+   225.3,
+   220.32
   ],
   "torchon": [
-   318.62,
-   230.75,
-   184.5,
-   257.72
+   305.4,
+   217.6,
+   211.17,
+   284.31
   ],
   "jambe-loin": [
-   292.71,
-   594.64,
-   102.57,
-   361.79
+   293.88,
+   579.76,
+   117.09,
+   398.96
   ],
   "jambe-proche": [
-   391.82,
-   593.53,
-   121.53,
-   356.77
+   374.26,
+   577.95,
+   146.67,
+   387.49
   ]
  },
  "controle": {
-  "corps": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
-  "tete": "bonne — graine 41, bonne (recouvrement 0.95, couleur 5)",
+  "corps": "bonne — graine 41, bonne (recouvrement 0.95, couleur 3)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 3)",
   "torchon": "bonne — graine 41, bonne (recouvrement 0.98, couleur 2)",
-  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 2)",
-  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.93, couleur 3)"
+  "jambe-loin": "bonne — graine 41, bonne (recouvrement 0.94, couleur 5)",
+  "jambe-proche": "bonne — graine 41, bonne (recouvrement 0.92, couleur 1)"
  },
- "temps_pc51_s": 176,
- "temps_total_s": 184
+ "temps_pc51_s": 201,
+ "temps_total_s": 213
 }

@@ -5,11 +5,12 @@
  "dessin": "pieces",
  "regard": "droite",
  "hauteur_ecran": 260,
+ "recouvrement": 10,
  "modele": "animagine",
  "prefixe_ordre": "gln-perso-pianiste",
- "pre": "a single cutout piece of an adult 1930s jazz pianist scene, slender adult proportions, ",
- "suf": ", (isolated on a plain flat medium grey background:1.4), (simple background:1.2), nothing else, graphic novel illustration, heavy black ink, bold crosshatching, comic book noir, limited palette of black, amber and deep emerald, dramatic shadows",
- "neg": "text, watermark, signature, logo, letters, scenery, room, multiple characters, crowd, cropped, extra limbs, extra fingers, bad hands, deformed face, nudity, chibi, child, big head, super deformed, pink, magenta, purple, glowing eyes, black face, faceless, blank face",
+ "pre": "a single isolated cutout fragment of an ink drawing, ",
+ "suf": ", (isolated on a plain flat medium grey background:1.4), (simple background:1.2), nothing else, graphic novel illustration, heavy black ink, bold crosshatching, comic book noir, limited palette of black, amber and deep emerald",
+ "neg": "text, watermark, signature, logo, letters, scenery, room, (multiple people:1.4), (second person:1.4), crowd, full body, piano, grand piano, cropped, extra limbs, extra fingers, bad hands, deformed face, nudity, chibi, child, pink, magenta, purple",
  "mouvement": {
   "mode": "assis"
  },
@@ -19,59 +20,20 @@
    "role": "racine",
    "z": 0,
    "priorite": 1,
+   "garder": true,
    "zone": {
-    "union": [
-     {
-      "boite": [
-       79,
-       560,
-       445,
-       925
-      ]
-     },
-     {
-      "boite": [
-       600,
-       735,
-       720,
-       890
-      ]
-     },
-     {
-      "boite": [
-       79,
-       880,
-       747,
-       927
-      ]
-     }
+    "boite": [
+     0,
+     0,
+     768,
+     1024
     ]
    },
    "pivot": [
     420,
     905
    ],
-   "texte": "a black upright piano with its stool and a soft grey floor shadow, alone, no person"
-  },
-  {
-   "nom": "jambes",
-   "role": "fixe",
-   "parent": "piano",
-   "z": 1,
-   "priorite": 2,
-   "zone": {
-    "boite": [
-     445,
-     735,
-     625,
-     900
-    ]
-   },
-   "pivot": [
-    560,
-    760
-   ],
-   "texte": "the legs of a seated man in black trousers with white shoes, alone"
+   "texte": "the upright piano, the stool, the legs and the floor shadow, kept as drawn"
   },
   {
    "nom": "corps",
@@ -79,19 +41,20 @@
    "parent": "piano",
    "z": 2,
    "priorite": 3,
+   "force": 45,
    "zone": {
     "boite": [
-     470,
-     600,
+     480,
+     615,
      640,
-     770
+     765
     ]
    },
    "pivot": [
-    560,
+    565,
     765
    ],
-   "texte": "the torso of a jazz pianist in a black tuxedo leaning forward, no head, no arms"
+   "texte": "the back and shoulders of a man in a black tuxedo jacket leaning forward, no head, no arms"
   },
   {
    "nom": "tete",
@@ -99,6 +62,7 @@
    "parent": "corps",
    "z": 3,
    "priorite": 4,
+   "force": 45,
    "zone": {
     "ellipse": [
      505,
@@ -108,10 +72,10 @@
     ]
    },
    "pivot": [
-    512,
-    620
+    515,
+    622
    ],
-   "texte": "the head of a pale blond man with eyes closed, profile, head only"
+   "texte": "the head of a pale blond man with eyes closed seen in profile, head only"
   },
   {
    "nom": "mains",
@@ -119,6 +83,7 @@
    "parent": "corps",
    "z": 4,
    "priorite": 5,
+   "force": 45,
    "zone": {
     "boite": [
      395,
@@ -129,9 +94,9 @@
    },
    "pivot": [
     545,
-    680
+    685
    ],
-   "texte": "two forearms in black sleeves with white hands playing piano keys, alone"
+   "texte": "two forearms in black sleeves with white hands resting on piano keys, alone"
   }
  ],
  "arret": {
@@ -165,7 +130,7 @@
    "oscille": [
     0,
     20,
-    3,
+    2.5,
     4.5
    ]
   },
@@ -196,43 +161,36 @@
  ],
  "placement": {
   "piano": [
-   65.51,
-   553.31,
-   697.15,
-   374.38
-  ],
-  "jambes": [
-   444.07,
-   745.3,
-   179.54,
-   157.17
+   78.66,
+   532.4,
+   668.82,
+   395.62
   ],
   "corps": [
-   468.96,
-   607.75,
-   117.34,
-   164.33
+   464.51,
+   602.46,
+   122.34,
+   174.34
   ],
   "tete": [
-   462.39,
-   538.87,
-   74.6,
-   86.93
+   455.0,
+   535.21,
+   87.31,
+   101.73
   ],
   "mains": [
-   393.64,
-   679.19,
-   153.64,
-   68.26
+   383.29,
+   668.34,
+   174.89,
+   88.98
   ]
  },
  "controle": {
-  "piano": "bonne — graine 41, bonne (recouvrement 0.87, couleur 10)",
-  "jambes": "bonne — graine 41, bonne (recouvrement 0.98, couleur 1)",
-  "corps": "bonne — graine 41, bonne (recouvrement 0.93, couleur 2)",
-  "tete": "bonne — graine 41, bonne (recouvrement 0.92, couleur 0)",
-  "mains": "bonne — graine 41, bonne (recouvrement 0.96, couleur 4)"
+  "piano": "bonne — graine 41, bonne (recouvrement 0.99, couleur 1)",
+  "corps": "bonne — graine 41, bonne (recouvrement 0.95, couleur 11)",
+  "tete": "bonne — graine 41, bonne (recouvrement 0.97, couleur 2)",
+  "mains": "bonne — graine 41, bonne (recouvrement 0.96, couleur 6)"
  },
- "temps_pc51_s": 165,
- "temps_total_s": 173
+ "temps_pc51_s": 98,
+ "temps_total_s": 105
 }

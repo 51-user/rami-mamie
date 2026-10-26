@@ -193,6 +193,16 @@ function dessinerPerso(f, t, x, sol, dir) {
       cx.strokeStyle = "rgba(40,30,22,0.9)"; cx.lineWidth = 3; cx.stroke();
     }
     cx.drawImage(im, r[0], r[1], r[2], r[3]);
+    if (p.vapeur) {                                                   // la vapeur d'un mug : dessinée par le code, elle ondule
+      cx.save(); cx.lineCap = "round";
+      for (let k = 0; k < 3; k++) {
+        const x0 = r[0] + r[2] * (0.3 + 0.2 * k), y0 = r[1] + r[3] * 0.05, ph = t * 2.2 + k * 2.1;
+        cx.beginPath(); cx.moveTo(x0, y0);
+        for (let j = 1; j <= 12; j++) cx.lineTo(x0 + Math.sin(ph + j * 0.6) * r[2] * 0.06, y0 - j * r[3] * 0.06);
+        cx.strokeStyle = "rgba(255,255,255," + (0.35 + 0.15 * Math.sin(ph)) + ")"; cx.lineWidth = r[2] * 0.06; cx.stroke();
+      }
+      cx.restore();
+    }
   }
   cx.setTransform(1, 0, 0, 1, 0, 0);
 }
