@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le carré de la Vallée</title>
+<meta name="theme-color" content="#1A4A33">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<style>
+/* ===== Le carré de la Vallée (02/11, Florian : « le genre de tetris mais dans un carré où tu peux mettre que 3 pièces et qu'il y ait
+   des pièces de 1 et de 2 »). Un puzzle de blocs sur une grille carrée, sans gravité : trois pièces sont offertes, on les glisse
+   au doigt où l'on veut ; une ligne ou une colonne pleine s'en va ; quand les trois sont posées, trois autres arrivent ; la partie
+   s'arrête quand plus aucune pièce offerte ne rentre. Pas de temps, pas de menu : la partie démarre dès l'ouverture.
+   Même habit que les briques : bois chaud, parchemin, Fredoka, fond de la Vallée et ses saisons.
+   LE JEU D'ABORD : le carré et la réserve des trois pièces prennent l'écran ; plaques fines et petits boutons dans un coin. ===== */
+/* Fredoka (licence OFL, fonts/Fredoka-OFL.txt), servie avec le jeu */
+@font-face{font-family:"Fredoka";src:url('fonts/Fredoka.ttf') format('truetype');font-weight:300 700;font-display:swap}
+:root{--bois:repeating-linear-gradient(90deg,rgba(60,30,10,.07) 0 2px,transparent 2px 15px),linear-gradient(#C99060,#9A6334);
+  --bois-clair:repeating-linear-gradient(90deg,rgba(60,30,10,.06) 0 2px,transparent 2px 15px),linear-gradient(#DDAA74,#B98048);
+  --parchemin:radial-gradient(ellipse at 50% 40%,#FCF1D4,#F0DAA8);--brun:#3E2410;--brun-doux:#6B4A2C;--cadre:#5A3418;--bord:#4A2A12;--lueur:#FFD86B;
+  --info:#F3E8CC;--info-bord:#C4A878;--f:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",Arial,sans-serif;color-scheme:light}
+html,body{height:100%;margin:0}
+body{background:#2A2018;font-family:var(--f);color:var(--brun);overflow:hidden;touch-action:none;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+button{font-family:var(--f);cursor:pointer;color:inherit}
+button:focus{outline:none}button:focus-visible{box-shadow:0 0 0 4px var(--lueur)}
+/* la scène Vallée, teintée selon la saison, comme aux briques */
+#fond{position:fixed;inset:-24px;background:#5B4A2A url('cartes/fond-vallee.webp') center/cover;transition:filter 2.5s ease}
+#teinte{position:fixed;inset:0;transition:background-color 2.5s ease;pointer-events:none}
+#ombre{position:fixed;inset:0;background:radial-gradient(ellipse 70% 70% at 50% 50%,rgba(30,18,6,.12),rgba(30,18,6,.42));pointer-events:none}
+#ciel{position:fixed;inset:0;pointer-events:none}
+#jeu{position:fixed;inset:0;z-index:1}
+/* le carré : un cadre de bois, l'intérieur sombre et doux */
+.plateau{position:absolute;box-sizing:border-box;border:4px solid var(--bord);border-radius:12px;padding:5px;background:var(--bois);touch-action:none;
+  box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 4px 0 #3A2010,0 10px 24px rgba(0,0,0,.4)}
+.plateau canvas{display:block;border:2px solid #3A2010;border-radius:4px}
+/* la réserve : les trois pièces offertes, posées sur une planche claire */
+#reserve{position:absolute;touch-action:none;border-radius:14px;background:rgba(40,22,8,.32);box-shadow:inset 0 0 0 2px rgba(255,236,200,.18)}
+/* les plaques fines et les petits boutons ronds */
+.infos{position:absolute;display:flex;flex-wrap:wrap;gap:6px;box-sizing:border-box}
+.plaque{display:flex;align-items:center;justify-content:center;gap:6px;min-height:26px;box-sizing:border-box;padding:2px 10px;white-space:nowrap;
+  background:var(--info);color:var(--brun);font-size:17px;font-weight:700;line-height:1.1;border:2px solid var(--info-bord);border-radius:6px}
+.plaque b{font-size:21px}
+.plaque.petit{font-size:14px;font-weight:600}
+.plaque.gonfle{animation:gonfle .45s}
+@keyframes gonfle{40%{transform:scale(1.22);background:#FFF1B8}}
+.haut{position:absolute;display:flex;gap:8px;justify-content:flex-end}
+.rond{width:52px;height:52px;border-radius:50%;background:var(--bois-clair);border:4px solid var(--bord);color:#FFF4D6;padding:0;display:inline-flex;align-items:center;justify-content:center;
+  text-shadow:0 2px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -4px 0 rgba(0,0,0,.25),0 5px 0 #3A2010;transition:filter .12s,transform .08s,box-shadow .2s}
+.rond svg{width:28px;height:28px;filter:drop-shadow(0 2px 0 #3A2010);overflow:visible}
+.rond:active{transform:translateY(4px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),inset 0 -2px 0 rgba(0,0,0,.25),0 1px 0 #3A2010;filter:brightness(1.18) sepia(.2)}
+.rond.confirme{box-shadow:0 0 0 4px var(--lueur),0 0 14px var(--lueur),0 5px 0 #3A2010}
+/* la pièce tenue au doigt et les éclats passent devant tout */
+#main{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9}
+/* les fenêtres : fines (même habit que les briques) */
+.voile{position:fixed;inset:0;background:rgba(40,22,8,.45);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px;box-sizing:border-box}
+.fen{background:var(--parchemin);border:3px solid var(--cadre);border-radius:14px;box-shadow:0 4px 0 #3A2010;padding:18px 22px;max-width:520px;width:100%;
+  max-height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;text-align:center;animation:fen .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes fen{from{transform:scale(.85);opacity:0}}
+.fen h2{margin:0;font-size:28px;color:#FFF1CC;-webkit-text-stroke:4px #4A2A12;paint-order:stroke fill;text-shadow:0 2px 0 #4A2A12}
+.fen p{margin:0;font-size:20px}
+.btn{background:var(--bois);color:#FFF4D6;border:3px solid var(--bord);border-radius:10px;font-size:20px;font-weight:700;min-height:56px;padding:4px 16px;
+  text-shadow:0 1px 0 #3A2010;box-shadow:inset 0 2px 0 rgba(255,230,180,.45),inset 0 -3px 0 rgba(0,0,0,.25),0 3px 0 #3A2010;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.btn.clair{background:var(--bois-clair)}
+.btn.grand{min-height:72px;font-size:24px}
+.btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,230,180,.3),0 0 0 #3A2010;filter:brightness(1.15)}
+/* la bulle d'aide du premier geste, et celle du bouton « nouvelle partie » */
+.bulle{position:fixed;z-index:7;transform:translate(-50%,-100%);max-width:min(380px,86vw);padding:8px 14px;box-sizing:border-box;pointer-events:none;text-align:center;
+  background:var(--info);color:var(--brun);font-size:19px;font-weight:700;line-height:1.25;border:2px solid var(--info-bord);border-radius:10px;
+  box-shadow:0 4px 0 rgba(58,32,16,.5);animation:bulle .3s ease-out}
+@keyframes bulle{from{opacity:0;margin-top:8px}}
+/* l'annonce d'une nouvelle saison, les points qui volent, les rubans des grands coups, la bulle des enchaînements */
+.annonce{position:fixed;z-index:8;transform:translate(-50%,0);padding:8px 18px;background:var(--info);border:2px solid var(--info-bord);border-radius:8px;
+  font-size:22px;font-weight:700;white-space:nowrap;pointer-events:none;animation:annonce 2.8s ease forwards}
+@keyframes annonce{0%{opacity:0;margin-top:10px}12%{opacity:1;margin-top:0}80%{opacity:1}100%{opacity:0}}
+.vole{position:fixed;z-index:9;transform:translate(-50%,-50%);font-size:34px;font-weight:700;color:#FFF1CC;-webkit-text-stroke:5px #4A2A12;paint-order:stroke fill;
+  pointer-events:none;transition:left .75s cubic-bezier(.5,0,.6,1),top .75s cubic-bezier(.5,-.6,.6,1),transform .75s,opacity .75s;white-space:nowrap}
+.ruban{position:fixed;z-index:9;transform:translate(-50%,-50%);padding:8px 34px;background:#C2457A;color:#FFF1CC;font-size:34px;font-weight:700;white-space:nowrap;
+  -webkit-text-stroke:4px #6E1E40;paint-order:stroke fill;pointer-events:none;animation:ruban 1.9s cubic-bezier(.2,1.4,.4,1) forwards;
+  clip-path:polygon(0 0,100% 0,94% 50%,100% 100%,0 100%,6% 50%)}
+.ruban.grand{background:#E2B447;-webkit-text-stroke-color:#6E4A12;font-size:40px}
+@keyframes ruban{0%{transform:translate(-50%,-50%) scale(.2) rotate(-8deg);opacity:0}18%{transform:translate(-50%,-50%) scale(1.08) rotate(2deg);opacity:1}
+  30%{transform:translate(-50%,-50%) scale(1) rotate(0)}82%{opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
+.combo{position:fixed;z-index:9;transform:translate(-50%,-50%);font-size:clamp(26px,7.5vw,40px);font-weight:700;color:#FFE27A;-webkit-text-stroke:5px #4A2A12;paint-order:stroke fill;
+  pointer-events:none;animation:combo 1.3s ease-out forwards;white-space:nowrap}
+@keyframes combo{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}25%{transform:translate(-50%,-50%) scale(1.25);opacity:1}100%{transform:translate(-50%,-160%) scale(1);opacity:0}}
+@media (prefers-reduced-motion: reduce){.annonce,.fen{animation:none}}
+</style>
+</head>
+<body data-o="portrait">
+<div id="fond"></div><div id="teinte"></div><div id="ombre"></div><canvas id="ciel"></canvas>
+<div id="jeu">
+  <div class="plateau" id="plateau"><canvas id="toile" aria-label="Le carré"></canvas></div>
+  <canvas id="reserve" aria-label="Les trois pièces à poser"></canvas>
+  <div class="infos" id="infos">
+    <div class="plaque" id="plPoints"></div>
+    <div class="plaque petit" id="plSaison"></div>
+  </div>
+  <div class="haut" id="haut">
+    <button class="rond" data-a="nouvelle" id="bNouvelle" aria-label="Nouvelle partie"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v5h-5"/></svg></button>
+    <button class="rond" data-a="son" id="bSon"></button>
+    <button class="rond" data-a="doux" id="bDoux"></button>
+    <button class="rond" data-a="accueil" aria-label="Retour à l'accueil"><svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5L12 4l9 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg></button>
+  </div>
+</div>
+<canvas id="main"></canvas><canvas id="fx"></canvas>
+<div id="fenetre"></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+
+/* =====================================================================================================================
+   LES BLOCS DE LA VALLÉE — même section dans briques.html et carre.html (02/11) : les mêmes matières, les mêmes formes,
+   le même éclatement. Les deux copies se gardent identiques ; une retouche ici se reporte là-bas.
+   ===================================================================================================================== */
+/* ---------- Les formes : les sept pièces de 4 carrés, puis les nouvelles ----------
+   Une lettre par forme. L'ordre de CLES fixe le code rangé dans les grilles : (rang + 1) × 4 + variante.
+   Les briques prennent le début (IOTSZJLmdrc), le carré prend tout. */
+const CLES='IOTSZJLmdrcVGQ';
+const FORMES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,1,0],[1,1,1],[0,0,0]],
+  S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]],
+  m:[[1]],                                  // la pièce d'une case
+  d:[[0,0,0],[0,1,1],[0,0,0]],              // la pièce de deux cases (elle tourne sur sa première case)
+  r:[[0,0,0],[1,1,1],[0,0,0]],              // la barrette de trois
+  c:[[1,0],[1,1]],                          // le petit coin de trois
+  V:[[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],   // la grande barre de cinq (carré seulement)
+  G:[[1,0,0],[1,0,0],[1,1,1]],              // le grand coin de cinq (carré seulement)
+  Q:[[1,1,1],[1,1,1],[1,1,1]]};             // le grand carré de neuf (carré seulement)
+const MATIERE={I:'tuiles',O:'paille',T:'fleurs',S:'haie',Z:'brique',J:'pierre',L:'bois',
+  m:'citrouille',d:'eau',r:'lavande',c:'miel',V:'bouleau',G:'glace',Q:'nuit'};
+/* trois teintes par matière : les éclats prennent la couleur du bloc qui part */
+const COULEURS={bois:['#D7A169','#A46635','#5A3418'],pierre:['#C9CBC3','#8B8E87','#6C6E69'],paille:['#F2D47A','#C99A3A','#FCECAA'],
+  brique:['#C4603F','#A84A33','#D8C4A2'],haie:['#76A845','#4F7F2E','#8DBE5A'],fleurs:['#F4B3CB','#FFF6FA','#FFE27A'],tuiles:['#7480A0','#414B66','#363E55'],
+  citrouille:['#F2A04A','#C8641E','#6E9E3E'],eau:['#7CC8D8','#2F7F99','#E4F7FA'],lavande:['#B9A2E4','#7A61B0','#6E9E3E'],miel:['#F6C65A','#C47F1C','#FFE9A8'],
+  bouleau:['#F2EBDD','#3A332B','#D9CFBC'],glace:['#E6F6FD','#8EC3E0','#FFFFFF'],nuit:['#2C3466','#FFF3B0','#4A5598']};
+const tourne=m=>m.map((r,y)=>r.map((_,x)=>m[m.length-1-x][y]));
+
+/* ---------- Le dessin d'un bloc : de vrais petits blocs de matière, avec relief, dessinés une fois par taille ---------- */
+function hasard(seed){return()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function arrondi(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+const degrade=(g,s,a,b)=>{const d=g.createLinearGradient(0,0,0,s);d.addColorStop(0,a);d.addColorStop(1,b);return d};
+const MATIERES={
+  /* les sept matières des briques (25/10) */
+  bois(g,s,R){g.fillStyle=degrade(g,s,'#D7A169','#A46635');g.fillRect(0,0,s,s);
+    g.lineWidth=Math.max(1,s*.025);g.strokeStyle='rgba(90,50,20,.28)';
+    for(let k=0;k<6;k++){const y=s*(.08+k*.16+R()*.05);g.beginPath();g.moveTo(0,y);g.bezierCurveTo(s*.3,y+s*(R()-.5)*.12,s*.7,y+s*(R()-.5)*.12,s,y);g.stroke()}
+    for(const y of [s/3,s*2/3]){g.fillStyle='rgba(74,42,18,.6)';g.fillRect(0,y-s*.025,s,s*.045);g.fillStyle='rgba(255,220,170,.28)';g.fillRect(0,y+s*.02,s,s*.025)}
+    g.strokeStyle='rgba(74,42,18,.55)';g.lineWidth=Math.max(1,s*.03);g.beginPath();g.ellipse(s*(.25+R()*.5),s*(.12+Math.floor(R()*3)/3),s*.07,s*.04,0,0,7);g.stroke()},
+  pierre(g,s,R){g.fillStyle='#6C6E69';g.fillRect(0,0,s,s);
+    for(const [cx,cy] of [[.27,.27],[.74,.25],[.25,.74],[.73,.73]]){const x=s*(cx+(R()-.5)*.06),y=s*(cy+(R()-.5)*.06),rx=s*(.21+R()*.05),ry=s*(.19+R()*.05);
+      const d=g.createLinearGradient(0,y-ry,0,y+ry);d.addColorStop(0,'#C9CBC3');d.addColorStop(1,'#8B8E87');
+      g.fillStyle=d;g.beginPath();g.ellipse(x,y,rx,ry,R()*.6,0,7);g.fill();g.strokeStyle='rgba(50,48,44,.45)';g.lineWidth=Math.max(1,s*.025);g.stroke();
+      g.fillStyle='rgba(255,255,250,.25)';g.beginPath();g.ellipse(x-rx*.3,y-ry*.4,rx*.35,ry*.2,-.3,0,7);g.fill()}},
+  paille(g,s,R){g.fillStyle=degrade(g,s,'#F2D47A','#C99A3A');g.fillRect(0,0,s,s);g.lineCap='round';g.lineWidth=Math.max(1,s*.032);
+    for(let k=0;k<26;k++){const x=R()*s,y=R()*s,l=s*(.25+R()*.35),a=-1.1+(R()-.5)*.35;g.strokeStyle=k%2?'rgba(252,236,170,.85)':'rgba(160,118,40,.6)';
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+    g.fillStyle='rgba(138,90,46,.55)';g.fillRect(0,s*.46,s,s*.08)},
+  brique(g,s,R){g.fillStyle='#D8C4A2';g.fillRect(0,0,s,s);const h=s/3,j=s*.045,C=['#B8533A','#C4603F','#A84A33','#BE5A3C'];
+    for(let r=0;r<3;r++){const dec=r%2?-s/4:0;for(let k=-1;k<3;k++){const x=dec+k*s/2+j/2,y=r*h+j/2,w=s/2-j,hh=h-j;
+      g.fillStyle=C[Math.floor(R()*C.length)];g.fillRect(x,y,w,hh);g.fillStyle='rgba(255,210,170,.3)';g.fillRect(x,y,w,hh*.18);
+      g.fillStyle='rgba(60,20,10,.2)';g.fillRect(x,y+hh*.8,w,hh*.2)}}},
+  haie(g,s,R){g.fillStyle='#355C20';g.fillRect(0,0,s,s);const C=['#4F7F2E','#5E8E34','#76A845','#8DBE5A'];
+    for(let k=0;k<18;k++){const x=R()*s,y=R()*s,r=s*(.1+R()*.1);g.fillStyle=C[Math.floor(R()*C.length)];g.beginPath();g.arc(x,y,r,0,7);g.fill();
+      g.fillStyle='rgba(220,255,170,.22)';g.beginPath();g.arc(x-r*.3,y-r*.35,r*.35,0,7);g.fill()}},
+  fleurs(g,s,R){g.fillStyle=degrade(g,s,'#F4B3CB','#D77FA2');g.fillRect(0,0,s,s);
+    for(let k=0;k<4;k++){g.fillStyle=k%2?'#6E9E3E':'#5E8E34';g.beginPath();g.ellipse(R()*s,R()*s,s*.1,s*.05,R()*3,0,7);g.fill()}
+    for(const [cx,cy] of [[.3,.3],[.72,.38],[.38,.74],[.8,.8]]){const x=s*(cx+(R()-.5)*.08),y=s*(cy+(R()-.5)*.08),r=s*.1,blanc=R()<.5;
+      g.fillStyle=blanc?'#FFF6FA':'#FFE27A';for(let p=0;p<5;p++){const a=p*1.2566;g.beginPath();g.arc(x+Math.cos(a)*r,y+Math.sin(a)*r,r*.72,0,7);g.fill()}
+      g.fillStyle='#E8A03A';g.beginPath();g.arc(x,y,r*.55,0,7);g.fill()}},
+  tuiles(g,s,R){g.fillStyle='#363E55';g.fillRect(0,0,s,s);const h=s/3.2,w=s/2.5;
+    for(let r=0;r<5;r++){const y=r*h-h*.4,dec=r%2?w/2:0;for(let k=-1;k<4;k++){const x=dec+k*w;
+      const d=g.createLinearGradient(0,y,0,y+h*1.2);d.addColorStop(0,'#7480A0');d.addColorStop(1,'#414B66');g.fillStyle=d;
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w,y+h*.55);g.arc(x+w/2,y+h*.55,w/2,0,Math.PI);g.closePath();g.fill();
+      g.strokeStyle='rgba(25,28,40,.6)';g.lineWidth=Math.max(1,s*.025);g.stroke()}}},
+  /* les nouvelles matières (02/11), une par nouvelle forme */
+  citrouille(g,s,R){g.fillStyle=degrade(g,s,'#F6AE58','#C8641E');g.fillRect(0,0,s,s);   // les côtes d'une citrouille du potager
+    for(const cx of [.2,.5,.8]){const x=s*(cx+(R()-.5)*.04),w=s*.17;const d=g.createLinearGradient(x-w,0,x+w,0);
+      d.addColorStop(0,'rgba(150,60,10,.35)');d.addColorStop(.45,'rgba(255,214,150,.35)');d.addColorStop(1,'rgba(150,60,10,.35)');
+      g.fillStyle=d;g.beginPath();g.ellipse(x,s*.52,w,s*.56,0,0,7);g.fill()}
+    g.strokeStyle='rgba(120,48,8,.5)';g.lineWidth=Math.max(1,s*.03);
+    for(const cx of [.35,.65]){g.beginPath();g.moveTo(s*cx,0);g.bezierCurveTo(s*(cx-.06),s*.35,s*(cx-.06),s*.65,s*cx,s);g.stroke()}
+    g.fillStyle='#5E8E34';g.beginPath();g.ellipse(s*(.3+R()*.4),s*.1,s*.12,s*.05,R()-.5,0,7);g.fill()},
+  eau(g,s,R){g.fillStyle=degrade(g,s,'#6CC0D2','#2F7F99');g.fillRect(0,0,s,s);   // l'eau de l'étang, ses rides et un nénuphar
+    g.lineCap='round';g.lineWidth=Math.max(1,s*.035);
+    for(let k=0;k<4;k++){const y=s*(.15+k*.24+(R()-.5)*.05),a=s*.05;g.strokeStyle=k%2?'rgba(228,247,250,.55)':'rgba(30,90,110,.35)';
+      g.beginPath();g.moveTo(s*.05,y);g.bezierCurveTo(s*.3,y-a,s*.45,y+a,s*.7,y);g.quadraticCurveTo(s*.85,y-a*.6,s*.95,y);g.stroke()}
+    const x=s*(.3+R()*.4),y=s*(.3+R()*.4),r=s*.15;g.fillStyle='#6E9E3E';g.beginPath();g.moveTo(x,y);g.arc(x,y,r,.5,Math.PI*2-.1);g.closePath();g.fill();
+    g.fillStyle='rgba(220,255,170,.4)';g.beginPath();g.arc(x-r*.3,y-r*.3,r*.3,0,7);g.fill();
+    g.fillStyle='rgba(255,255,255,.7)';g.beginPath();g.ellipse(s*.78,s*.2,s*.06,s*.025,-.4,0,7);g.fill()},
+  lavande(g,s,R){g.fillStyle=degrade(g,s,'#A892D6','#6A559C');g.fillRect(0,0,s,s);   // des brins de lavande serrés
+    g.lineCap='round';
+    for(let k=0;k<5;k++){const x=s*(.1+k*.2+(R()-.5)*.06),pied=s,haut=s*(.12+R()*.1);
+      g.strokeStyle='#557A30';g.lineWidth=Math.max(1,s*.035);g.beginPath();g.moveTo(x,pied);g.lineTo(x+s*.02,haut);g.stroke();
+      for(let p=0;p<6;p++){const y=haut+p*s*.07;g.fillStyle=p%2?'#C9B6EE':'#8E6FC4';
+        g.beginPath();g.ellipse(x-s*.035,y,s*.04,s*.03,0,0,7);g.fill();g.beginPath();g.ellipse(x+s*.05,y+s*.03,s*.04,s*.03,0,0,7);g.fill()}}},
+  miel(g,s,R){g.fillStyle='#B7741A';g.fillRect(0,0,s,s);   // les alvéoles d'un rayon de miel
+    const r=s/5.2,h=r*Math.sqrt(3);
+    for(let col=-1;col<5;col++)for(let row=-1;row<5;row++){const x=col*r*1.5,y=row*h+(col%2?h/2:0);
+      const d=g.createLinearGradient(0,y-h/2,0,y+h/2);d.addColorStop(0,'#FAD679');d.addColorStop(1,'#D9952A');g.fillStyle=d;
+      g.beginPath();for(let a=0;a<6;a++)g.lineTo(x+Math.cos(a*Math.PI/3)*r*.86,y+Math.sin(a*Math.PI/3)*r*.86);g.closePath();g.fill();
+      g.strokeStyle='rgba(122,70,12,.55)';g.lineWidth=Math.max(1,s*.025);g.stroke()}
+    g.fillStyle='rgba(255,250,220,.6)';g.beginPath();g.ellipse(s*(.3+R()*.4),s*(.3+R()*.3),s*.05,s*.08,0,0,7);g.fill()},
+  bouleau(g,s,R){g.fillStyle=degrade(g,s,'#F7F1E4','#D6CBB6');g.fillRect(0,0,s,s);   // l'écorce blanche du bouleau et ses marques
+    g.fillStyle='#3A332B';
+    for(let k=0;k<7;k++){const y=R()*s,x=R()*s*.8,w=s*(.12+R()*.25),h=s*(.025+R()*.03);g.globalAlpha=.55+R()*.4;g.beginPath();g.ellipse(x+w/2,y,w/2,h,0,0,7);g.fill()}
+    g.globalAlpha=1;g.strokeStyle='rgba(150,135,110,.35)';g.lineWidth=Math.max(1,s*.02);
+    for(let k=0;k<3;k++){const x=s*(.2+k*.3+(R()-.5)*.1);g.beginPath();g.moveTo(x,0);g.lineTo(x+s*(R()-.5)*.08,s);g.stroke()}},
+  glace(g,s,R){g.fillStyle=degrade(g,s,'#D9F0FA','#8EC3E0');g.fillRect(0,0,s,s);   // un bloc de glace de l'hiver, en facettes
+    const m=[s*(.4+R()*.2),s*(.4+R()*.2)],coins=[[0,0],[s,0],[s,s],[0,s]],T=['rgba(255,255,255,.45)','rgba(120,170,205,.3)','rgba(80,140,185,.32)','rgba(235,250,255,.35)'];
+    coins.forEach((c,k)=>{const n=coins[(k+1)%4];g.fillStyle=T[k];g.beginPath();g.moveTo(m[0],m[1]);g.lineTo(c[0],c[1]);g.lineTo(n[0],n[1]);g.closePath();g.fill()});
+    g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=Math.max(1,s*.02);g.beginPath();coins.forEach(c=>{g.moveTo(m[0],m[1]);g.lineTo(c[0],c[1])});g.stroke();
+    g.fillStyle='#FFFFFF';const x=s*.28,y=s*.26,r=s*.09;g.beginPath();
+    for(let a=0;a<8;a++){const q=a%2?r*.25:r;g.lineTo(x+Math.cos(a*Math.PI/4)*q,y+Math.sin(a*Math.PI/4)*q)}g.closePath();g.fill()},
+  nuit(g,s,R){g.fillStyle=degrade(g,s,'#36407A','#1A1E40');g.fillRect(0,0,s,s);   // un morceau de ciel de nuit, ses étoiles
+    for(let k=0;k<9;k++){g.fillStyle=`rgba(255,243,176,${(.4+R()*.6).toFixed(2)})`;g.beginPath();g.arc(R()*s,R()*s,s*(.012+R()*.02),0,7);g.fill()}
+    const x=s*(.3+R()*.4),y=s*(.3+R()*.4),r=s*.13;g.fillStyle='#FFE89A';g.beginPath();
+    for(let a=0;a<8;a++){const q=a%2?r*.32:r;g.lineTo(x+Math.cos(a*Math.PI/4-Math.PI/2)*q,y+Math.sin(a*Math.PI/4-Math.PI/2)*q)}g.closePath();g.fill()}};
+function bloc(mat,v,s){
+  const cv=document.createElement('canvas');cv.width=cv.height=s;const g=cv.getContext('2d'),R=hasard(mat.length*977+v*131+mat.charCodeAt(0));
+  const r=s*.14,L=Math.max(2,s*.1);
+  g.save();arrondi(g,0,0,s,s,r);g.clip();MATIERES[mat](g,s,R);
+  /* le relief : haut et gauche éclairés, bas et droite dans l'ombre */
+  const poly=(pts,c)=>{g.fillStyle=c;g.beginPath();pts.forEach(([x,y],k)=>k?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()};
+  poly([[0,0],[s,0],[s-L,L],[L,L]],'rgba(255,244,214,.42)');
+  poly([[0,0],[L,L],[L,s-L],[0,s]],'rgba(255,244,214,.24)');
+  poly([[0,s],[L,s-L],[s-L,s-L],[s,s]],'rgba(30,14,2,.34)');
+  poly([[s,0],[s,s],[s-L,s-L],[s-L,L]],'rgba(30,14,2,.22)');
+  g.restore();
+  const lw=Math.max(1.5,s*.05);g.lineWidth=lw;g.strokeStyle='rgba(46,24,8,.9)';arrondi(g,lw/2,lw/2,s-lw,s-lw,r);g.stroke();
+  return cv;
+}
+
+/* ---------- L'éclatement : un seul calque par-dessus tout ----------
+   Un bloc qui part saute, gonfle d'une lueur blanche, puis éclate : quatre morceaux de lui-même, des éclats de sa matière,
+   des étincelles. Une onde de choc part de l'endroit du coup ; un éclair blanc et une secousse viennent quand plusieurs lignes
+   partent ensemble ; en « effets doux », ni éclair ni secousse, et moitié moins d'éclats. Au-delà de 800 morceaux, les plus
+   vieux s'en vont, pour rester fluide sur tablette. */
+function effets(cv){
+  const g=cv.getContext('2d');
+  let D=1,parts=[],anneaux=[],eclair=null,secoue=null,propre=true;
+  const entre=(a,b)=>a+Math.random()*(b-a);
+  // la petite lueur ronde des étincelles, dessinée une fois
+  const lueur=document.createElement('canvas');lueur.width=lueur.height=32;
+  {const l=lueur.getContext('2d'),d=l.createRadialGradient(16,16,0,16,16,16);d.addColorStop(0,'rgba(255,252,230,1)');d.addColorStop(.35,'rgba(255,216,107,.85)');
+    d.addColorStop(1,'rgba(255,216,107,0)');l.fillStyle=d;l.fillRect(0,0,32,32)}
+  const SAISON=['petale','soleil','feuille','flocon'];
+  const E={
+    doux:false,
+    taille(){D=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(innerWidth*D);cv.height=Math.round(innerHeight*D);propre=false},
+    // un morceau de la saison : pétale, étincelle de soleil, feuille, flocon
+    morceau(x,y,sa,vy){const p={k:SAISON[sa],x,y,vx:entre(-1.6,1.6),vy:vy==null?entre(-4,-1):vy,rot:Math.random()*6,vr:entre(-.15,.15),age:0,
+      vie:entre(900,1500),r:entre(4,7),g:sa===3?.05:.09,flotte:sa!==1};parts.push(p);return p},
+    // un bloc qui saute puis éclate ; force : 1 pour une ligne, plus quand plusieurs partent ou s'enchaînent
+    bloc(img,x,y,cote,mat,o){o=o||{};parts.push({k:'bloc',img,mat,x,y,cote,vx:o.vx!=null?o.vx:entre(-1.2,1.2),vy:o.vy!=null?o.vy:entre(-7,-4.5),
+      rot:0,vr:entre(-.18,.18),age:0,vie:o.vie||380,g:.38,force:o.force||1})},
+    // des éclats de matière et des étincelles, en étoile autour d'un point
+    eclats(x,y,cote,mat,n,force){const C=COULEURS[mat]||COULEURS.bois;n=Math.round(E.doux?n/2:n);
+      for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,v=entre(2.5,6)*(.8+.2*force);
+        parts.push({k:'eclat',col:C[k%3],x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2.5,rot:Math.random()*6,vr:entre(-.4,.4),age:0,vie:entre(480,820),r:cote*entre(.09,.16),g:.32})}
+      const m=Math.round((E.doux?1:2)*force);
+      for(let k=0;k<m;k++){const a=Math.random()*Math.PI*2,v=entre(1,3.5);
+        parts.push({k:'etincelle',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,age:0,vie:entre(380,640),r:cote*entre(.35,.6),g:.05})}},
+    // l'onde de choc : un cercle de lumière qui s'ouvre
+    anneau(x,y,r,col,epais){anneaux.push({x,y,r,col:col||'255,240,190',ep:epais||8,age:0,vie:460})},
+    eclair(force){if(E.doux)return;eclair={t0:performance.now(),a:Math.min(.5,force)}},
+    secouer(el,amp,dur){if(E.doux)return;secoue={el,t0:performance.now(),amp,dur}},
+    calmer(){if(secoue){secoue.el.style.transform='';secoue=null}eclair=null},
+    // la poussière d'une pose : de petits nuages
+    nuage(x,y){for(let k=0;k<3;k++)parts.push({k:'nuage',x:x+entre(-4,4),y,vx:entre(-1.2,1.2),vy:entre(-1.1,-.3),age:0,vie:entre(380,560),r:entre(3,6),g:0})},
+    // une pluie de saison (ou de confettis) sur un rectangle de l'écran
+    pluie(r,n,sa,conf){
+      for(let k=0;k<n;k++){const p=conf?{k:'confetti',x:entre(r.left,r.right),y:r.top-10,vx:entre(-1.5,1.5),vy:entre(-6,-1),rot:Math.random()*6,vr:entre(-.3,.3),
+          age:0,vie:entre(1400,2200),r:entre(4,7),g:.12,col:['#E53935','#FDD835','#43A047','#1E88E5','#AB47BC','#FB8C00'][k%6]}
+        :E.morceau(entre(r.left,r.right),r.top-entre(0,40),sa,entre(.5,2.5));
+        p.attente=k*18;p.vie+=600;if(conf)parts.push(p)}},
+    pas(dt){
+      const k=dt/16,now=performance.now();
+      if(secoue){const p=(now-secoue.t0)/secoue.dur;
+        if(p>=1){secoue.el.style.transform='';secoue=null}
+        else{const a=secoue.amp*(1-p)*(1-p);secoue.el.style.transform=`translate(${((Math.random()-.5)*2*a).toFixed(1)}px,${((Math.random()-.5)*2*a).toFixed(1)}px)`}}
+      if(!parts.length&&!anneaux.length&&!eclair){if(!propre){g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,cv.width,cv.height);propre=true}return}
+      g.setTransform(D,0,0,D,0,0);g.clearRect(0,0,innerWidth,innerHeight);propre=false;
+      if(eclair){const p=(now-eclair.t0)/220;if(p>=1)eclair=null;else{g.fillStyle=`rgba(255,246,214,${(eclair.a*(1-p)*(1-p)).toFixed(3)})`;g.fillRect(0,0,innerWidth,innerHeight)}}
+      anneaux=anneaux.filter(a=>{a.age+=dt;const p=Math.max(0,a.age/a.vie);if(p>=1)return false;
+        const e=1-(1-p)*(1-p)*(1-p);g.strokeStyle=`rgba(${a.col},${(.85*(1-p)).toFixed(3)})`;g.lineWidth=Math.max(1,a.ep*(1-p));
+        g.beginPath();g.arc(a.x,a.y,a.r*(.25+e),0,7);g.stroke();return true});
+      const neufs=[];
+      for(const p of parts){if(p.attente>0){p.attente-=dt;neufs.push(p);continue}
+        p.age+=dt;p.vy+=p.g*k;if(p.flotte&&p.vy>1.2)p.vy=1.2;p.vx*=Math.pow(.99,k);
+        p.x+=p.vx*k+(p.flotte?Math.sin(p.age/220+p.rot)*.4*k:0);p.y+=p.vy*k;p.rot=(p.rot||0)+(p.vr||0)*k;
+        if(p.k==='bloc'&&p.age>=p.vie){briser(p,neufs);continue}
+        if(p.age<p.vie&&p.y<innerHeight+40){neufs.push(p);dessine(p)}}
+      parts=neufs;
+      if(parts.length>800)parts.splice(0,parts.length-800)}
+  };
+  function briser(p,dans){const h=p.img.width/2;
+    for(let a=0;a<2;a++)for(let b=0;b<2;b++)dans.push({k:'quart',img:p.img,sx:a*h,sy:b*h,sw:h,x:p.x+(a-.5)*p.cote/2,y:p.y+(b-.5)*p.cote/2,
+      vx:p.vx+(a-.5)*3,vy:p.vy+(b-.5)*2-1.5,rot:p.rot,vr:entre(-.3,.3),age:0,vie:entre(650,900),cote:p.cote/2,g:.42});
+    const avant=parts;parts=dans;E.eclats(p.x,p.y,p.cote,p.mat,4+3*p.force,p.force);parts=avant}
+  function dessine(p){g.save();g.translate(p.x,p.y);g.rotate(p.rot||0);const fin=Math.max(0,1-p.age/p.vie);g.globalAlpha=Math.min(1,fin*1.6);
+    if(p.k==='bloc'){const q=Math.max(0,(p.age-p.vie+110)/110),c=p.cote*(1+.18*q);g.globalAlpha=1;g.drawImage(p.img,-c/2,-c/2,c,c);
+      if(q>0){g.globalAlpha=q*.9;g.fillStyle='#FFF8E0';arrondi(g,-c/2,-c/2,c,c,c*.14);g.fill()}}   // il gonfle et blanchit juste avant d'éclater
+    else if(p.k==='quart'){const c=p.cote;g.drawImage(p.img,p.sx,p.sy,p.sw,p.sw,-c/2,-c/2,c,c)}
+    else if(p.k==='eclat'){g.fillStyle=p.col;g.beginPath();g.moveTo(-p.r,-p.r*.6);g.lineTo(p.r,-p.r*.2);g.lineTo(-p.r*.2,p.r*.8);g.closePath();g.fill();
+      g.strokeStyle='rgba(46,24,8,.5)';g.lineWidth=1;g.stroke()}
+    else if(p.k==='etincelle'){g.globalCompositeOperation='lighter';const c=p.r*(.6+.4*fin);g.drawImage(lueur,-c,-c,2*c,2*c)}
+    else if(p.k==='petale'){g.fillStyle='#F7B6CF';g.beginPath();g.ellipse(0,0,p.r,p.r*.55,0,0,7);g.fill();g.fillStyle='#FFE3EE';g.beginPath();g.ellipse(-p.r*.3,-p.r*.12,p.r*.35,p.r*.18,0,0,7);g.fill()}
+    else if(p.k==='soleil'){g.fillStyle='#FFE27A';g.beginPath();for(let a=0;a<8;a++){const R=a%2?p.r*.35:p.r;g.lineTo(Math.cos(a*Math.PI/4)*R,Math.sin(a*Math.PI/4)*R)}g.closePath();g.fill();
+      g.fillStyle='#FFF8D6';g.beginPath();g.arc(0,0,p.r*.3,0,7);g.fill()}
+    else if(p.k==='feuille'){g.fillStyle=p.r>5.5?'#D66E28':'#E8A032';g.beginPath();g.ellipse(0,0,p.r*1.2,p.r*.6,0,0,7);g.fill();g.strokeStyle='rgba(110,50,10,.6)';g.lineWidth=1;g.beginPath();g.moveTo(-p.r*1.1,0);g.lineTo(p.r*1.1,0);g.stroke()}
+    else if(p.k==='flocon'){g.strokeStyle='#FFFFFF';g.lineWidth=1.6;g.lineCap='round';g.beginPath();for(let a=0;a<3;a++){const c=Math.cos(a*Math.PI/3)*p.r,s=Math.sin(a*Math.PI/3)*p.r;g.moveTo(-c,-s);g.lineTo(c,s)}g.stroke()}
+    else if(p.k==='nuage'){g.globalAlpha*=.55;g.fillStyle='#E8DCC4';g.beginPath();g.arc(0,0,p.r*(1+p.age/p.vie),0,7);g.fill()}
+    else if(p.k==='confetti'){g.fillStyle=p.col;g.fillRect(-p.r/2,-p.r*.3,p.r,p.r*.6)}
+    g.restore()}
+  return E;
+}
+/* ===================================================== fin des blocs de la Vallée ===================================================== */
+
+/* ---------- Le carré : 8 × 8 cases ; les pièces, chacune dans toutes ses orientations ---------- */
+const N=8;
+// ORIENTS[t] = les orientations distinctes de la forme t, chacune ramenée en haut à gauche : [[x,y],…]
+const ORIENTS={};
+for(const t of CLES){let m=FORMES[t];const vus=new Set();ORIENTS[t]=[];
+  for(let r=0;r<4;r++){const c=[];m.forEach((l,y)=>l.forEach((v,x)=>{if(v)c.push([x,y])}));
+    const mx=Math.min(...c.map(p=>p[0])),my=Math.min(...c.map(p=>p[1])),n=c.map(([x,y])=>[x-mx,y-my]).sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
+    const k=JSON.stringify(n);if(!vus.has(k)){vus.add(k);ORIENTS[t].push(n)}m=tourne(m)}}
+/* Les chances de chaque forme : les petites pièces (1, 2, 3 cases) viennent souvent, les grandes de temps en temps */
+const TIRAGE={m:7,d:8,r:6,c:7,O:5,I:3,T:4,S:3,Z:3,J:3,L:3,V:2,G:3,Q:2};
+function piece(t,o){const c=ORIENTS[t][o];return{t,c,w:Math.max(...c.map(p=>p[0]))+1,h:Math.max(...c.map(p=>p[1]))+1}}
+function auHasard(){const tot=Object.values(TIRAGE).reduce((a,b)=>a+b,0);let r=Math.random()*tot;
+  for(const t in TIRAGE){r-=TIRAGE[t];if(r<0)return piece(t,Math.floor(Math.random()*ORIENTS[t].length))}return piece('m',0)}
+const code=(p,k)=>(CLES.indexOf(p.t)+1)*4+(k%3);
+const libre=(b,x,y)=>x>=0&&y>=0&&x<N&&y<N&&!b[y*N+x];
+const rentre=(b,p,gx,gy)=>p.c.every(([x,y])=>libre(b,gx+x,gy+y));
+function rentreQuelquePart(b,p){for(let y=0;y<=N-p.h;y++)for(let x=0;x<=N-p.w;x++)if(rentre(b,p,x,y))return true;return false}
+// trois nouvelles pièces : la grille laisse toujours de la place à l'une d'elles au moins, à deux si elle peut
+function tirerTrois(){let meilleur=null,score=-1;
+  for(let essai=0;essai<40;essai++){const t=[auHasard(),auHasard(),auHasard()],n=t.filter(p=>rentreQuelquePart(P.b,p)).length;
+    if(n>score){score=n;meilleur=t}if(n>=2||(essai>=15&&n>=1))break}
+  return meilleur}
+// les lignes et colonnes pleines d'une grille
+function pleines(b){const L=[],K=[];
+  for(let y=0;y<N;y++){let ok=true;for(let x=0;x<N;x++)if(!b[y*N+x]){ok=false;break}if(ok)L.push(y)}
+  for(let x=0;x<N;x++){let ok=true;for(let y=0;y<N;y++)if(!b[y*N+x]){ok=false;break}if(ok)K.push(x)}
+  return{L,K}}
+
+/* ---------- Les saisons : une toutes les 10 lignes, comme le niveau des briques ---------- */
+const SAISONS=[
+  {nom:'Printemps',e:'🌸',dit:'Le printemps revient !',filtre:'hue-rotate(28deg) saturate(1.05) brightness(1.05)',teinte:'rgba(247,198,217,.16)'},
+  {nom:'Été',e:'🌻',dit:"L'été arrive !",filtre:'hue-rotate(14deg) saturate(1.25) brightness(1.08)',teinte:'rgba(255,226,122,.12)'},
+  {nom:'Automne',e:'🍂',dit:"Voici l'automne !",filtre:'none',teinte:'rgba(224,137,46,.08)'},
+  {nom:'Hiver',e:'❄️',dit:"L'hiver est là !",filtre:'saturate(.3) brightness(1.18) contrast(.92)',teinte:'rgba(205,225,245,.32)'}];
+const LIGNES_PAR_SAISON=10;
+const saisonNo=()=>Math.floor((P?P.lignes:0)/LIGNES_PAR_SAISON)%4;
+
+/* ---------- Mémoire de la tablette : même profil que les cartes (?profil=b pour les essais à deux onglets) ---------- */
+const PROFIL=(new URLSearchParams(location.search).get('profil')||'').replace(/[^a-z0-9]/gi,'');
+const K='carre'+(PROFIL?'-'+PROFIL:'')+':';
+const lis=(k,d)=>{try{const v=localStorage.getItem(K+k);return v===null?d:JSON.parse(v)}catch{return d}};
+const ecris=(k,v)=>{try{localStorage.setItem(K+k,JSON.stringify(v))}catch{}};
+/* Comme les briques : la partie finie verse dans la caisse du village ; la clé évite de payer deux fois. */
+function versVillage(n,cle){
+  try{ if(localStorage.getItem('village:paye:'+cle)) return; localStorage.setItem('village:paye:'+cle,'1');
+    localStorage.setItem('village:caisse', String((+localStorage.getItem('village:caisse')||0)+n)); }catch{}
+}
+const gainDe=l=>l>0?Math.min(300,Math.max(10,l*5)):0;
+
+/* ---------- Le son : quelques notes synthétisées, comme aux briques (aucun fichier) ---------- */
+let AC=null, sonOn=lis('son',true);
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch{AC=null}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function note(f,t0,dur,type,vol){if(!sonOn)return;const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(0,a.currentTime+t0);g.gain.linearRampToValueAtTime(vol||.12,a.currentTime+t0+.01);
+  g.gain.exponentialRampToValueAtTime(.0005,a.currentTime+t0+dur);o.connect(g).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+dur+.05)}
+const SON={
+  prise(){note(660,0,.06,'triangle',.03);note(880,.03,.06,'sine',.02)},
+  refus(){note(330,0,.09,'sine',.05);note(262,.07,.12,'sine',.04)},
+  tac(){note(880,0,.05,'triangle',.025)},
+  pose(){if(!sonOn)return;const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(170,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(70,a.currentTime+.16);g.gain.setValueAtTime(.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.2);
+    o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+.25)},
+  ligne(n,ch){const m=Math.pow(2,2*Math.min(ch||0,8)/12);[784,988,1175,1319,1568].slice(0,Math.min(n,4)+1).forEach((f,k)=>note(f*m,k*.08,.35,'sine',.09));note(1760*m,n*.08+.08,.4,'triangle',.04);
+    if(n>=3)[1568,1976,2349,3136].forEach((f,k)=>note(f*m,.5+k*.07,.5,'triangle',.05))},
+  fete(){[523,659,784,1047,1319,1568,2093].forEach((f,k)=>note(f,k*.09,.5,'triangle',.07));[1047,1319,1568].forEach(f=>note(f,.75,1.1,'sine',.05))},
+  saison(){[523,659,784,1047].forEach((f,k)=>note(f,k*.12,.4,'triangle',.08))},
+  arrivee(){[523,659,784].forEach((f,k)=>note(f,k*.06,.18,'triangle',.035))},
+  fin(){[784,659,523,659,784].forEach((f,k)=>note(f,k*.16,.45,'triangle',.07))}};
+const ICONE_SON=on=>`<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5h4l5-4v13l-5-4h-4z"/>${on?'<path d="M16 9a4.5 4.5 0 0 1 0 6"/><path d="M18.8 6.3a8.4 8.4 0 0 1 0 11.4"/>':'<path d="M16 9.5l5 5M21 9.5l-5 5"/>'}</svg>`;
+const ICONE_DOUX=on=>on?'<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4C9 5 5 11 5 19"/><path d="M19 4c1 7-4 12-11 12"/><path d="M5 19l-1.5 1.5"/></svg>'
+  :'<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="2.6"/></svg>';
+function majSon(){const b=$('bSon');b.innerHTML=ICONE_SON(sonOn);b.setAttribute('aria-label',sonOn?'Couper le son':'Remettre le son')}
+function majDoux(){const b=$('bDoux');b.innerHTML=ICONE_DOUX(doux);b.setAttribute('aria-label',doux?'Effets doux : remettre les effets vifs':'Passer aux effets doux')}
+
+/* ---------- La partie ---------- */
+let P=null, etat='jeu', record=lis('record',0);
+const sauve=()=>ecris('partie',P);
+function nouvellePartie(){
+  P={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),b:Array(N*N).fill(0),pieces:[null,null,null],score:0,lignes:0,serie:-1,sans:0,paye:false,fini:false,aide:true};
+  P.pieces=tirerTrois();arrivee=performance.now();saisonVue=-1;mettreSaison(false);sauve();majInfos();sale=true;
+}
+/* poser la pièce i en (gx, gy) : les cases se remplissent, puis les lignes et colonnes pleines s'en vont */
+function poser(i,gx,gy){
+  const p=P.pieces[i],cases=[];
+  p.c.forEach(([x,y],k)=>{const X=gx+x,Y=gy+y;P.b[Y*N+X]=code(p,k);cases.push([X,Y])});
+  P.pieces[i]=null;P.score+=p.c.length;P.aide=false;cacherBulle();
+  SON.pose();claque={cases,t0:performance.now()};
+  const r=boite();for(const [X,Y] of cases)if(!cases.some(([a,b])=>a===X&&b===Y+1))FX.nuage(r.left+(X+.5)*C,r.top+(Y+1)*C-2);
+  const {L,K}=pleines(P.b),n=L.length+K.length;
+  if(n){
+    P.serie=P.sans<3?P.serie+1:0;P.sans=0;   // un enchaînement : des lignes encore, sans trois pièces à vide entre deux
+    const avant=saisonNo(),gain=10*n*(n+1)/2*(1+Math.max(0,P.serie));
+    const vides=new Set();L.forEach(y=>{for(let x=0;x<N;x++)vides.add(y*N+x)});K.forEach(x=>{for(let y=0;y<N;y++)vides.add(y*N+x)});
+    // le coup : un instant de lueur (plus long quand le coup est grand), puis l'onde part de la pièce posée
+    const ox=gx+p.w/2,oy=gy+p.h/2,pause=[0,40,80,120,150,170][Math.min(n,5)],t0=performance.now()+120+pause,force=Math.min(3,1+.35*(n-1)+.3*Math.max(0,P.serie));
+    for(const k of vides){const x=k%N,y=Math.floor(k/N);partants.push({x,y,v:P.b[k],t:t0+Math.hypot(x+.5-ox,y+.5-oy)*30,force,ox,oy});P.b[k]=0}
+    coup={t0,ox,oy,n,force,fait:false};
+    P.lignes+=n;P.score+=gain;
+    SON.ligne(n,P.serie);
+    setTimeout(()=>{pointsVolent(gain,oy);if(P.serie>0)bulleCombo(P.serie+1,oy)},pause+200);
+    const vide=P.b.every(v=>!v);
+    if(vide){P.score+=300;setTimeout(()=>{ruban('🎉 Tout est vide !',true);FX.pluie(boite(),90,saisonNo(),true);SON.fete()},pause+500)}
+    else if(n>=4)setTimeout(()=>ruban('🌟 Quelle récolte !',true),pause+300);
+    else if(n===3)setTimeout(()=>ruban('🌾 Belle récolte !'),pause+300);
+    if(saisonNo()!==avant)setTimeout(()=>mettreSaison(true),pause+900);
+  }else{P.sans++;if(P.sans>=3)P.serie=-1}
+  if(P.pieces.every(x=>!x)){P.pieces=tirerTrois();arrivee=performance.now()+180;setTimeout(()=>SON.arrivee(),180)}
+  if(P.score>record){record=P.score;ecris('record',record)}
+  sale=true;majInfos();
+  // plus aucune pièce offerte ne rentre : la partie s'arrête, après l'éclatement
+  if(!P.pieces.some(x=>x&&rentreQuelquePart(P.b,x))){P.fini=true;etat='fin';finir()}
+  sauve();
+}
+function finir(){
+  const g=gainDe(P.lignes);
+  if(!P.paye){if(g)versVillage(g,'carre-'+P.id);P.paye=true}
+  sauve();setTimeout(()=>{SON.fin();fenFin()},1400);
+}
+
+/* ---------- Le dessin : le carré, la réserve, la pièce tenue ---------- */
+const toile=$('toile'),ctx=toile.getContext('2d'),resC=$('reserve'),rctx=resC.getContext('2d'),mainC=$('main'),mctx=mainC.getContext('2d');
+const FX=effets($('fx'));
+let C=40,TC=24,DPR=1,zones=[],sale=true,claque=null,partants=[],coup=null,arrivee=0,tenue=null,retour=null,doux=lis('doux',false);
+const calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
+FX.doux=doux||calme;
+const CACHE={};
+function blocs(s){if(!CACHE[s]){CACHE[s]={};for(const t of CLES)CACHE[s][t]=[0,1,2].map(v=>bloc(MATIERE[t],v,s))}return CACHE[s]}
+const imgDe=(v,B)=>B[CLES[(v>>2)-1]][v&3];
+const boite=()=>toile.getBoundingClientRect();
+function dessine(now){
+  const s=Math.round(C*DPR),W=N*s,B=blocs(s);
+  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,W);
+  ctx.fillStyle='rgba(30,18,8,.62)';ctx.fillRect(0,0,W,W);
+  // les cases vides : un léger creux
+  ctx.fillStyle='rgba(255,236,200,.06)';
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(!P.b[y*N+x]){arrondi(ctx,x*s+s*.06,y*s+s*.06,s*.88,s*.88,s*.12);ctx.fill()}
+  let pq=1;if(claque){pq=(now-claque.t0)/160;if(pq>=1)claque=null}
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=P.b[y*N+x];if(!v)continue;const img=imgDe(v,B);
+    if(claque&&claque.cases.some(([a,b])=>a===x&&b===y)){const k=1-.12*Math.sin(Math.PI*pq);ctx.drawImage(img,x*s+s*(1-k)/2,y*s+s*(1-k)/2,s*k,s*k)}
+    else ctx.drawImage(img,x*s,y*s)}
+  // les blocs qui vont partir : ils blanchissent de plus en plus jusqu'à leur départ
+  for(const p of partants){ctx.drawImage(imgDe(p.v,B),p.x*s,p.y*s);
+    const a=Math.min(1,Math.max(.25,1-(p.t-now)/260));ctx.fillStyle=`rgba(255,248,220,${(.75*a).toFixed(3)})`;arrondi(ctx,p.x*s,p.y*s,s,s,s*.14);ctx.fill()}
+  // la pièce tenue au-dessus du carré : son ombre là où elle se posera, et les lignes qu'elle remplirait, qui scintillent
+  if(tenue&&tenue.ok){const p=tenue.p,b=P.b.slice();p.c.forEach(([x,y],k)=>{b[(tenue.gy+y)*N+tenue.gx+x]=code(p,k)});
+    const {L,K}=pleines(b),pul=(.3+.18*Math.sin(now/110)).toFixed(3);
+    ctx.globalAlpha=.45;p.c.forEach(([x,y],k)=>ctx.drawImage(B[p.t][k%3],(tenue.gx+x)*s,(tenue.gy+y)*s));ctx.globalAlpha=1;
+    ctx.fillStyle=`rgba(255,216,107,${pul})`;
+    for(const y of L)for(let x=0;x<N;x++){arrondi(ctx,x*s,y*s,s,s,s*.14);ctx.fill()}
+    for(const x of K)for(let y=0;y<N;y++){if(L.includes(y))continue;arrondi(ctx,x*s,y*s,s,s,s*.14);ctx.fill()}
+    ctx.strokeStyle='rgba(255,240,200,.75)';ctx.lineWidth=Math.max(1.5,s*.05);ctx.setLineDash([s*.18,s*.12]);
+    p.c.forEach(([x,y])=>ctx.strokeRect((tenue.gx+x)*s+s*.08,(tenue.gy+y)*s+s*.08,s*.84,s*.84));ctx.setLineDash([])}
+}
+/* la taille des pièces de la réserve : la même pour les trois, la plus grande qui laisse chacune tenir dans sa place */
+function tailleReserve(){let t=C*.75;for(const p of P.pieces)if(p&&zones[0])t=Math.min(t,zones[0].w/(p.w+.7),zones[0].h/(p.h+.7));return Math.max(12,t)}
+function dessineReserve(now){
+  const w=resC.width,h=resC.height;rctx.setTransform(1,0,0,1,0,0);rctx.clearRect(0,0,w,h);
+  if(!tenue)TC=tailleReserve();   // pendant qu'une pièce est tenue, les autres ne changent pas de taille
+  const B=blocs(Math.round(C*DPR)),s=TC*DPR;
+  zones.forEach((z,i)=>{const p=P.pieces[i];if(!p||(tenue&&tenue.i===i)||(retour&&retour.i===i))return;
+    const q=Math.min(1,Math.max(0,(now-arrivee-i*70)/260)),e=1-(1-q)*(1-q)*(1-q);if(q<=0)return;
+    const ok=rentreQuelquePart(P.b,p);
+    const ox=(z.x+(z.w-p.w*TC)/2+(1-e)*z.w*.5)*DPR,oy=(z.y+(z.h-p.h*TC)/2)*DPR;
+    rctx.globalAlpha=e*(ok?1:.38);   // une pièce qui ne rentre nulle part reste pâle
+    p.c.forEach(([x,y],k)=>rctx.drawImage(B[p.t][k%3],Math.round(ox+x*s),Math.round(oy+y*s),Math.round(s),Math.round(s)))});
+  rctx.globalAlpha=1;
+}
+// la pièce au bout du doigt (ou qui revient dans la réserve), à la taille du carré
+function dessineMain(now){
+  mctx.setTransform(1,0,0,1,0,0);mctx.clearRect(0,0,mainC.width,mainC.height);
+  const r=resC.getBoundingClientRect();let p,x,y,c;
+  if(tenue){p=tenue.p;const q=Math.min(1,(now-tenue.t0)/110);c=TC+(C-TC)*q;x=tenue.x-p.w*c/2;y=tenue.y-p.h*c-C*.9*q}
+  else if(retour){p=retour.p;const q=Math.min(1,(now-retour.t0)/170),e=1-(1-q)*(1-q);const z=zones[retour.i];
+    c=C+(TC-C)*e;x=retour.x+(r.left+z.x+(z.w-p.w*TC)/2-retour.x)*e;y=retour.y+(r.top+z.y+(z.h-p.h*TC)/2-retour.y)*e;if(q>=1)retour=null}
+  if(!p)return;
+  const s=Math.round(C*DPR),B=blocs(s);mctx.setTransform(DPR,0,0,DPR,0,0);
+  mctx.shadowColor='rgba(20,10,0,.45)';mctx.shadowBlur=12;mctx.shadowOffsetY=6;
+  p.c.forEach(([cx,cy],k)=>mctx.drawImage(B[p.t][k%3],x+cx*c,y+cy*c,c,c));mctx.shadowColor='transparent';
+}
+function majInfos(){
+  if(!P)return;const S=SAISONS[saisonNo()];
+  $('plPoints').innerHTML=`<b>${P.score.toLocaleString('fr-FR')}</b> points`;
+  $('plSaison').textContent=`${S.e} ${P.lignes} ligne${P.lignes>1?'s':''} · record ${record.toLocaleString('fr-FR')}`;
+}
+
+/* ---------- Les effets du coup : l'onde part de la pièce posée, les blocs sautent et éclatent ---------- */
+function lancer(now){
+  if(coup&&!coup.fait&&now>=coup.t0){coup.fait=true;const r=boite(),cx=r.left+coup.ox*C,cy=r.top+coup.oy*C;
+    FX.anneau(cx,cy,C*N*Math.min(.9,.35+.15*coup.n),'255,240,190',6+3*coup.n);
+    if(coup.n>=2)FX.anneau(cx,cy,C*N*Math.min(1.2,.5+.18*coup.n),'255,216,107',4+2*coup.n);
+    if(coup.n>=2)FX.secouer($('jeu'),[0,0,4,6,9,11][Math.min(coup.n,5)],[0,0,240,300,380,440][Math.min(coup.n,5)]);
+    if(coup.n>=3)FX.eclair(.12*coup.n);
+    if(coup.n>=3&&!FX.doux&&(!navigator.userActivation||navigator.userActivation.hasBeenActive)){try{navigator.vibrate&&navigator.vibrate(coup.n>=4?[60,40,90]:[50])}catch{}}}
+  if(!partants.length)return;
+  const r=boite(),s=Math.round(C*DPR),B=blocs(s),sa=saisonNo();let n=0;
+  partants=partants.filter(p=>{if(now<p.t)return true;
+    const dx=p.x+.5-p.ox,dy=p.y+.5-p.oy,d=Math.hypot(dx,dy)||1,x=r.left+(p.x+.5)*C,y=r.top+(p.y+.5)*C;
+    FX.bloc(imgDe(p.v,B),x,y,C,MATIERE[CLES[(p.v>>2)-1]],{vx:dx/d*(1.2+p.force*.8)+(Math.random()-.5),vy:-(4+p.force*1.3+Math.random()*2.5),force:p.force});
+    if(Math.random()<.5)FX.morceau(x,y,sa);
+    n++;return false});
+  if(n){SON.tac();sale=true}   // le carré se redessine sans les blocs partis
+}
+
+/* ---------- La boucle ---------- */
+let avant=0;
+function boucle(ts){
+  requestAnimationFrame(boucle);
+  const dt=Math.min(100,ts-(avant||ts));avant=ts;const now=performance.now();
+  lancer(now);ciel(dt);FX.pas(dt);
+  const anime=claque||partants.length||tenue||retour||now-arrivee<500;
+  if(sale||anime){dessine(now);dessineMain(now);dessineReserve(now);sale=false}   // la main d'abord : une pièce revenue se redessine aussitôt dans la réserve
+}
+
+/* ---------- Le doigt : prendre une pièce dans la réserve, la glisser sur le carré, la lâcher ---------- */
+function viser(){
+  const p=tenue.p,r=boite(),q=Math.min(1,(performance.now()-tenue.t0)/110),c=TC+(C-TC)*q;
+  const fx=(tenue.x-p.w*c/2-r.left)/C,fy=(tenue.y-p.h*c-C*.9*q-r.top)/C;
+  // la case la plus proche où la pièce rentre, parmi les quatre qui l'entourent (le doigt n'a pas à viser au pixel près)
+  let best=null,bd=1e9;
+  for(const gx of [Math.floor(fx),Math.ceil(fx)])for(const gy of [Math.floor(fy),Math.ceil(fy)]){
+    if(!rentre(P.b,p,gx,gy))continue;const d=(gx-fx)**2+(gy-fy)**2;if(d<bd){bd=d;best=[gx,gy]}}
+  tenue.ok=!!best&&bd<.75;if(tenue.ok){tenue.gx=best[0];tenue.gy=best[1]}
+}
+resC.addEventListener('pointerdown',e=>{
+  if(etat!=='jeu'||tenue||!P)return;e.preventDefault();audio();
+  const r=resC.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  const i=zones.findIndex(z=>x>=z.x&&x<z.x+z.w&&y>=z.y&&y<z.y+z.h);
+  if(i<0||!P.pieces[i])return;
+  retour=null;try{resC.setPointerCapture(e.pointerId)}catch{}
+  tenue={i,p:P.pieces[i],id:e.pointerId,x:e.clientX,y:e.clientY,t0:performance.now(),ok:false};SON.prise();cacherBulle();viser();sale=true;
+});
+resC.addEventListener('pointermove',e=>{if(!tenue||e.pointerId!==tenue.id)return;tenue.x=e.clientX;tenue.y=e.clientY;viser();sale=true});
+function lacher(e,annule){
+  if(!tenue||e.pointerId!==tenue.id)return;const t=tenue;tenue=null;sale=true;
+  if(!annule){t.x=e.clientX;t.y=e.clientY;tenue=t;viser();tenue=null}
+  if(!annule&&t.ok&&etat==='jeu'){poser(t.i,t.gx,t.gy);return}
+  // elle ne rentre pas là : elle revient dans la réserve
+  const q=Math.min(1,(performance.now()-t.t0)/110),c=TC+(C-TC)*q;
+  retour={i:t.i,p:t.p,x:t.x-t.p.w*c/2,y:t.y-t.p.h*c-C*.9*q,t0:performance.now()};
+  if(!annule&&performance.now()-t.t0>180)SON.refus();
+}
+resC.addEventListener('pointerup',e=>lacher(e,false));
+resC.addEventListener('pointercancel',e=>lacher(e,true));
+resC.addEventListener('lostpointercapture',e=>lacher(e,false));
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ---------- La scène : la saison et ce qui vole dans l'air (comme aux briques) ---------- */
+const fond=$('fond'),teinte=$('teinte'),cielC=$('ciel'),cg=cielC.getContext('2d');
+let flocons=[],saisonVue=-1;
+function mettreSaison(annoncer){
+  const i=saisonNo();if(i===saisonVue)return;saisonVue=i;const S=SAISONS[i];
+  fond.style.filter=S.filtre;teinte.style.backgroundColor=S.teinte;flocons=[];
+  if(annoncer){SON.saison();const r=$('plateau').getBoundingClientRect(),a=document.createElement('div');a.className='annonce';
+    a.textContent=`${S.e} ${S.dit}`;a.style.left=(r.left+r.width/2)+'px';a.style.top=(r.top+r.height*.3)+'px';
+    document.body.appendChild(a);setTimeout(()=>a.remove(),2900)}
+  majInfos();
+}
+function ciel(dt){
+  if(calme||document.hidden)return;
+  const w=cielC.width,h=cielC.height,i=saisonVue<0?0:saisonVue;
+  while(flocons.length<22){const f={x:Math.random()*w,y:Math.random()*h,v:.3+Math.random()*.7,a:Math.random()*6,r:3+Math.random()*4};
+    if(i===1)f.r=1.5+Math.random()*2;flocons.push(f)}
+  cg.clearRect(0,0,w,h);const k=dt/16;
+  for(const f of flocons){f.a+=.02*k;
+    if(i===1){f.y-=.15*f.v*k;f.x+=Math.sin(f.a)*.3*k}else{f.y+=(i===3?.45:.6)*f.v*k;f.x+=(Math.sin(f.a)*.5+(i===0?.3:0))*k}
+    if(f.y>h+10){f.y=-10;f.x=Math.random()*w}if(f.y<-10){f.y=h+10;f.x=Math.random()*w}if(f.x>w+10)f.x=-10;if(f.x<-10)f.x=w+10;
+    cg.save();cg.translate(f.x,f.y);cg.rotate(f.a);
+    if(i===0){cg.fillStyle='rgba(250,200,220,.8)';cg.beginPath();cg.ellipse(0,0,f.r,f.r*.55,0,0,7);cg.fill()}
+    else if(i===1){cg.fillStyle=`rgba(255,236,150,${(.4+.4*Math.sin(f.a*3)).toFixed(2)})`;cg.beginPath();cg.arc(0,0,f.r,0,7);cg.fill()}
+    else if(i===2){cg.fillStyle=f.v>.65?'rgba(214,110,40,.85)':'rgba(232,160,50,.85)';cg.beginPath();cg.ellipse(0,0,f.r*1.2,f.r*.6,0,0,7);cg.fill()}
+    else{cg.fillStyle='rgba(255,255,255,.85)';cg.beginPath();cg.arc(0,0,f.r*.7,0,7);cg.fill()}
+    cg.restore()}
+}
+
+/* ---------- Les mots qui volent : points, rubans, enchaînements, la bulle du premier geste ---------- */
+function pointsVolent(n,oy){const r=boite(),el=document.createElement('div'),cible=$('plPoints').getBoundingClientRect();
+  el.className='vole';el.textContent='+'+n.toLocaleString('fr-FR');el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+oy*C)+'px';document.body.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.left=(cible.left+cible.width/2)+'px';el.style.top=(cible.top+cible.height/2)+'px';el.style.transform='translate(-50%,-50%) scale(.6)';el.style.opacity='.4'}));
+  setTimeout(()=>{el.remove();const pl=$('plPoints');pl.classList.remove('gonfle');void pl.offsetWidth;pl.classList.add('gonfle')},820)}
+function ruban(txt,grand){const r=boite(),el=document.createElement('div');el.className='ruban'+(grand?' grand':'');el.textContent=txt;
+  el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+r.height*.4)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1900)}
+function bulleCombo(n,oy){const r=boite(),el=document.createElement('div');el.className='combo';el.textContent='Enchaînement ×'+n;
+  el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+Math.max(1.2,oy)*C)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1300)}
+let bulleEl=null;
+function montrerBulle(txt,x,y){cacherBulle();bulleEl=document.createElement('div');bulleEl.className='bulle';bulleEl.textContent=txt;
+  bulleEl.style.left=x+'px';bulleEl.style.top=y+'px';document.body.appendChild(bulleEl)}
+function cacherBulle(){if(bulleEl){bulleEl.remove();bulleEl=null}}
+function aideDebut(){if(P&&P.aide&&etat==='jeu'){const r=resC.getBoundingClientRect();montrerBulle('Glissez une pièce sur le carré 👆',r.left+r.width/2,r.top-8);
+  if(document.body.dataset.o==='paysage')bulleEl.style.top=(r.top+bulleEl.offsetHeight+6)+'px'}}   // en paysage, au haut de la réserve : les plaques restent lisibles
+
+/* ---------- La place : tout est mesuré sur l'écran réel ---------- */
+function poseBoite(el,x,y,w,h){el.style.left=x+'px';el.style.top=y+'px';if(w!=null)el.style.width=w+'px';if(h!=null)el.style.height=h+'px'}
+function placer(){
+  const vw=innerWidth,vh=innerHeight,m=10,f=13,hb=56,portrait=vh>vw*1.05;
+  document.body.dataset.o=portrait?'portrait':'paysage';
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  cielC.width=vw;cielC.height=vh;FX.taille();mainC.width=Math.round(vw*DPR);mainC.height=Math.round(vh*DPR);
+  tenue=null;retour=null;
+  const haut=$('haut'),infos=$('infos');let bx,by,zone;
+  if(portrait){
+    // en haut, les boutons ; dessous, une rangée de deux plaques fines ; puis le carré, et la réserve sous le pouce
+    poseBoite(haut,vw-m-232,m,232,null);poseBoite(infos,m,m+hb+4,vw-2*m,null);
+    const top=m+hb+4+infos.offsetHeight+m,reserveMin=Math.round(Math.min(vh*.26,(vw-2*m)/3*1.15));
+    C=Math.floor((Math.min(vw-2*m,vh-top-2*m-reserveMin)-2*f)/N);
+    const B=C*N+2*f,reste=vh-top-B-2*m,rh=Math.round(Math.min(reste,Math.max(130,C*.75*4.6)));
+    bx=Math.round((vw-B)/2);by=top+Math.round((reste-rh)*.4);   // le carré et la réserve, ensemble, au milieu de la place qui reste
+    zone={x:m,y:by+B+m,w:vw-2*m,h:rh};
+  }else{
+    // le carré à gauche sur toute la hauteur ; à droite les boutons, les plaques, puis la réserve
+    C=Math.floor((vh-2*m-2*f)/N);let B=C*N+2*f;
+    let col=Math.min(vw-B-3*m,Math.round(B*.85));
+    if(col<240){C=Math.floor((vw-3*m-240-2*f)/N);B=C*N+2*f;col=240}
+    const gx=Math.round((vw-(B+m+col))/2);bx=gx;by=Math.round((vh-B)/2);const cx=gx+B+m;
+    poseBoite(haut,cx+col-232,m,232,null);poseBoite(infos,cx,m+hb+6,col,null);
+    const zy=m+hb+6+infos.offsetHeight+m;zone={x:cx,y:zy,w:col,h:vh-zy-m};
+  }
+  C=Math.max(8,C);   // une fenêtre minuscule (onglet caché, clavier ouvert) ne donne jamais une taille négative
+  const B=C*N+2*f;poseBoite($('plateau'),bx,by,B,B);
+  const s=Math.round(C*DPR);toile.width=toile.height=N*s;toile.style.width=toile.style.height=N*C+'px';
+  // la réserve : trois places côte à côte (ou l'une sous l'autre si la place est en hauteur)
+  poseBoite(resC,zone.x,zone.y,zone.w,zone.h);resC.width=Math.round(zone.w*DPR);resC.height=Math.round(zone.h*DPR);
+  const enLigne=zone.w>=zone.h*.9;
+  zones=[0,1,2].map(i=>enLigne?{x:i*zone.w/3,y:0,w:zone.w/3,h:zone.h}:{x:0,y:i*zone.h/3,w:zone.w,h:zone.h/3});
+  for(const k in CACHE)if(+k!==s)delete CACHE[k];
+  sale=true;if(bulleEl)aideDebut();
+}
+
+/* ---------- Les boutons du coin ---------- */
+let confirmer=null;
+$('haut').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;audio();
+  if(a==='accueil'){sauve();location.href='index.html'+location.search}
+  else if(a==='son'){sonOn=!sonOn;ecris('son',sonOn);majSon()}
+  else if(a==='doux'){doux=!doux;ecris('doux',doux);FX.doux=doux||calme;if(FX.doux)FX.calmer();majDoux()}
+  else if(a==='nouvelle'){
+    /* toucher encore pour recommencer : les lignes déjà faites sont versées au village */
+    if(confirmer!==b){confirmer=b;b.classList.add('confirme');const r=b.getBoundingClientRect();montrerBulle('Touchez encore pour recommencer',r.left+r.width/2,r.bottom+60);
+      setTimeout(()=>{if(confirmer===b){confirmer=null;b.classList.remove('confirme');cacherBulle()}},4000);return}
+    confirmer=null;b.classList.remove('confirme');cacherBulle();recommencer();
+  }
+});
+function recommencer(){
+  if(P&&!P.paye){const g=gainDe(P.lignes);if(g)versVillage(g,'carre-'+P.id);P.paye=true}
+  fenetre.innerHTML='';partants=[];coup=null;etat='jeu';nouvellePartie();
+}
+
+/* ---------- La fin : plus de place ---------- */
+const fenetre=$('fenetre');
+function fenFin(){
+  if(etat!=='fin')return;
+  const l=P.lignes,g=gainDe(l),neuf=P.score>=record&&P.score>0;
+  fenetre.innerHTML=`<div class="voile"><div class="fen" role="dialog" aria-label="Partie terminée">
+    <h2>Plus de place !</h2>
+    <p><b>${P.score.toLocaleString('fr-FR')} points</b> · ${l} ligne${l>1?'s':''}</p>
+    <p>${neuf?'🏆 Nouveau record !':`Record : ${record.toLocaleString('fr-FR')} points`}</p>
+    ${g?`<p>🏡 +${g} pièces et des étoiles pour votre village.</p>`:'<p>Les lignes pleines rapportent des pièces au village.</p>'}
+    <button class="btn grand" data-a="encore">Une nouvelle partie</button>
+    <button class="btn clair" data-a="accueil">Retour à l'accueil</button></div></div>`;
+}
+fenetre.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;audio();
+  if(b.dataset.a==='encore')recommencer();else if(b.dataset.a==='accueil')location.href='index.html'+location.search});
+
+/* ---------- Au démarrage : la partie gardée reprend, sinon une nouvelle commence tout de suite ---------- */
+P=lis('partie',null);
+if(!P||P.fini||!Array.isArray(P.b)||P.b.length!==N*N||!Array.isArray(P.pieces))P=null;
+majSon();majDoux();placer();addEventListener('resize',placer);
+if(P){arrivee=performance.now();mettreSaison(false);majInfos()}else nouvellePartie();
+placer();   // une seconde fois, les plaques remplies : leur vraie hauteur compte dans la place
+setTimeout(aideDebut,600);
+requestAnimationFrame(boucle);
+
+// Accès pour la vérification automatisée (lecture de l'état et poses) : sans effet pour les joueuses.
+window.__carre={get P(){return P},poser,rentre,rentreQuelquePart,pleines,piece,tirerTrois,get zones(){return zones},get C(){return C}};
+</script>
+</body>
+</html>

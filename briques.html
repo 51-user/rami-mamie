@@ -11,6 +11,7 @@
 <style>
 /* ===== Les briques de la Vallée (25/10, cahier des charges de Mamie transmis par Florian : « 1. Tetris en version Vallée »).
    Les règles du jeu classique de briques qui tombent : 7 pièces de 4 carrés, les lignes pleines s'en vont, la vitesse monte doucement.
+   Depuis le 02/11, les quatre petites pièces du carré (carre.html) tombent aussi : une case, deux cases, la barrette et le coin de trois.
    Même habit que le village, les cartes et les mots mêlés : bois chaud, parchemin, Fredoka, fond de la Vallée.
    LE JEU D'ABORD : le puits prend toute la hauteur ; les infos sont des plaques fines ; les gros boutons de bois sont dessous
    (portrait) ou de part et d'autre, sous les pouces (paysage). ===== */
@@ -129,12 +130,216 @@ body[data-o="paysage"] #cmdD [data-a="tourner"]{grid-column:1 / 3;width:auto}
 <div id="fenetre"></div>
 <script>
 'use strict';
-/* ---------- Les sept pièces, chacune dans une matière du village ---------- */
-const TYPES='IOTSZJL';
+/* =====================================================================================================================
+   LES BLOCS DE LA VALLÉE — même section dans briques.html et carre.html (02/11) : les mêmes matières, les mêmes formes,
+   le même éclatement. Les deux copies se gardent identiques ; une retouche ici se reporte là-bas.
+   ===================================================================================================================== */
+/* ---------- Les formes : les sept pièces de 4 carrés, puis les nouvelles ----------
+   Une lettre par forme. L'ordre de CLES fixe le code rangé dans les grilles : (rang + 1) × 4 + variante.
+   Les briques prennent le début (IOTSZJLmdrc), le carré prend tout. */
+const CLES='IOTSZJLmdrcVGQ';
 const FORMES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,1,0],[1,1,1],[0,0,0]],
-  S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]]};
-const MATIERE={I:'tuiles',O:'paille',T:'fleurs',S:'haie',Z:'brique',J:'pierre',L:'bois'};
+  S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]],
+  m:[[1]],                                  // la pièce d'une case
+  d:[[0,0,0],[0,1,1],[0,0,0]],              // la pièce de deux cases (elle tourne sur sa première case)
+  r:[[0,0,0],[1,1,1],[0,0,0]],              // la barrette de trois
+  c:[[1,0],[1,1]],                          // le petit coin de trois
+  V:[[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],   // la grande barre de cinq (carré seulement)
+  G:[[1,0,0],[1,0,0],[1,1,1]],              // le grand coin de cinq (carré seulement)
+  Q:[[1,1,1],[1,1,1],[1,1,1]]};             // le grand carré de neuf (carré seulement)
+const MATIERE={I:'tuiles',O:'paille',T:'fleurs',S:'haie',Z:'brique',J:'pierre',L:'bois',
+  m:'citrouille',d:'eau',r:'lavande',c:'miel',V:'bouleau',G:'glace',Q:'nuit'};
+/* trois teintes par matière : les éclats prennent la couleur du bloc qui part */
+const COULEURS={bois:['#D7A169','#A46635','#5A3418'],pierre:['#C9CBC3','#8B8E87','#6C6E69'],paille:['#F2D47A','#C99A3A','#FCECAA'],
+  brique:['#C4603F','#A84A33','#D8C4A2'],haie:['#76A845','#4F7F2E','#8DBE5A'],fleurs:['#F4B3CB','#FFF6FA','#FFE27A'],tuiles:['#7480A0','#414B66','#363E55'],
+  citrouille:['#F2A04A','#C8641E','#6E9E3E'],eau:['#7CC8D8','#2F7F99','#E4F7FA'],lavande:['#B9A2E4','#7A61B0','#6E9E3E'],miel:['#F6C65A','#C47F1C','#FFE9A8'],
+  bouleau:['#F2EBDD','#3A332B','#D9CFBC'],glace:['#E6F6FD','#8EC3E0','#FFFFFF'],nuit:['#2C3466','#FFF3B0','#4A5598']};
 const tourne=m=>m.map((r,y)=>r.map((_,x)=>m[m.length-1-x][y]));
+
+/* ---------- Le dessin d'un bloc : de vrais petits blocs de matière, avec relief, dessinés une fois par taille ---------- */
+function hasard(seed){return()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function arrondi(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+const degrade=(g,s,a,b)=>{const d=g.createLinearGradient(0,0,0,s);d.addColorStop(0,a);d.addColorStop(1,b);return d};
+const MATIERES={
+  /* les sept matières des briques (25/10) */
+  bois(g,s,R){g.fillStyle=degrade(g,s,'#D7A169','#A46635');g.fillRect(0,0,s,s);
+    g.lineWidth=Math.max(1,s*.025);g.strokeStyle='rgba(90,50,20,.28)';
+    for(let k=0;k<6;k++){const y=s*(.08+k*.16+R()*.05);g.beginPath();g.moveTo(0,y);g.bezierCurveTo(s*.3,y+s*(R()-.5)*.12,s*.7,y+s*(R()-.5)*.12,s,y);g.stroke()}
+    for(const y of [s/3,s*2/3]){g.fillStyle='rgba(74,42,18,.6)';g.fillRect(0,y-s*.025,s,s*.045);g.fillStyle='rgba(255,220,170,.28)';g.fillRect(0,y+s*.02,s,s*.025)}
+    g.strokeStyle='rgba(74,42,18,.55)';g.lineWidth=Math.max(1,s*.03);g.beginPath();g.ellipse(s*(.25+R()*.5),s*(.12+Math.floor(R()*3)/3),s*.07,s*.04,0,0,7);g.stroke()},
+  pierre(g,s,R){g.fillStyle='#6C6E69';g.fillRect(0,0,s,s);
+    for(const [cx,cy] of [[.27,.27],[.74,.25],[.25,.74],[.73,.73]]){const x=s*(cx+(R()-.5)*.06),y=s*(cy+(R()-.5)*.06),rx=s*(.21+R()*.05),ry=s*(.19+R()*.05);
+      const d=g.createLinearGradient(0,y-ry,0,y+ry);d.addColorStop(0,'#C9CBC3');d.addColorStop(1,'#8B8E87');
+      g.fillStyle=d;g.beginPath();g.ellipse(x,y,rx,ry,R()*.6,0,7);g.fill();g.strokeStyle='rgba(50,48,44,.45)';g.lineWidth=Math.max(1,s*.025);g.stroke();
+      g.fillStyle='rgba(255,255,250,.25)';g.beginPath();g.ellipse(x-rx*.3,y-ry*.4,rx*.35,ry*.2,-.3,0,7);g.fill()}},
+  paille(g,s,R){g.fillStyle=degrade(g,s,'#F2D47A','#C99A3A');g.fillRect(0,0,s,s);g.lineCap='round';g.lineWidth=Math.max(1,s*.032);
+    for(let k=0;k<26;k++){const x=R()*s,y=R()*s,l=s*(.25+R()*.35),a=-1.1+(R()-.5)*.35;g.strokeStyle=k%2?'rgba(252,236,170,.85)':'rgba(160,118,40,.6)';
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+    g.fillStyle='rgba(138,90,46,.55)';g.fillRect(0,s*.46,s,s*.08)},
+  brique(g,s,R){g.fillStyle='#D8C4A2';g.fillRect(0,0,s,s);const h=s/3,j=s*.045,C=['#B8533A','#C4603F','#A84A33','#BE5A3C'];
+    for(let r=0;r<3;r++){const dec=r%2?-s/4:0;for(let k=-1;k<3;k++){const x=dec+k*s/2+j/2,y=r*h+j/2,w=s/2-j,hh=h-j;
+      g.fillStyle=C[Math.floor(R()*C.length)];g.fillRect(x,y,w,hh);g.fillStyle='rgba(255,210,170,.3)';g.fillRect(x,y,w,hh*.18);
+      g.fillStyle='rgba(60,20,10,.2)';g.fillRect(x,y+hh*.8,w,hh*.2)}}},
+  haie(g,s,R){g.fillStyle='#355C20';g.fillRect(0,0,s,s);const C=['#4F7F2E','#5E8E34','#76A845','#8DBE5A'];
+    for(let k=0;k<18;k++){const x=R()*s,y=R()*s,r=s*(.1+R()*.1);g.fillStyle=C[Math.floor(R()*C.length)];g.beginPath();g.arc(x,y,r,0,7);g.fill();
+      g.fillStyle='rgba(220,255,170,.22)';g.beginPath();g.arc(x-r*.3,y-r*.35,r*.35,0,7);g.fill()}},
+  fleurs(g,s,R){g.fillStyle=degrade(g,s,'#F4B3CB','#D77FA2');g.fillRect(0,0,s,s);
+    for(let k=0;k<4;k++){g.fillStyle=k%2?'#6E9E3E':'#5E8E34';g.beginPath();g.ellipse(R()*s,R()*s,s*.1,s*.05,R()*3,0,7);g.fill()}
+    for(const [cx,cy] of [[.3,.3],[.72,.38],[.38,.74],[.8,.8]]){const x=s*(cx+(R()-.5)*.08),y=s*(cy+(R()-.5)*.08),r=s*.1,blanc=R()<.5;
+      g.fillStyle=blanc?'#FFF6FA':'#FFE27A';for(let p=0;p<5;p++){const a=p*1.2566;g.beginPath();g.arc(x+Math.cos(a)*r,y+Math.sin(a)*r,r*.72,0,7);g.fill()}
+      g.fillStyle='#E8A03A';g.beginPath();g.arc(x,y,r*.55,0,7);g.fill()}},
+  tuiles(g,s,R){g.fillStyle='#363E55';g.fillRect(0,0,s,s);const h=s/3.2,w=s/2.5;
+    for(let r=0;r<5;r++){const y=r*h-h*.4,dec=r%2?w/2:0;for(let k=-1;k<4;k++){const x=dec+k*w;
+      const d=g.createLinearGradient(0,y,0,y+h*1.2);d.addColorStop(0,'#7480A0');d.addColorStop(1,'#414B66');g.fillStyle=d;
+      g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w,y+h*.55);g.arc(x+w/2,y+h*.55,w/2,0,Math.PI);g.closePath();g.fill();
+      g.strokeStyle='rgba(25,28,40,.6)';g.lineWidth=Math.max(1,s*.025);g.stroke()}}},
+  /* les nouvelles matières (02/11), une par nouvelle forme */
+  citrouille(g,s,R){g.fillStyle=degrade(g,s,'#F6AE58','#C8641E');g.fillRect(0,0,s,s);   // les côtes d'une citrouille du potager
+    for(const cx of [.2,.5,.8]){const x=s*(cx+(R()-.5)*.04),w=s*.17;const d=g.createLinearGradient(x-w,0,x+w,0);
+      d.addColorStop(0,'rgba(150,60,10,.35)');d.addColorStop(.45,'rgba(255,214,150,.35)');d.addColorStop(1,'rgba(150,60,10,.35)');
+      g.fillStyle=d;g.beginPath();g.ellipse(x,s*.52,w,s*.56,0,0,7);g.fill()}
+    g.strokeStyle='rgba(120,48,8,.5)';g.lineWidth=Math.max(1,s*.03);
+    for(const cx of [.35,.65]){g.beginPath();g.moveTo(s*cx,0);g.bezierCurveTo(s*(cx-.06),s*.35,s*(cx-.06),s*.65,s*cx,s);g.stroke()}
+    g.fillStyle='#5E8E34';g.beginPath();g.ellipse(s*(.3+R()*.4),s*.1,s*.12,s*.05,R()-.5,0,7);g.fill()},
+  eau(g,s,R){g.fillStyle=degrade(g,s,'#6CC0D2','#2F7F99');g.fillRect(0,0,s,s);   // l'eau de l'étang, ses rides et un nénuphar
+    g.lineCap='round';g.lineWidth=Math.max(1,s*.035);
+    for(let k=0;k<4;k++){const y=s*(.15+k*.24+(R()-.5)*.05),a=s*.05;g.strokeStyle=k%2?'rgba(228,247,250,.55)':'rgba(30,90,110,.35)';
+      g.beginPath();g.moveTo(s*.05,y);g.bezierCurveTo(s*.3,y-a,s*.45,y+a,s*.7,y);g.quadraticCurveTo(s*.85,y-a*.6,s*.95,y);g.stroke()}
+    const x=s*(.3+R()*.4),y=s*(.3+R()*.4),r=s*.15;g.fillStyle='#6E9E3E';g.beginPath();g.moveTo(x,y);g.arc(x,y,r,.5,Math.PI*2-.1);g.closePath();g.fill();
+    g.fillStyle='rgba(220,255,170,.4)';g.beginPath();g.arc(x-r*.3,y-r*.3,r*.3,0,7);g.fill();
+    g.fillStyle='rgba(255,255,255,.7)';g.beginPath();g.ellipse(s*.78,s*.2,s*.06,s*.025,-.4,0,7);g.fill()},
+  lavande(g,s,R){g.fillStyle=degrade(g,s,'#A892D6','#6A559C');g.fillRect(0,0,s,s);   // des brins de lavande serrés
+    g.lineCap='round';
+    for(let k=0;k<5;k++){const x=s*(.1+k*.2+(R()-.5)*.06),pied=s,haut=s*(.12+R()*.1);
+      g.strokeStyle='#557A30';g.lineWidth=Math.max(1,s*.035);g.beginPath();g.moveTo(x,pied);g.lineTo(x+s*.02,haut);g.stroke();
+      for(let p=0;p<6;p++){const y=haut+p*s*.07;g.fillStyle=p%2?'#C9B6EE':'#8E6FC4';
+        g.beginPath();g.ellipse(x-s*.035,y,s*.04,s*.03,0,0,7);g.fill();g.beginPath();g.ellipse(x+s*.05,y+s*.03,s*.04,s*.03,0,0,7);g.fill()}}},
+  miel(g,s,R){g.fillStyle='#B7741A';g.fillRect(0,0,s,s);   // les alvéoles d'un rayon de miel
+    const r=s/5.2,h=r*Math.sqrt(3);
+    for(let col=-1;col<5;col++)for(let row=-1;row<5;row++){const x=col*r*1.5,y=row*h+(col%2?h/2:0);
+      const d=g.createLinearGradient(0,y-h/2,0,y+h/2);d.addColorStop(0,'#FAD679');d.addColorStop(1,'#D9952A');g.fillStyle=d;
+      g.beginPath();for(let a=0;a<6;a++)g.lineTo(x+Math.cos(a*Math.PI/3)*r*.86,y+Math.sin(a*Math.PI/3)*r*.86);g.closePath();g.fill();
+      g.strokeStyle='rgba(122,70,12,.55)';g.lineWidth=Math.max(1,s*.025);g.stroke()}
+    g.fillStyle='rgba(255,250,220,.6)';g.beginPath();g.ellipse(s*(.3+R()*.4),s*(.3+R()*.3),s*.05,s*.08,0,0,7);g.fill()},
+  bouleau(g,s,R){g.fillStyle=degrade(g,s,'#F7F1E4','#D6CBB6');g.fillRect(0,0,s,s);   // l'écorce blanche du bouleau et ses marques
+    g.fillStyle='#3A332B';
+    for(let k=0;k<7;k++){const y=R()*s,x=R()*s*.8,w=s*(.12+R()*.25),h=s*(.025+R()*.03);g.globalAlpha=.55+R()*.4;g.beginPath();g.ellipse(x+w/2,y,w/2,h,0,0,7);g.fill()}
+    g.globalAlpha=1;g.strokeStyle='rgba(150,135,110,.35)';g.lineWidth=Math.max(1,s*.02);
+    for(let k=0;k<3;k++){const x=s*(.2+k*.3+(R()-.5)*.1);g.beginPath();g.moveTo(x,0);g.lineTo(x+s*(R()-.5)*.08,s);g.stroke()}},
+  glace(g,s,R){g.fillStyle=degrade(g,s,'#D9F0FA','#8EC3E0');g.fillRect(0,0,s,s);   // un bloc de glace de l'hiver, en facettes
+    const m=[s*(.4+R()*.2),s*(.4+R()*.2)],coins=[[0,0],[s,0],[s,s],[0,s]],T=['rgba(255,255,255,.45)','rgba(120,170,205,.3)','rgba(80,140,185,.32)','rgba(235,250,255,.35)'];
+    coins.forEach((c,k)=>{const n=coins[(k+1)%4];g.fillStyle=T[k];g.beginPath();g.moveTo(m[0],m[1]);g.lineTo(c[0],c[1]);g.lineTo(n[0],n[1]);g.closePath();g.fill()});
+    g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=Math.max(1,s*.02);g.beginPath();coins.forEach(c=>{g.moveTo(m[0],m[1]);g.lineTo(c[0],c[1])});g.stroke();
+    g.fillStyle='#FFFFFF';const x=s*.28,y=s*.26,r=s*.09;g.beginPath();
+    for(let a=0;a<8;a++){const q=a%2?r*.25:r;g.lineTo(x+Math.cos(a*Math.PI/4)*q,y+Math.sin(a*Math.PI/4)*q)}g.closePath();g.fill()},
+  nuit(g,s,R){g.fillStyle=degrade(g,s,'#36407A','#1A1E40');g.fillRect(0,0,s,s);   // un morceau de ciel de nuit, ses étoiles
+    for(let k=0;k<9;k++){g.fillStyle=`rgba(255,243,176,${(.4+R()*.6).toFixed(2)})`;g.beginPath();g.arc(R()*s,R()*s,s*(.012+R()*.02),0,7);g.fill()}
+    const x=s*(.3+R()*.4),y=s*(.3+R()*.4),r=s*.13;g.fillStyle='#FFE89A';g.beginPath();
+    for(let a=0;a<8;a++){const q=a%2?r*.32:r;g.lineTo(x+Math.cos(a*Math.PI/4-Math.PI/2)*q,y+Math.sin(a*Math.PI/4-Math.PI/2)*q)}g.closePath();g.fill()}};
+function bloc(mat,v,s){
+  const cv=document.createElement('canvas');cv.width=cv.height=s;const g=cv.getContext('2d'),R=hasard(mat.length*977+v*131+mat.charCodeAt(0));
+  const r=s*.14,L=Math.max(2,s*.1);
+  g.save();arrondi(g,0,0,s,s,r);g.clip();MATIERES[mat](g,s,R);
+  /* le relief : haut et gauche éclairés, bas et droite dans l'ombre */
+  const poly=(pts,c)=>{g.fillStyle=c;g.beginPath();pts.forEach(([x,y],k)=>k?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()};
+  poly([[0,0],[s,0],[s-L,L],[L,L]],'rgba(255,244,214,.42)');
+  poly([[0,0],[L,L],[L,s-L],[0,s]],'rgba(255,244,214,.24)');
+  poly([[0,s],[L,s-L],[s-L,s-L],[s,s]],'rgba(30,14,2,.34)');
+  poly([[s,0],[s,s],[s-L,s-L],[s-L,L]],'rgba(30,14,2,.22)');
+  g.restore();
+  const lw=Math.max(1.5,s*.05);g.lineWidth=lw;g.strokeStyle='rgba(46,24,8,.9)';arrondi(g,lw/2,lw/2,s-lw,s-lw,r);g.stroke();
+  return cv;
+}
+
+/* ---------- L'éclatement : un seul calque par-dessus tout ----------
+   Un bloc qui part saute, gonfle d'une lueur blanche, puis éclate : quatre morceaux de lui-même, des éclats de sa matière,
+   des étincelles. Une onde de choc part de l'endroit du coup ; un éclair blanc et une secousse viennent quand plusieurs lignes
+   partent ensemble ; en « effets doux », ni éclair ni secousse, et moitié moins d'éclats. Au-delà de 800 morceaux, les plus
+   vieux s'en vont, pour rester fluide sur tablette. */
+function effets(cv){
+  const g=cv.getContext('2d');
+  let D=1,parts=[],anneaux=[],eclair=null,secoue=null,propre=true;
+  const entre=(a,b)=>a+Math.random()*(b-a);
+  // la petite lueur ronde des étincelles, dessinée une fois
+  const lueur=document.createElement('canvas');lueur.width=lueur.height=32;
+  {const l=lueur.getContext('2d'),d=l.createRadialGradient(16,16,0,16,16,16);d.addColorStop(0,'rgba(255,252,230,1)');d.addColorStop(.35,'rgba(255,216,107,.85)');
+    d.addColorStop(1,'rgba(255,216,107,0)');l.fillStyle=d;l.fillRect(0,0,32,32)}
+  const SAISON=['petale','soleil','feuille','flocon'];
+  const E={
+    doux:false,
+    taille(){D=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(innerWidth*D);cv.height=Math.round(innerHeight*D);propre=false},
+    // un morceau de la saison : pétale, étincelle de soleil, feuille, flocon
+    morceau(x,y,sa,vy){const p={k:SAISON[sa],x,y,vx:entre(-1.6,1.6),vy:vy==null?entre(-4,-1):vy,rot:Math.random()*6,vr:entre(-.15,.15),age:0,
+      vie:entre(900,1500),r:entre(4,7),g:sa===3?.05:.09,flotte:sa!==1};parts.push(p);return p},
+    // un bloc qui saute puis éclate ; force : 1 pour une ligne, plus quand plusieurs partent ou s'enchaînent
+    bloc(img,x,y,cote,mat,o){o=o||{};parts.push({k:'bloc',img,mat,x,y,cote,vx:o.vx!=null?o.vx:entre(-1.2,1.2),vy:o.vy!=null?o.vy:entre(-7,-4.5),
+      rot:0,vr:entre(-.18,.18),age:0,vie:o.vie||380,g:.38,force:o.force||1})},
+    // des éclats de matière et des étincelles, en étoile autour d'un point
+    eclats(x,y,cote,mat,n,force){const C=COULEURS[mat]||COULEURS.bois;n=Math.round(E.doux?n/2:n);
+      for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,v=entre(2.5,6)*(.8+.2*force);
+        parts.push({k:'eclat',col:C[k%3],x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2.5,rot:Math.random()*6,vr:entre(-.4,.4),age:0,vie:entre(480,820),r:cote*entre(.09,.16),g:.32})}
+      const m=Math.round((E.doux?1:2)*force);
+      for(let k=0;k<m;k++){const a=Math.random()*Math.PI*2,v=entre(1,3.5);
+        parts.push({k:'etincelle',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,age:0,vie:entre(380,640),r:cote*entre(.35,.6),g:.05})}},
+    // l'onde de choc : un cercle de lumière qui s'ouvre
+    anneau(x,y,r,col,epais){anneaux.push({x,y,r,col:col||'255,240,190',ep:epais||8,age:0,vie:460})},
+    eclair(force){if(E.doux)return;eclair={t0:performance.now(),a:Math.min(.5,force)}},
+    secouer(el,amp,dur){if(E.doux)return;secoue={el,t0:performance.now(),amp,dur}},
+    calmer(){if(secoue){secoue.el.style.transform='';secoue=null}eclair=null},
+    // la poussière d'une pose : de petits nuages
+    nuage(x,y){for(let k=0;k<3;k++)parts.push({k:'nuage',x:x+entre(-4,4),y,vx:entre(-1.2,1.2),vy:entre(-1.1,-.3),age:0,vie:entre(380,560),r:entre(3,6),g:0})},
+    // une pluie de saison (ou de confettis) sur un rectangle de l'écran
+    pluie(r,n,sa,conf){
+      for(let k=0;k<n;k++){const p=conf?{k:'confetti',x:entre(r.left,r.right),y:r.top-10,vx:entre(-1.5,1.5),vy:entre(-6,-1),rot:Math.random()*6,vr:entre(-.3,.3),
+          age:0,vie:entre(1400,2200),r:entre(4,7),g:.12,col:['#E53935','#FDD835','#43A047','#1E88E5','#AB47BC','#FB8C00'][k%6]}
+        :E.morceau(entre(r.left,r.right),r.top-entre(0,40),sa,entre(.5,2.5));
+        p.attente=k*18;p.vie+=600;if(conf)parts.push(p)}},
+    pas(dt){
+      const k=dt/16,now=performance.now();
+      if(secoue){const p=(now-secoue.t0)/secoue.dur;
+        if(p>=1){secoue.el.style.transform='';secoue=null}
+        else{const a=secoue.amp*(1-p)*(1-p);secoue.el.style.transform=`translate(${((Math.random()-.5)*2*a).toFixed(1)}px,${((Math.random()-.5)*2*a).toFixed(1)}px)`}}
+      if(!parts.length&&!anneaux.length&&!eclair){if(!propre){g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,cv.width,cv.height);propre=true}return}
+      g.setTransform(D,0,0,D,0,0);g.clearRect(0,0,innerWidth,innerHeight);propre=false;
+      if(eclair){const p=(now-eclair.t0)/220;if(p>=1)eclair=null;else{g.fillStyle=`rgba(255,246,214,${(eclair.a*(1-p)*(1-p)).toFixed(3)})`;g.fillRect(0,0,innerWidth,innerHeight)}}
+      anneaux=anneaux.filter(a=>{a.age+=dt;const p=Math.max(0,a.age/a.vie);if(p>=1)return false;
+        const e=1-(1-p)*(1-p)*(1-p);g.strokeStyle=`rgba(${a.col},${(.85*(1-p)).toFixed(3)})`;g.lineWidth=Math.max(1,a.ep*(1-p));
+        g.beginPath();g.arc(a.x,a.y,a.r*(.25+e),0,7);g.stroke();return true});
+      const neufs=[];
+      for(const p of parts){if(p.attente>0){p.attente-=dt;neufs.push(p);continue}
+        p.age+=dt;p.vy+=p.g*k;if(p.flotte&&p.vy>1.2)p.vy=1.2;p.vx*=Math.pow(.99,k);
+        p.x+=p.vx*k+(p.flotte?Math.sin(p.age/220+p.rot)*.4*k:0);p.y+=p.vy*k;p.rot=(p.rot||0)+(p.vr||0)*k;
+        if(p.k==='bloc'&&p.age>=p.vie){briser(p,neufs);continue}
+        if(p.age<p.vie&&p.y<innerHeight+40){neufs.push(p);dessine(p)}}
+      parts=neufs;
+      if(parts.length>800)parts.splice(0,parts.length-800)}
+  };
+  function briser(p,dans){const h=p.img.width/2;
+    for(let a=0;a<2;a++)for(let b=0;b<2;b++)dans.push({k:'quart',img:p.img,sx:a*h,sy:b*h,sw:h,x:p.x+(a-.5)*p.cote/2,y:p.y+(b-.5)*p.cote/2,
+      vx:p.vx+(a-.5)*3,vy:p.vy+(b-.5)*2-1.5,rot:p.rot,vr:entre(-.3,.3),age:0,vie:entre(650,900),cote:p.cote/2,g:.42});
+    const avant=parts;parts=dans;E.eclats(p.x,p.y,p.cote,p.mat,4+3*p.force,p.force);parts=avant}
+  function dessine(p){g.save();g.translate(p.x,p.y);g.rotate(p.rot||0);const fin=Math.max(0,1-p.age/p.vie);g.globalAlpha=Math.min(1,fin*1.6);
+    if(p.k==='bloc'){const q=Math.max(0,(p.age-p.vie+110)/110),c=p.cote*(1+.18*q);g.globalAlpha=1;g.drawImage(p.img,-c/2,-c/2,c,c);
+      if(q>0){g.globalAlpha=q*.9;g.fillStyle='#FFF8E0';arrondi(g,-c/2,-c/2,c,c,c*.14);g.fill()}}   // il gonfle et blanchit juste avant d'éclater
+    else if(p.k==='quart'){const c=p.cote;g.drawImage(p.img,p.sx,p.sy,p.sw,p.sw,-c/2,-c/2,c,c)}
+    else if(p.k==='eclat'){g.fillStyle=p.col;g.beginPath();g.moveTo(-p.r,-p.r*.6);g.lineTo(p.r,-p.r*.2);g.lineTo(-p.r*.2,p.r*.8);g.closePath();g.fill();
+      g.strokeStyle='rgba(46,24,8,.5)';g.lineWidth=1;g.stroke()}
+    else if(p.k==='etincelle'){g.globalCompositeOperation='lighter';const c=p.r*(.6+.4*fin);g.drawImage(lueur,-c,-c,2*c,2*c)}
+    else if(p.k==='petale'){g.fillStyle='#F7B6CF';g.beginPath();g.ellipse(0,0,p.r,p.r*.55,0,0,7);g.fill();g.fillStyle='#FFE3EE';g.beginPath();g.ellipse(-p.r*.3,-p.r*.12,p.r*.35,p.r*.18,0,0,7);g.fill()}
+    else if(p.k==='soleil'){g.fillStyle='#FFE27A';g.beginPath();for(let a=0;a<8;a++){const R=a%2?p.r*.35:p.r;g.lineTo(Math.cos(a*Math.PI/4)*R,Math.sin(a*Math.PI/4)*R)}g.closePath();g.fill();
+      g.fillStyle='#FFF8D6';g.beginPath();g.arc(0,0,p.r*.3,0,7);g.fill()}
+    else if(p.k==='feuille'){g.fillStyle=p.r>5.5?'#D66E28':'#E8A032';g.beginPath();g.ellipse(0,0,p.r*1.2,p.r*.6,0,0,7);g.fill();g.strokeStyle='rgba(110,50,10,.6)';g.lineWidth=1;g.beginPath();g.moveTo(-p.r*1.1,0);g.lineTo(p.r*1.1,0);g.stroke()}
+    else if(p.k==='flocon'){g.strokeStyle='#FFFFFF';g.lineWidth=1.6;g.lineCap='round';g.beginPath();for(let a=0;a<3;a++){const c=Math.cos(a*Math.PI/3)*p.r,s=Math.sin(a*Math.PI/3)*p.r;g.moveTo(-c,-s);g.lineTo(c,s)}g.stroke()}
+    else if(p.k==='nuage'){g.globalAlpha*=.55;g.fillStyle='#E8DCC4';g.beginPath();g.arc(0,0,p.r*(1+p.age/p.vie),0,7);g.fill()}
+    else if(p.k==='confetti'){g.fillStyle=p.col;g.fillRect(-p.r/2,-p.r*.3,p.r,p.r*.6)}
+    g.restore()}
+  return E;
+}
+/* ===================================================== fin des blocs de la Vallée ===================================================== */
+/* ---------- Les pièces des briques : les sept de 4 carrés, et depuis le 02/11 les quatre petites du carré ----------
+   (la pièce d'une case, celle de deux, la barrette de trois, le petit coin de trois). Formes et matières : section
+   « Les blocs de la Vallée » plus bas, la même que dans carre.html. */
+const TYPES='IOTSZJLmdrc';
 /* ROT[t][r] = les cases pleines [x,y] de la pièce t tournée r fois */
 const ROT={};
 for(const t of TYPES){let m=FORMES[t];ROT[t]=[];for(let r=0;r<4;r++){const c=[];m.forEach((l,y)=>l.forEach((v,x)=>{if(v)c.push([x,y])}));ROT[t].push(c);m=tourne(m)}}
@@ -197,56 +402,7 @@ function musique(on){
 const ICONE_SON=on=>`<svg viewBox="0 0 24 24" fill="none" stroke="#FFF4D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5h4l5-4v13l-5-4h-4z"/>${on?'<path d="M16 9a4.5 4.5 0 0 1 0 6"/><path d="M18.8 6.3a8.4 8.4 0 0 1 0 11.4"/>':'<path d="M16 9.5l5 5M21 9.5l-5 5"/>'}</svg>`;
 function majSon(){const b=document.getElementById('bSon');b.innerHTML=ICONE_SON(musiqueOn);b.setAttribute('aria-label',musiqueOn?'Couper la musique':'Remettre la musique')}
 
-/* ---------- Les blocs : de vrais petits blocs de matière, avec relief, dessinés une fois par taille ---------- */
-function hasard(seed){return()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function arrondi(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
-const degrade=(g,s,a,b)=>{const d=g.createLinearGradient(0,0,0,s);d.addColorStop(0,a);d.addColorStop(1,b);return d};
-const MATIERES={
-  bois(g,s,R){g.fillStyle=degrade(g,s,'#D7A169','#A46635');g.fillRect(0,0,s,s);
-    g.lineWidth=Math.max(1,s*.025);g.strokeStyle='rgba(90,50,20,.28)';
-    for(let k=0;k<6;k++){const y=s*(.08+k*.16+R()*.05);g.beginPath();g.moveTo(0,y);g.bezierCurveTo(s*.3,y+s*(R()-.5)*.12,s*.7,y+s*(R()-.5)*.12,s,y);g.stroke()}
-    for(const y of [s/3,s*2/3]){g.fillStyle='rgba(74,42,18,.6)';g.fillRect(0,y-s*.025,s,s*.045);g.fillStyle='rgba(255,220,170,.28)';g.fillRect(0,y+s*.02,s,s*.025)}
-    g.strokeStyle='rgba(74,42,18,.55)';g.lineWidth=Math.max(1,s*.03);g.beginPath();g.ellipse(s*(.25+R()*.5),s*(.12+Math.floor(R()*3)/3),s*.07,s*.04,0,0,7);g.stroke()},
-  pierre(g,s,R){g.fillStyle='#6C6E69';g.fillRect(0,0,s,s);
-    for(const [cx,cy] of [[.27,.27],[.74,.25],[.25,.74],[.73,.73]]){const x=s*(cx+(R()-.5)*.06),y=s*(cy+(R()-.5)*.06),rx=s*(.21+R()*.05),ry=s*(.19+R()*.05);
-      const d=g.createLinearGradient(0,y-ry,0,y+ry);d.addColorStop(0,'#C9CBC3');d.addColorStop(1,'#8B8E87');
-      g.fillStyle=d;g.beginPath();g.ellipse(x,y,rx,ry,R()*.6,0,7);g.fill();g.strokeStyle='rgba(50,48,44,.45)';g.lineWidth=Math.max(1,s*.025);g.stroke();
-      g.fillStyle='rgba(255,255,250,.25)';g.beginPath();g.ellipse(x-rx*.3,y-ry*.4,rx*.35,ry*.2,-.3,0,7);g.fill()}},
-  paille(g,s,R){g.fillStyle=degrade(g,s,'#F2D47A','#C99A3A');g.fillRect(0,0,s,s);g.lineCap='round';g.lineWidth=Math.max(1,s*.032);
-    for(let k=0;k<26;k++){const x=R()*s,y=R()*s,l=s*(.25+R()*.35),a=-1.1+(R()-.5)*.35;g.strokeStyle=k%2?'rgba(252,236,170,.85)':'rgba(160,118,40,.6)';
-      g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
-    g.fillStyle='rgba(138,90,46,.55)';g.fillRect(0,s*.46,s,s*.08)},
-  brique(g,s,R){g.fillStyle='#D8C4A2';g.fillRect(0,0,s,s);const h=s/3,j=s*.045,C=['#B8533A','#C4603F','#A84A33','#BE5A3C'];
-    for(let r=0;r<3;r++){const dec=r%2?-s/4:0;for(let k=-1;k<3;k++){const x=dec+k*s/2+j/2,y=r*h+j/2,w=s/2-j,hh=h-j;
-      g.fillStyle=C[Math.floor(R()*C.length)];g.fillRect(x,y,w,hh);g.fillStyle='rgba(255,210,170,.3)';g.fillRect(x,y,w,hh*.18);
-      g.fillStyle='rgba(60,20,10,.2)';g.fillRect(x,y+hh*.8,w,hh*.2)}}},
-  haie(g,s,R){g.fillStyle='#355C20';g.fillRect(0,0,s,s);const C=['#4F7F2E','#5E8E34','#76A845','#8DBE5A'];
-    for(let k=0;k<18;k++){const x=R()*s,y=R()*s,r=s*(.1+R()*.1);g.fillStyle=C[Math.floor(R()*C.length)];g.beginPath();g.arc(x,y,r,0,7);g.fill();
-      g.fillStyle='rgba(220,255,170,.22)';g.beginPath();g.arc(x-r*.3,y-r*.35,r*.35,0,7);g.fill()}},
-  fleurs(g,s,R){g.fillStyle=degrade(g,s,'#F4B3CB','#D77FA2');g.fillRect(0,0,s,s);
-    for(let k=0;k<4;k++){g.fillStyle=k%2?'#6E9E3E':'#5E8E34';g.beginPath();g.ellipse(R()*s,R()*s,s*.1,s*.05,R()*3,0,7);g.fill()}
-    for(const [cx,cy] of [[.3,.3],[.72,.38],[.38,.74],[.8,.8]]){const x=s*(cx+(R()-.5)*.08),y=s*(cy+(R()-.5)*.08),r=s*.1,blanc=R()<.5;
-      g.fillStyle=blanc?'#FFF6FA':'#FFE27A';for(let p=0;p<5;p++){const a=p*1.2566;g.beginPath();g.arc(x+Math.cos(a)*r,y+Math.sin(a)*r,r*.72,0,7);g.fill()}
-      g.fillStyle='#E8A03A';g.beginPath();g.arc(x,y,r*.55,0,7);g.fill()}},
-  tuiles(g,s,R){g.fillStyle='#363E55';g.fillRect(0,0,s,s);const h=s/3.2,w=s/2.5;
-    for(let r=0;r<5;r++){const y=r*h-h*.4,dec=r%2?w/2:0;for(let k=-1;k<4;k++){const x=dec+k*w;
-      const d=g.createLinearGradient(0,y,0,y+h*1.2);d.addColorStop(0,'#7480A0');d.addColorStop(1,'#414B66');g.fillStyle=d;
-      g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w,y+h*.55);g.arc(x+w/2,y+h*.55,w/2,0,Math.PI);g.closePath();g.fill();
-      g.strokeStyle='rgba(25,28,40,.6)';g.lineWidth=Math.max(1,s*.025);g.stroke()}}}};
-function bloc(mat,v,s){
-  const cv=document.createElement('canvas');cv.width=cv.height=s;const g=cv.getContext('2d'),R=hasard(mat.length*977+v*131+mat.charCodeAt(0));
-  const r=s*.14,L=Math.max(2,s*.1);
-  g.save();arrondi(g,0,0,s,s,r);g.clip();MATIERES[mat](g,s,R);
-  /* le relief : haut et gauche éclairés, bas et droite dans l'ombre */
-  const poly=(pts,c)=>{g.fillStyle=c;g.beginPath();pts.forEach(([x,y],k)=>k?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()};
-  poly([[0,0],[s,0],[s-L,L],[L,L]],'rgba(255,244,214,.42)');
-  poly([[0,0],[L,L],[L,s-L],[0,s]],'rgba(255,244,214,.24)');
-  poly([[0,s],[L,s-L],[s-L,s-L],[s,s]],'rgba(30,14,2,.34)');
-  poly([[s,0],[s,s],[s-L,s-L],[s-L,L]],'rgba(30,14,2,.22)');
-  g.restore();
-  const lw=Math.max(1.5,s*.05);g.lineWidth=lw;g.strokeStyle='rgba(46,24,8,.9)';arrondi(g,lw/2,lw/2,s-lw,s-lw,r);g.stroke();
-  return cv;
-}
+/* ---------- Les blocs, dessinés une fois par taille (matières : section « Les blocs de la Vallée », en tête) ---------- */
 const CACHE={};
 function blocs(s){if(!CACHE[s]){CACHE[s]={};for(const t of TYPES)CACHE[s][t]=[0,1,2].map(v=>bloc(MATIERE[t],v,s))}return CACHE[s]}
 
@@ -265,7 +421,7 @@ function heurte(t,r,x,y){
 }
 function sortir(){
   const t=P.suite;P.suite=tirer();
-  P.cur={t,r:0,x:t==='O'?4:3,y:t==='I'?-1:0};retards=0;delai=0;acc=0;
+  P.cur={t,r:0,x:Math.floor((LARG-FORMES[t].length)/2),y:-Math.min(...ROT[t][0].map(c=>c[1]))};retards=0;delai=0;acc=0;
   if(heurte(t,0,P.cur.x,P.cur.y)){P.cur=null;finir();return}
   dessineSuite();sale=true;
 }
@@ -279,7 +435,7 @@ function bouge(dx,dy){
   return true;
 }
 function tourner(){
-  const c=P.cur;if(!c||efface||c.t==='O')return;
+  const c=P.cur;if(!c||efface||c.t==='O'||c.t==='m')return;
   const r=(c.r+1)%4;
   for(const [dx,dy] of [[0,0],[-1,0],[1,0],[0,-1],[-2,0],[2,0],[0,-2]]){
     if(!heurte(c.t,r,c.x+dx,c.y+dy)){c.r=r;c.x+=dx;c.y+=dy;sale=true;SON.tourne();
@@ -301,9 +457,7 @@ function poser(){
   if(dehors){finir();return}
   const pleines=[];for(let y=0;y<HAUT;y++){let ok=true;for(let x=0;x<LARG;x++)if(!P.b[y*LARG+x]){ok=false;break}if(ok)pleines.push(y)}
   if(pleines.length){const n=pleines.length;P.combo=(P.combo==null||P.combo<0?-1:P.combo)+1;   // des lignes coup sur coup : un enchaînement
-    efface={rangs:pleines,t0:performance.now(),lances:0,saison:(P.niveau-1)%4};SON.ligne(n,P.combo);
-    if(n>=2)secouer(n>=4?9:n===3?6:3.5,n>=4?420:260);
-    if(n>=4&&!doucement()&&(!navigator.userActivation||navigator.userActivation.hasBeenActive)){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch{}}   /* seulement après un vrai toucher */}
+    efface={rangs:pleines,t0:performance.now()+PAUSE[n],lances:0,saison:(P.niveau-1)%4,force:Math.min(3,1+.35*(n-1)+.3*P.combo),parti:false};SON.ligne(n,P.combo)}
   else{P.combo=-1;sortir()}
   sale=true;majInfos();sauve();
 }
@@ -320,7 +474,7 @@ function retirerLignes(){
   P.lignes+=n;P.score+=gain;P.niveau=1+Math.floor(P.lignes/LIGNES_PAR_NIVEAU);
   pointsVolent(gain,yMilieu);
   if(P.combo>0){bulleCombo(P.combo+1,yMilieu)}
-  if(vide){ruban('🎉 Puits vidé !',true);pluie(90,sa,true);pluie(50,sa);SON.fete();secouer(7,380)}
+  if(vide){ruban('🎉 Puits vidé !',true);pluie(90,sa,true);pluie(50,sa);SON.fete();FX.secouer($('jeu'),7,380)}
   else if(n>=4){ruban('🌾 Récolte !');pluie(70,sa)}
   if(P.niveau!==avant){mettreSaison(true)}
   sortir();majInfos();sauve();
@@ -338,14 +492,15 @@ function boucle(ts){
   requestAnimationFrame(boucle);
   const dt=Math.min(100,ts-(avant||ts));avant=ts;
   if(etat==='jeu'&&P&&!P.fini){
-    if(efface){sale=true;const e=ts-efface.t0;while(efface.lances<LARG&&e>=efface.lances*VAGUE)lancerColonne(efface.lances++);if(e>=EFFACE_MS)retirerLignes()}
+    if(efface){sale=true;const e=ts-efface.t0;if(e>=0&&!efface.parti){efface.parti=true;choc()}
+      while(efface.lances<LARG&&e>=efface.lances*VAGUE)lancerColonne(efface.lances++);if(e>=EFFACE_MS)retirerLignes()}
     else if(P.cur){
       const c=P.cur;
       if(heurte(c.t,c.r,c.x,c.y+1)){acc=0;delai+=dt;if(delai>=DELAI_POSE)poser()}
       else{delai=0;acc+=dt;if(acc>=gravite()){acc=0;c.y++;sale=true}}
     }
   }
-  ciel(dt);effets(dt);
+  ciel(dt);FX.pas(dt);
   if(tombe||claque)sale=true;
   if(sale){dessine();sale=false}
 }
@@ -372,8 +527,8 @@ function dessine(){
       let kk=k;if(claque&&claque.cases.some(([a,b])=>a===x&&b===y))kk=1-.12*Math.sin(Math.PI*pq);
       const img=B[TYPES[(v>>2)-1]][v&3];
       if(kk===1)ctx.drawImage(img,x*s,y*s+dy);else ctx.drawImage(img,x*s-s*(1/kk-1)/4,y*s+dy+s*(1-kk),s*(1+(1/kk-1)/2),s*kk)}}
-  if(efface){const p=Math.min(1,(now-efface.t0)/EFFACE_MS);
-    ctx.fillStyle=`rgba(255,240,190,${(.35+.4*Math.sin(Math.PI*p)).toFixed(3)})`;for(const y of efface.rangs)ctx.fillRect(efface.lances*s,y*s,W-efface.lances*s,s)}
+  if(efface){const p=Math.min(1,(now-efface.t0)/EFFACE_MS);   // avant l'onde (p < 0), les lignes blanchissent
+    ctx.fillStyle=`rgba(255,244,205,${(p<0?.85:.35+.4*Math.sin(Math.PI*p)).toFixed(3)})`;for(const y of efface.rangs)ctx.fillRect(efface.lances*s,y*s,W-efface.lances*s,s)}
   const c=P.cur;
   if(c&&!P.fini){
     // le fantôme : l'ombre de la pièce là où elle tombera, cernée d'un trait clair
@@ -435,64 +590,36 @@ function ciel(dt){
 }
 
 /* ---------- Les effets (26/10, Florian : « de meilleurs effets lorsque les blocs se détruisent, on ajoute un maximum de features
-   satisfaisantes », puis « go pour le tout ») ----------
-   Un seul calque de particules par-dessus tout, dessiné à chaque image tant qu'il y a quelque chose à montrer.
-   Les règles ne changent pas ; seuls les points d'enchaînement et du puits vidé s'ajoutent (barème du jeu classique). */
-const fxC=document.getElementById('fx'),fx=fxC.getContext('2d');
-let parts=[], secoue=null, tombe=null, claque=null, doux=lis('doux',false), FXD=1;
+   satisfaisantes », puis « go pour le tout » ; 02/11 : « des blocs qui explosent de manière satisfaisante et donnent envie de
+   continuer à jouer ») ----------
+   Le moteur est celui de la section « Les blocs de la Vallée », le même que le carré. Quand des lignes partent : un instant de
+   lueur (plus long quand le coup est grand), puis l'onde ; chaque bloc saute, gonfle, blanchit et éclate en morceaux de sa
+   matière ; une onde de choc s'ouvre ; à partir de deux lignes, secousse ; à partir de trois, éclair. Les enchaînements
+   ajoutent de la force. Les règles ne changent pas ; seuls les points d'enchaînement et du puits vidé s'ajoutent. */
+const FX=effets(document.getElementById('fx'));
+let tombe=null, claque=null, doux=lis('doux',false);
 const VAGUE=32, EFFACE_MS=LARG*VAGUE+170;   // l'onde : une colonne toutes les 32 ms, de gauche à droite
+const PAUSE=[0,0,70,120,170];               // l'instant de lueur avant l'onde, selon le nombre de lignes
 const doucement=()=>doux||calme;
-function fxTaille(){FXD=Math.min(2,window.devicePixelRatio||1);fxC.width=Math.round(innerWidth*FXD);fxC.height=Math.round(innerHeight*FXD)}
+FX.doux=doucement();
 const boitePuits=()=>toile.getBoundingClientRect();
-const hasardEntre=(a,b)=>a+Math.random()*(b-a);
-// un morceau de la saison du niveau : pétale, étincelle de soleil, feuille, flocon
-function morceau(x,y,sa,vy){const p={k:['petale','soleil','feuille','flocon'][sa],x,y,vx:hasardEntre(-1.6,1.6),vy:vy==null?hasardEntre(-4,-1):vy,
-  rot:Math.random()*6,vr:hasardEntre(-.15,.15),age:0,vie:hasardEntre(900,1500),r:hasardEntre(4,7),g:sa===3?.05:.09,flotte:sa!==1};parts.push(p);return p}
-// une colonne de l'onde part : chaque carré saute, tourne, puis se brise en quatre et retombe, avec quelques morceaux de saison
+// le coup part : onde de choc au milieu des lignes, secousse et éclair selon leur nombre
+function choc(){const r=boitePuits(),c=r.height/HAUT,n=efface.rangs.length,cy=r.top+(efface.rangs[0]+efface.rangs[n-1]+1)/2*c;
+  FX.anneau(r.left+r.width/2,cy,r.width*(.45+.12*n),'255,240,190',6+3*n);
+  if(n>=2){FX.anneau(r.left+r.width/2,cy,r.width*(.6+.15*n),'255,216,107',4+2*n);FX.secouer($('jeu'),n>=4?10:n===3?7:4,n>=4?440:n===3?340:260)}
+  if(n>=3)FX.eclair(.13*n);
+  if(n>=4&&!doucement()&&(!navigator.userActivation||navigator.userActivation.hasBeenActive)){try{navigator.vibrate&&navigator.vibrate([60,40,90])}catch{}}}   /* seulement après un vrai toucher */
+// une colonne de l'onde part : chaque carré saute, tourne, gonfle, puis éclate, avec quelques morceaux de saison
 function lancerColonne(x){const r=boitePuits(),c=r.height/HAUT,s=Math.round(C*DPR),B=blocs(s),sa=efface.saison;
-  for(const y of efface.rangs){const v=P.b[y*LARG+x];if(!v)continue;
-    parts.push({k:'bloc',img:B[TYPES[(v>>2)-1]][v&3],x:r.left+(x+.5)*c,y:r.top+(y+.5)*c,vx:hasardEntre(-1.2,1.2)+(x-4.5)*.12,vy:hasardEntre(-7,-4.5),
-      rot:0,vr:hasardEntre(-.18,.18),age:0,vie:380,cote:c,g:.38});
-    for(let k=0;k<2;k++)morceau(r.left+(x+.5)*c,r.top+(y+.5)*c,sa)}
+  for(const y of efface.rangs){const v=P.b[y*LARG+x];if(!v)continue;const t=TYPES[(v>>2)-1];
+    FX.bloc(B[t][v&3],r.left+(x+.5)*c,r.top+(y+.5)*c,c,MATIERE[t],{vx:(Math.random()-.5)*2.4+(x-4.5)*.14*efface.force,vy:-(4.5+efface.force*1.2+Math.random()*2.5),force:efface.force});
+    FX.morceau(r.left+(x+.5)*c,r.top+(y+.5)*c,sa)}
   if(x%3===0)SON.tac()}
-function briser(p){const h=p.img.width/2;
-  for(let a=0;a<2;a++)for(let b=0;b<2;b++)parts.push({k:'quart',img:p.img,sx:a*h,sy:b*h,sw:h,x:p.x+(a-.5)*p.cote/2,y:p.y+(b-.5)*p.cote/2,
-    vx:p.vx+(a-.5)*2.4,vy:p.vy+(b-.5)*1.6-1,rot:p.rot,vr:hasardEntre(-.25,.25),age:0,vie:hasardEntre(650,900),cote:p.cote/2,g:.42})}
 // la poussière de la pose : de petits nuages sous la pièce
 function poussiere(cases){const r=boitePuits(),c=r.height/HAUT;
-  for(const [X,Y] of cases){if(cases.some(([a,b])=>a===X&&b===Y+1))continue;
-    for(let k=0;k<3;k++)parts.push({k:'nuage',x:r.left+(X+Math.random())*c,y:r.top+(Y+1)*c-2,vx:hasardEntre(-1.2,1.2),vy:hasardEntre(-1.1,-.3),age:0,vie:hasardEntre(380,560),r:hasardEntre(3,6),g:0})}}
+  for(const [X,Y] of cases){if(cases.some(([a,b])=>a===X&&b===Y+1))continue;FX.nuage(r.left+(X+.5)*c,r.top+(Y+1)*c-2)}}
 // une pluie de saison sur tout le puits (le grand coup, le puits vidé)
-function pluie(n,sa,conf){const r=boitePuits();
-  for(let k=0;k<n;k++){const p=conf?{k:'confetti',x:hasardEntre(r.left,r.right),y:r.top-10,vx:hasardEntre(-1.5,1.5),vy:hasardEntre(-6,-1),rot:Math.random()*6,vr:hasardEntre(-.3,.3),
-      age:0,vie:hasardEntre(1400,2200),r:hasardEntre(4,7),g:.12,col:['#E53935','#FDD835','#43A047','#1E88E5','#AB47BC','#FB8C00'][k%6]}
-    :morceau(hasardEntre(r.left,r.right),r.top-hasardEntre(0,40),sa,hasardEntre(.5,2.5));
-    p.attente=k*18;p.vie+=600;if(conf)parts.push(p)}}
-function dessinePart(p){const g=fx;g.save();g.translate(p.x,p.y);g.rotate(p.rot||0);const fin=Math.max(0,1-p.age/p.vie);g.globalAlpha=Math.min(1,fin*1.6);
-  if(p.k==='bloc'){const c=p.cote;g.drawImage(p.img,-c/2,-c/2,c,c)}
-  else if(p.k==='quart'){const c=p.cote;g.drawImage(p.img,p.sx,p.sy,p.sw,p.sw,-c/2,-c/2,c,c)}
-  else if(p.k==='petale'){g.fillStyle='#F7B6CF';g.beginPath();g.ellipse(0,0,p.r,p.r*.55,0,0,7);g.fill();g.fillStyle='#FFE3EE';g.beginPath();g.ellipse(-p.r*.3,-p.r*.12,p.r*.35,p.r*.18,0,0,7);g.fill()}
-  else if(p.k==='soleil'){g.fillStyle='#FFE27A';g.beginPath();for(let a=0;a<8;a++){const R=a%2?p.r*.35:p.r;g.lineTo(Math.cos(a*Math.PI/4)*R,Math.sin(a*Math.PI/4)*R)}g.closePath();g.fill();
-    g.fillStyle='#FFF8D6';g.beginPath();g.arc(0,0,p.r*.3,0,7);g.fill()}
-  else if(p.k==='feuille'){g.fillStyle=p.r>5.5?'#D66E28':'#E8A032';g.beginPath();g.ellipse(0,0,p.r*1.2,p.r*.6,0,0,7);g.fill();g.strokeStyle='rgba(110,50,10,.6)';g.lineWidth=1;g.beginPath();g.moveTo(-p.r*1.1,0);g.lineTo(p.r*1.1,0);g.stroke()}
-  else if(p.k==='flocon'){g.strokeStyle='#FFFFFF';g.lineWidth=1.6;g.lineCap='round';g.beginPath();for(let a=0;a<3;a++){const c=Math.cos(a*Math.PI/3)*p.r,s=Math.sin(a*Math.PI/3)*p.r;g.moveTo(-c,-s);g.lineTo(c,s)}g.stroke()}
-  else if(p.k==='nuage'){g.globalAlpha*=.55;g.fillStyle='#E8DCC4';g.beginPath();g.arc(0,0,p.r*(1+p.age/p.vie),0,7);g.fill()}
-  else if(p.k==='confetti'){g.fillStyle=p.col;g.fillRect(-p.r/2,-p.r*.3,p.r,p.r*.6)}
-  g.restore()}
-let fxVide=true;
-function effets(dt){const k=dt/16;
-  if(secoue){const p=(performance.now()-secoue.t0)/secoue.dur,j=$('jeu');
-    if(p>=1){j.style.transform='';secoue=null}else{const a=secoue.amp*(1-p);j.style.transform=`translate(${(Math.random()-.5)*2*a}px,${(Math.random()-.5)*2*a}px)`}}
-  if(!parts.length){if(!fxVide){fx.setTransform(1,0,0,1,0,0);fx.clearRect(0,0,fxC.width,fxC.height);fxVide=true}return}
-  fx.setTransform(FXD,0,0,FXD,0,0);fx.clearRect(0,0,innerWidth,innerHeight);fxVide=false;
-  const neufs=[];
-  for(const p of parts){if(p.attente>0){p.attente-=dt;neufs.push(p);continue}
-    p.age+=dt;p.vy+=p.g*k;if(p.flotte&&p.vy>1.2)p.vy=1.2;p.vx*=Math.pow(.99,k);p.x+=p.vx*k+(p.flotte?Math.sin(p.age/220+p.rot)*.4*k:0);p.y+=p.vy*k;p.rot=(p.rot||0)+(p.vr||0)*k;
-    if(p.k==='bloc'&&p.age>=p.vie){briser(p);continue}
-    if(p.age<p.vie&&p.y<innerHeight+40){neufs.push(p);dessinePart(p)}}
-  parts=neufs;
-  if(parts.length>700)parts.splice(0,parts.length-700)}
-function secouer(amp,dur){if(doucement())return;secoue={t0:performance.now(),amp,dur}}
+const pluie=(n,sa,conf)=>FX.pluie(boitePuits(),n,sa,conf);
 // les points qui volent jusqu'au compteur, qui grossit en les recevant
 function pointsVolent(n,y0){const r=boitePuits(),el=document.createElement('div'),cible=$('plPoints').getBoundingClientRect();
   el.className='vole';el.textContent='+'+n.toLocaleString('fr-FR');el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+y0)+'px';document.body.appendChild(el);
@@ -516,7 +643,7 @@ function placer(){
   const vw=innerWidth,vh=innerHeight,m=10,f=13,portrait=vh>vw*1.05;
   document.body.dataset.o=portrait?'portrait':'paysage';
   DPR=Math.min(2,window.devicePixelRatio||1);
-  cielC.width=vw;cielC.height=vh;fxTaille();
+  cielC.width=vw;cielC.height=vh;FX.taille();
   let bs,gap;
   if(portrait){
     const colW=Math.round(Math.min(240,Math.max(150,vw*.25)));
@@ -674,7 +801,7 @@ $('haut').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;audio();
   if(a==='pause'){if(etat==='jeu')mettrePause();else if(etat==='pause')jouer()}
   else if(a==='son'){musiqueOn=!musiqueOn;ecris('musique',musiqueOn);majSon();musique(musiqueOn&&etat==='jeu')}
-  else if(a==='doux'){doux=!doux;ecris('doux',doux);majDoux();if(doux&&secoue){secoue=null;$('jeu').style.transform=''}}
+  else if(a==='doux'){doux=!doux;ecris('doux',doux);majDoux();FX.doux=doucement();if(FX.doux)FX.calmer()}
   else if(a==='accueil'){if(P&&!P.fini)sauve();location.href='index.html'+location.search}
 });
 
