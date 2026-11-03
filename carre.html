@@ -118,8 +118,8 @@ const $=id=>document.getElementById(id);
    ===================================================================================================================== */
 /* ---------- Les formes : les sept pièces de 4 carrés, puis les nouvelles ----------
    Une lettre par forme. L'ordre de CLES fixe le code rangé dans les grilles : (rang + 1) × 4 + variante.
-   Les briques prennent le début (IOTSZJLmdrc), le carré prend tout. */
-const CLES='IOTSZJLmdrcVGQ';
+   Les briques prennent le début (IOTSZJLmdrc) et la croix, le carré prend tout. */
+const CLES='IOTSZJLmdrcVGQX';
 const FORMES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,1,0],[1,1,1],[0,0,0]],
   S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]],
   m:[[1]],                                  // la pièce d'une case
@@ -128,9 +128,10 @@ const FORMES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,
   c:[[1,0],[1,1]],                          // le petit coin de trois
   V:[[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],   // la grande barre de cinq (carré seulement)
   G:[[1,0,0],[1,0,0],[1,1,1]],              // le grand coin de cinq (carré seulement)
-  Q:[[1,1,1],[1,1,1],[1,1,1]]};             // le grand carré de neuf (carré seulement)
+  Q:[[1,1,1],[1,1,1],[1,1,1]],              // le grand carré de neuf (carré seulement)
+  X:[[0,1,0],[1,1,1],[0,1,0]]};             // la croix de cinq (03/11), rare dans les deux jeux
 const MATIERE={I:'tuiles',O:'paille',T:'fleurs',S:'haie',Z:'brique',J:'pierre',L:'bois',
-  m:'citrouille',d:'eau',r:'lavande',c:'miel',V:'bouleau',G:'glace',Q:'nuit'};
+  m:'citrouille',d:'eau',r:'lavande',c:'miel',V:'bouleau',G:'glace',Q:'nuit',X:'pierre'};
 /* trois teintes par matière : les éclats prennent la couleur du bloc qui part */
 const COULEURS={bois:['#D7A169','#A46635','#5A3418'],pierre:['#C9CBC3','#8B8E87','#6C6E69'],paille:['#F2D47A','#C99A3A','#FCECAA'],
   brique:['#C4603F','#A84A33','#D8C4A2'],haie:['#76A845','#4F7F2E','#8DBE5A'],fleurs:['#F4B3CB','#FFF6FA','#FFE27A'],tuiles:['#7480A0','#414B66','#363E55'],
@@ -328,7 +329,7 @@ for(const t of CLES){let m=FORMES[t];const vus=new Set();ORIENTS[t]=[];
     const mx=Math.min(...c.map(p=>p[0])),my=Math.min(...c.map(p=>p[1])),n=c.map(([x,y])=>[x-mx,y-my]).sort((a,b)=>a[1]-b[1]||a[0]-b[0]);
     const k=JSON.stringify(n);if(!vus.has(k)){vus.add(k);ORIENTS[t].push(n)}m=tourne(m)}}
 /* Les chances de chaque forme : les petites pièces (1, 2, 3 cases) viennent souvent, les grandes de temps en temps */
-const TIRAGE={m:7,d:8,r:6,c:7,O:5,I:3,T:4,S:3,Z:3,J:3,L:3,V:2,G:3,Q:2};
+const TIRAGE={m:7,d:8,r:6,c:7,O:5,I:3,T:4,S:3,Z:3,J:3,L:3,V:2,G:3,Q:2,X:2};   // la croix : 2 sur 61, aussi rare que la barre et le carré
 function piece(t,o){const c=ORIENTS[t][o];return{t,c,w:Math.max(...c.map(p=>p[0]))+1,h:Math.max(...c.map(p=>p[1]))+1}}
 function auHasard(){const tot=Object.values(TIRAGE).reduce((a,b)=>a+b,0);let r=Math.random()*tot;
   for(const t in TIRAGE){r-=TIRAGE[t];if(r<0)return piece(t,Math.floor(Math.random()*ORIENTS[t].length))}return piece('m',0)}
